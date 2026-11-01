@@ -90,6 +90,10 @@ def snapshot(surface):
     state['group_label']=a.group_name();state['group_bank']=a.group_bank
     state['wave_preload']=a.track().get('sample')
     if a.page in ('PAD','CHANNEL'):state['output_art']=output_art(a)
+    if a.page=='PROJECT LOAD':
+        state['choice']='LOAD PROJECT'
+        entries=tuple(a.project_label(path) for path in a.project_files())
+        state['project_list']=(entries,max(0,min(a.project_choice,len(entries)-1)))
     if a.page in ('SAMPLER','PLUGIN','AUDIO LOOP') and state.get('page_index',0)==0:
         state['chain_cards']=chain_state(surface)
     if a.page in ('PATTERN GRID','GRID EDIT'):

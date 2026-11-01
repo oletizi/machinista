@@ -15,8 +15,9 @@ class Mk3Renderer:
     def close(self):
         self.waveforms.close()
         if self.encoder:self.encoder.close()
-    def list(self,c,items,index,y=88):
-        index=max(0,min(index,len(items)-1));first=max(0,min(index-2,len(items)-6))
+    def list(self,c,items,index,y=88,first=None):
+        index=max(0,min(index,len(items)-1))
+        first=max(0,min(index-2,len(items)-6)) if first is None else max(0,first)
         for row,item in enumerate(items[first:first+6]):
             selected=first+row==index;yy=y+row*21
             if selected:c.rect(8,yy,464,21,ACCENT,radius=3)
@@ -198,6 +199,7 @@ class Mk3Renderer:
                 c.text(316,34,f'{s.get("tempo",0):.2f}',13,True,width=67)
                 c.text(438,34,s.get('position',''),13,True,width=73,center=True)
             title=(s.get('group_label',chr(65+s.get('group',0)%8))+' / '+s.get('title','Machinista')) if side==0 else s.get('choice',s.get('page',''))
+            if side==0 and 'project_list' in s:title='PROJECTS'
             if side==0 and 'updater' in s:title='SOFTWARE UPDATE'
             if side==0 and 'settings_menu' in s:title='SETTINGS / '+s['settings_menu'][0]
             if 'events_native' in s:
@@ -415,6 +417,21 @@ class Mk3Renderer:
             q.text(18,126,u.get('error') or u.get('message',''),13,color=MUTED,width=442)
             q.rect(18,161,444,12,PANEL,LINE,3);q.rect(20,163,max(1,round(440*u.get('progress',0)/100)),8,ACCENT,radius=2)
             q.text(18,183,'Machinista + Raspberry Pi OS',14,True,width=442)
+        elif 'project_list' in s:
+            entries,index=s['project_list']
+            if entries:
+                # Keep each page stationary while the colored cursor visits all
+                # six rows. Never feed the monochrome, pre-scrolled arrow list.
+                self.list(p,entries,index,first=index//6*6)
+                q.text(20,96,'SELECTED PROJECT',12,True,color=MUTED,width=440)
+                size=23
+                while size>14 and q.draw.textlength(entries[index],font=font(size,True))>440:size-=1
+                q.text(20,121,entries[index],size,True,width=440)
+                q.text(20,166,f'{index+1} / {len(entries)}',15,color=ACCENT,width=440)
+                q.text(20,194,'Press encoder to load',13,color=MUTED,width=440)
+            else:
+                p.text(20,100,'No saved projects',19,color=MUTED,width=440)
+                q.text(20,100,'Create or import a project',17,color=MUTED,width=440)
         elif 'utility' in s:
             header,body,footer=s['utility'];self.list(p,body,0);q.text(20,96,header,23,True,width=440);q.text(20,150,footer,15,color=MUTED,width=440)
         else:
