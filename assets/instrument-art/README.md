@@ -27,3 +27,16 @@ Asset: [generic-filter.png](generic-filter.png)
 Final prompt:
 
 > Create one isolated production UI bitmap asset for a tiny 480x272 groovebox display: an original compact stereo filter/effect desktop module with a matte charcoal metal body, two very large rotary knobs, three smaller controls, and one wide luminous yellow-orange screen showing a simple resonant low-pass filter response curve. Clearly looks like an audio filter/effect, not a keyboard. Wide horizontal silhouette about 3.2:1, centered, whole module visible, slightly elevated almost front-on view. Refined restrained 3D product illustration with crisp edges, small highlights, bold simple geometry, legible when shown at 420 pixels wide and 112 high. Purple and amber/orange small accents. No text, letters, numbers, brand marks, cables, hands or external objects. Genuine transparent background; no environment, no floor, no baked checkerboard. One filter/effect module only.
+
+## Keyboard correction — 1 November 2026
+
+The two keyboard illustrations were edited with built-in Imagegen. Both now use
+a 25-key C-to-C keyboard: 15 white keys and 10 black keys in groups 2–3–2–3,
+with no black key between E/F or B/C. The orange Machinista Synth has an **MS**
+housing badge. The filter illustration is unchanged.
+
+Exact edit prompts: [edit-prompts-20261101.json](edit-prompts-20261101.json).
+High-resolution edited sources are retained locally under
+`output/imagegen/synth-keyboards-20261101/`; the two PNGs in this folder are the
+production 448 × 120 RGBA assets. Preparation only crops transparent outer padding
+and scales the generated artwork; it does not redraw keys or lettering.
