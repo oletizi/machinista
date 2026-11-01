@@ -157,25 +157,22 @@ class Mk3Renderer:
             c.text(xx+cell/2,yy+(cell-14)/2,str(pad+1),10,active,BG if active else color,width=cell-2,center=True)
 
     def navigate(self,p,q,s):
-        from app.fokus_mk2 import navigate_icon
+        from app.navigation_art import image
         for side,c in enumerate((p,q)):
             for i in range(4):
-                index=side*4+i;x=3+i*120;selected=i in s.get('active_left' if side==0 else 'active_right',())
-                c.rect(x,91,114,115,ACCENT if selected else PANEL,ACCENT if selected else LINE,5)
-                color=BG if selected else self.accent
-                class Icon:
-                    def rect(self,xx,yy,w,h,ink,fill=True):c.rect(xx,yy,w,h,ink if fill else None,None if fill else ink)
-                    def line(self,x1,y1,x2,y2,ink):c.line((x1,y1,x2,y2),ink,2)
-                # Reuse the eight MK2 symbols as vectors, scaled to native color.
-                class Scaled:
-                    def rect(self,xx,yy,w,h,ink,fill=True):Icon().rect(x+27+xx*3,111+yy*3,w*3,h*3,ink,fill)
-                    def line(self,x1,y1,x2,y2,ink):Icon().line(x+27+x1*3,111+y1*3,x+27+x2*3,111+y2*3,ink)
-                navigate_icon(Scaled(),0,0,index,color)
-                c.text(x+57,184,s['keys'][index],12,True,BG if selected else INK,width=106,center=True)
+                index=side*4+i;x=3+i*120
+                selected=i in s.get('active_left' if side==0 else 'active_right',())
+                c.rect(x,91,114,115,PANEL,ACCENT if selected else LINE,8)
+                if selected:
+                    c.rect(x+1,92,112,113,None,ACCENT,7)
+                    c.rect(x+13,201,88,3,ACCENT,radius=1)
+                icon=image(index,selected)
+                if icon is not None:c.image.paste(icon,(x+19,102),icon)
+                c.text(x+57,182,s['keys'][index],12,True,INK,width=106,center=True)
 
     def draw(self,s):
         # Mixer strips span both displays and share one vertical baseline.
-        p,q=Canvas(),Canvas(compact_header='mixer' not in s);accent=GROUPS[s.get('group',0)%8]
+        p,q=Canvas(),Canvas(compact_header='mixer' not in s and 'view_origin' not in s);accent=GROUPS[s.get('group',0)%8]
         self.accent=accent
         keys=s.get('keys',('',)*8)
         for side,c in enumerate((p,q)):

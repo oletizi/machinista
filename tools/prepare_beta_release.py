@@ -18,7 +18,7 @@ def main():
  files={}
  def add(p,name=None):
   p=Path(p);name=name or str(p.relative_to(ROOT));assert p.is_file();files[name]=p
- for directory in ('app','web','src','tests','deploy','assets/branding','assets/manual-web','assets/fonts','assets/instrument-art','assets/screens'):
+ for directory in ('app','web','src','tests','deploy','assets/branding','assets/manual-web','assets/fonts','assets/instrument-art','assets/navigation-art','assets/screens'):
   for p in (ROOT/directory).rglob('*'):
    if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.pyc':add(p)
  for p in (ROOT/'tools').iterdir():
