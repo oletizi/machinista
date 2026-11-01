@@ -34,10 +34,16 @@ class WorkflowConsistencyTests(unittest.TestCase):
             for key in ('CHANNEL','PLUG-IN','MIXER','EVENTS','KEYBOARD','CHORDS','ARRANGER','SETTINGS','FILE','MACRO'):
                 with self.subTest(mode=mode,key=key):
                     a,s,press=self.app(Mk3Surface);a.open_live_fx();a.live_fx_mode=mode
-                    a.live_fx_pad_on(2,100,owner='mk3');a.actions.clear();press(key)
+                    a.live_fx_pad_on(2,100,owner='mk3');a.actions.clear()
+                    if key=='EVENTS':s.button(key,True)
+                    else:press(key)
                     self.assertNotEqual(a.page,'LIVE FX');self.assertEqual(a.live_fx_current,0)
                     self.assertFalse(a.live_fx_held);self.assertFalse(a.live_fx_pad_off(2,owner='mk3'))
                     self.assertTrue(any(action=='live_fx' and value[1:4]==(0,0,0) for action,value in a.actions))
+                    if key=='EVENTS':
+                        s.button(key,False)
+                        self.assertEqual(a.page,'LIVE FX')
+                        self.assertEqual(a.live_fx_current,0);self.assertFalse(a.live_fx_held)
     def test_mk3_fx_exit_records_off_and_keeps_the_requested_destination(self):
         a,s,press=self.app(Mk3Surface);a.page='MIXER';a.open_live_fx();a.live_fx_mode=1
         a.playing=a.recording=True;a.step=0;a.clock_phase=24

@@ -47,22 +47,22 @@ class EventRangeTests(unittest.TestCase):
   for encoder in (0,1,5):
    with self.subTest(encoder=encoder):
     a=self.a;a.grid_step=0;a.grid_selected.clear();before=copy.deepcopy(a.project)
-    self.s.button('DISPLAY 1',True)
+    self.s.button('DISPLAY 4',True)
     self.assertEqual(event_state(a)['selection_range'],(0,24))
     self.s.rotate(encoder,2)
     self.assertEqual(a.grid_selection_range,(0,72));self.assertEqual(len(a.grid_selected),2)
-    self.s.button('DISPLAY 1',False)
+    self.s.button('DISPLAY 4',False)
     self.assertIsNone(a.grid_selection_range);self.assertEqual(len(a.grid_selected),2)
     self.assertEqual(a.project,before)
  def test_display_select_tap_still_toggles_current_note(self):
   for expected in (True,False):
-   self.s.button('DISPLAY 1',True);self.s.button('DISPLAY 1',False)
+   self.s.button('DISPLAY 4',True);self.s.button('DISPLAY 4',False)
    self.assertEqual(bool(self.a.grid_selected),expected)
  def test_physical_select_position_encoder_and_disconnect(self):
   a=self.a;before=copy.deepcopy(a.project);self.s.button('SELECT',True);self.s.rotate(5,2)
   self.assertEqual(len(a.grid_selected),2);self.assertEqual(a.project,before)
   self.s.disconnect();self.assertIsNone(a.grid_range_anchor);self.assertIsNone(a.grid_selection_range)
-  self.s.button('DISPLAY 1',True);self.s.rotate(1,1);self.s.disconnect()
+  self.s.button('DISPLAY 4',True);self.s.rotate(1,1);self.s.disconnect()
   self.assertIsNone(a.grid_range_anchor);self.assertNotIn('EVENT RANGE SELECT',a.held_buttons)
 
  def test_drum_range_reanchors_when_selected_pad_changes(self):

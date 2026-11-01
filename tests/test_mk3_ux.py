@@ -75,13 +75,13 @@ class Mk3UXTests(unittest.TestCase):
  def test_event_buttons_describe_edit_add_done_and_selection(self):
   a=self.a;a.page='PATTERN GRID';a.grid_notes=False;a.grid_step=0
   a.put_note(0,0,dict(note=36,length=24,velocity=90,probability=100))
-  self.assertEqual(self.s.softkeys()[:2],('SELECT','EDIT'))
-  self.s.softkey(0);state=snapshot(self.s)
-  self.assertEqual(state['keys'][0],'SELECTED');self.assertIn(0,state['active_left'])
+  self.assertEqual(self.s.softkeys()[:4],('PIN','EDIT','FOLLOW','SELECT'))
+  self.s.softkey(3);state=snapshot(self.s)
+  self.assertEqual(state['keys'][3],'SELECTED');self.assertIn(3,state['active_left'])
   self.s.softkey(1);self.assertEqual(a.page,'GRID EDIT')
   self.assertEqual(self.s.softkeys()[1],'DONE');self.assertIn(1,snapshot(self.s)['active_left'])
   self.s.softkey(1);self.assertEqual(a.page,'PATTERN GRID')
-  self.s.softkey(0);self.assertEqual(self.s.softkeys()[0],'SELECT');self.assertNotIn(0,snapshot(self.s)['active_left'])
+  self.s.softkey(3);self.assertEqual(self.s.softkeys()[3],'SELECT');self.assertNotIn(3,snapshot(self.s)['active_left'])
   a.grid_step=4;self.assertEqual(self.s.softkeys()[1],'ADD NOTE')
   before=len(a.event_notes());self.s.softkey(1)
   self.assertEqual(len(a.event_notes()),before+1);self.assertEqual(self.s.softkeys()[1],'DONE')

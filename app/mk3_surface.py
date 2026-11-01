@@ -17,14 +17,20 @@ class Mk3Surface(Mk2Surface):
         if name=='EVENTS':
             if pressed:
                 if name in self.held:return
-                if a.page=='LIVE FX':
+                origin=a.page
+                if origin=='LIVE FX':
                     a.live_fx_off()
+                    # The FX workspace consumes unknown buttons. Leave it before
+                    # dispatching the shared held mode, then retain its return view.
+                    a.page=a.control_home()
                     if self.strip_mode=='PERFORM':self.strip_mode=None
                 was_editor=a.page in ('PATTERN GRID','GRID EDIT')
                 # Both editor pages belong to the same temporary mode.
                 if a.page=='GRID EDIT':a.page='PATTERN GRID'
                 super().button(name,True)
-                if not was_editor and a.page=='PATTERN GRID':a.open_pattern_grid()
+                if not was_editor and a.page=='PATTERN GRID':
+                    a.open_pattern_grid()
+                    if origin=='LIVE FX':a.mode_origins['EVENTS']=origin
             else:super().button(name,False)
             return
         if name=='FOLLOW':
