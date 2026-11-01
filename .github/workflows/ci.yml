@@ -40,6 +40,12 @@ jobs:
       - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
       - run: cmake --build build --parallel 2
       - run: ctest --test-dir build --output-on-failure
+      - name: Native effects host integration
+        run: python3 tools/check_native_effects.py build/audio_engine /tmp/machinista-effect-renders
+      - name: Native effects memory safety
+        run: |
+          g++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Isrc tests/native_effects_test.cpp -o /tmp/machinista-effects-memory
+          /tmp/machinista-effects-memory
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'

@@ -34,6 +34,7 @@ controllers and audio devices. Save backups of work you want to keep.
   making room in the bass whenever the kick hits.
 - **Audio loops:** record a loop that plays with your Pattern, or bounce a playing
   part to another pad to keep working with it as audio.
+- **Built-in studio effects:** EQ, compressor, limiter, transient shaping, Room/Hall/Plate reverb, stereo delay and six modulation effects. Use them on sounds, groups or the master, and record parameter changes. No extra plug-in installation is needed.
 - **Extra instruments and effects:** install compatible LV2 plug-ins. LV2 is the
   add-on format; the public image does not include third-party plug-ins.
 - **External gear:** play from a MIDI keyboard, control an external instrument,

@@ -1,0 +1,216 @@
+{
+  "schema": 1,
+  "id": "native-phaser",
+  "uri": "urn:machinista:effect:phaser",
+  "title": "Machinista Phaser",
+  "provider": "native-core",
+  "parameters": [
+    {
+      "symbol": "rate",
+      "name": "RATE",
+      "min": 0.02,
+      "max": 12,
+      "default": 0.6,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 0
+    },
+    {
+      "symbol": "depth",
+      "name": "DEPTH",
+      "min": 0,
+      "max": 1,
+      "default": 0.6,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 1
+    },
+    {
+      "symbol": "center",
+      "name": "CENTER",
+      "min": 80,
+      "max": 4000,
+      "default": 800,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 2
+    },
+    {
+      "symbol": "feedback",
+      "name": "FEEDBACK",
+      "min": -0.8,
+      "max": 0.8,
+      "default": 0.25,
+      "unit": "signed_percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 3
+    },
+    {
+      "symbol": "stages",
+      "name": "STAGES",
+      "min": 0,
+      "max": 3,
+      "default": 1,
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "4"
+        ],
+        [
+          1,
+          "6"
+        ],
+        [
+          2,
+          "8"
+        ],
+        [
+          3,
+          "12"
+        ]
+      ],
+      "index": 4
+    },
+    {
+      "symbol": "stereo",
+      "name": "STEREO",
+      "min": 0,
+      "max": 180,
+      "default": 90,
+      "unit": "degree",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 5
+    },
+    {
+      "symbol": "mix",
+      "name": "MIX",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 6
+    },
+    {
+      "symbol": "output",
+      "name": "OUTPUT",
+      "min": -24,
+      "max": 12,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 7
+    }
+  ],
+  "pages": [
+    {
+      "title": "PHASER",
+      "controls": [
+        "rate",
+        "depth",
+        "center",
+        "feedback",
+        "stages",
+        "stereo",
+        "mix",
+        "output"
+      ]
+    }
+  ],
+  "overrides": {
+    "rate": {
+      "name": "RATE",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "depth": {
+      "name": "DEPTH",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "center": {
+      "name": "CENTER",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "feedback": {
+      "name": "FEEDBACK",
+      "unit": "signed_percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "stages": {
+      "name": "STAGES",
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "4"
+        ],
+        [
+          1,
+          "6"
+        ],
+        [
+          2,
+          "8"
+        ],
+        [
+          3,
+          "12"
+        ]
+      ]
+    },
+    "stereo": {
+      "name": "STEREO",
+      "unit": "degree",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "mix": {
+      "name": "MIX",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "output": {
+      "name": "OUTPUT",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    }
+  }
+}

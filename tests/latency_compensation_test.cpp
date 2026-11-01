@@ -14,6 +14,10 @@ int main(){
     assert(p->edge(0,2)==0&&p->edge(1,2)==600);
     std::array<float,256> l{},r{};l[0]=1;r[0]=.5;
     for(unsigned block=0;block<5;++block){p->push(P::post(1),l.data(),r.data());for(unsigned i=0;i<256;++i){auto v=p->read(P::post(1),l.data(),r.data(),i,600);assert(v.l==((block*256+i==600)?1.f:0.f));}l.fill(0);r.fill(0);}
+    // Silent buses may sleep only after every delayed sample has left the ring.
+    assert(!p->active(1));l[0]=.3f;p->push(P::post(1),l.data(),l.data());assert(p->active(1));l.fill(0);
+    p->push(P::post(1),l.data(),l.data());assert(p->active(1));p->push(P::post(1),l.data(),l.data());assert(p->active(1));
+    for(unsigned n=0;n<4;++n)p->push(P::post(1),l.data(),l.data());assert(!p->active(1));
     // Fader edits cannot wipe buffered audio.
     l[0]=.7;p->reset();p->push(P::post(1),l.data(),l.data());p->configure(g,c);l.fill(0);p->push(P::post(1),l.data(),l.data());p->push(P::post(1),l.data(),l.data());assert(p->read(P::post(1),l.data(),l.data(),88,600).l==.7f);
     p->disable();assert(p->total==0&&p->edge(1,2)==0);p->configure(g,c);assert(p->total==617);

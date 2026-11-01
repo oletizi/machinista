@@ -13,6 +13,7 @@
 #include "audio/lv2_worker.hpp"
 #include "audio/transport.hpp"
 #include "audio/ducktor.hpp"
+#include "audio/native_effects.hpp"
 #include "audio/synth.hpp"
 #include <array>
 #include <atomic>
@@ -94,7 +95,7 @@ public:
             }
             out<<"]}";lilv_node_free(name);
         }
-        if(comma)out<<',';Ducktor::inventory(out);out<<',';NativeSynth::inventory(out);
+        if(comma)out<<',';Ducktor::inventory(out);out<<',';NativeSynth::inventory(out);out<<',';NativeEffect::inventory(out);
         out<<"]\n";lilv_node_free(audio);lilv_node_free(control);lilv_node_free(input);lilv_node_free(midi);lilv_node_free(integer);lilv_node_free(toggle);lilv_node_free(logarithmic);
     }
 };
@@ -103,6 +104,7 @@ class LV2Plugin {
 public:
     const LilvPlugin* plugin=nullptr;LilvInstance* instance=nullptr;
     std::unique_ptr<Ducktor> ducktor;
+    std::unique_ptr<NativeEffect> effect;
     std::unique_ptr<NativeSynth> synth;
     std::vector<float> controls;
     std::vector<std::unique_ptr<std::atomic<float>>> desired;
@@ -127,6 +129,11 @@ public:
     std::array<const LV2_Feature*,7> features{};
     LV2Plugin(LV2World& world,const std::string& uri,double rate){
         host=&world;sample_rate=static_cast<float>(rate);multitimbral=uri=="urn:machinista:ports:virtualjv-multi";
+        if(const int kind=NativeEffect::identify(uri);kind>=0){
+            effect=std::make_unique<NativeEffect>(unsigned(kind),sample_rate);
+            for(unsigned i=0;i<effect->parameter_count();++i)desired.emplace_back(std::make_unique<std::atomic<float>>(NativeEffect::specs[kind].ports[i].initial));
+            reported_latency=float(effect->latency());return;
+        }
         if(uri==Ducktor::uri){
             ducktor=std::make_unique<Ducktor>(sample_rate);sidechain_in={0,1};
             for(const auto& p:Ducktor::ports)desired.emplace_back(std::make_unique<std::atomic<float>>(p.initial));
@@ -190,6 +197,7 @@ public:
     ~LV2Plugin(){worker.stop();if(instance){lilv_instance_deactivate(instance);lilv_instance_free(instance);}}
     void save_state(const std::string& directory){
         std::filesystem::create_directories(directory);
+        if(effect){std::ofstream out(directory+"/state.ttl");out<<"# Machinista effect controls are stored in the project.\n";return;}
         if(synth){synth->save_state(directory);return;}
         if(ducktor){std::ofstream out(directory+"/state.ttl");out<<"# Ducktor stores all controls in the project.\n";return;}
         auto state=lilv_state_new_from_instance(plugin,instance,&host->mapper,nullptr,directory.c_str(),directory.c_str(),directory.c_str(),nullptr,nullptr,LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE,features.data());
@@ -198,6 +206,7 @@ public:
         if(status)throw std::runtime_error("LV2 state save failed");
     }
     void restore_state(const std::string& file){
+        if(effect)return;
         if(synth){synth->restore_state(file);return;}
         if(ducktor)return;
         auto state=lilv_state_new_from_file(host->world,&host->mapper,nullptr,file.c_str());if(!state)throw std::runtime_error("LV2 state load failed");
@@ -211,6 +220,7 @@ public:
         lilv_instance_deactivate(instance);lilv_instance_activate(instance);
     }
     void run(float* left,float* right,const MidiEvent* events,unsigned count,const TransportPosition& transport={},const float* sc_l=nullptr,const float* sc_r=nullptr){
+        if(effect){NativeEffect::Params p{};for(unsigned i=0;i<desired.size();++i)p[i]=desired[i]->load();effect->process(left,right,p,bypass.load(),float(transport.bpm));return;}
         if(synth){NativeSynth::Params p{};for(unsigned i=0;i<p.size();++i)p[i]=desired[i]->load();synth->process(left,right,events,count,p,std::clamp(float(transport.bpm),20.f,400.f),bypass.load());return;}
         if(ducktor){std::array<float,10> p{};for(unsigned i=0;i<p.size();++i)p[i]=desired[i]->load();ducktor->process(left,right,sc_l,sc_r,p,bypass.load());return;}
         if(bypass.load()){reported_latency=0;if(instrument){std::fill_n(left,256,0);std::fill_n(right,256,0);}return;}

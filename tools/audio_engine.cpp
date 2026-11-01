@@ -453,15 +453,14 @@ int main(int argc,char** argv) {
                 }
                 dsp_early_chains.store(early_count);dsp_parallel_chains.store(early_count+(leaf_count>=2?leaf_count:0));dsp_rt_workers.store(render_pool.realtime_workers());
                 for(unsigned pos=0;pos<routing->count;++pos){const unsigned bus=routing->order[pos];const auto& route=routing->routes[bus];
+                    auto* chain=block_chains[bus];
+                    // With latency compensation, retain buses only while their
+                    // histories still contain signal. Empty histories are zero;
+                    // routing 1089 silent buses would exceed a Pi 4 audio block.
+                    if(!signal[bus]&&!chain&&(!pdc->total||!pdc->active(bus))){bus_latency[bus].store(0);continue;}
                     if(pdc->total){pdc->push(PDC::local(bus),local_l[bus].data(),local_r[bus].data());
                     for(unsigned i=0;i<256;++i){const auto v=pdc->read(PDC::local(bus),local_l[bus].data(),local_r[bus].data(),i,pdc->arrival[bus]);buses_l[bus][i]+=v.l;buses_r[bus][i]+=v.r;}}
-                    auto* chain=block_chains[bus];
-                    // Empty buses have no samples, upstream signal, input or
-                    // plug-in tail. Their buffers were cleared above; avoid
-                    // routing 256 zero samples through every inactive Sound.
-                    // PDC histories and all plug-in chains must still advance.
-                    if(!pdc->total&&!signal[bus]&&!chain){bus_latency[bus].store(0);continue;}
-                    if(!pdc->total){
+                    {
                         if(route.dest>=0)signal[route.dest]=true;
                         if(route.a>=0&&route.ag!=0)signal[route.a]=true;
                         if(route.b>=0&&route.bg!=0)signal[route.b]=true;

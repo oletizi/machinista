@@ -1,0 +1,1707 @@
+[
+  {
+    "id": "eq",
+    "uri": "urn:machinista:effect:eq",
+    "name": "Machinista EQ",
+    "art": "fx-eq",
+    "parameters": [
+      {
+        "symbol": "low_freq",
+        "name": "LOW FREQ",
+        "min": 30,
+        "max": 500,
+        "default": 100,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "low_gain",
+        "name": "LOW GAIN",
+        "min": -18,
+        "max": 18,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mid1_freq",
+        "name": "MID 1 FREQ",
+        "min": 80,
+        "max": 4000,
+        "default": 400,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mid1_gain",
+        "name": "MID 1 GAIN",
+        "min": -18,
+        "max": 18,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mid1_q",
+        "name": "MID 1 Q",
+        "min": 0.2,
+        "max": 8,
+        "default": 0.7,
+        "unit": "",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mid2_freq",
+        "name": "MID 2 FREQ",
+        "min": 400,
+        "max": 12000,
+        "default": 2500,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mid2_gain",
+        "name": "MID 2 GAIN",
+        "min": -18,
+        "max": 18,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mid2_q",
+        "name": "MID 2 Q",
+        "min": 0.2,
+        "max": 8,
+        "default": 1,
+        "unit": "",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "high_freq",
+        "name": "HIGH FREQ",
+        "min": 2000,
+        "max": 20000,
+        "default": 8000,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "high_gain",
+        "name": "HIGH GAIN",
+        "min": -18,
+        "max": 18,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "lowcut",
+        "name": "LOW CUT",
+        "min": 0,
+        "max": 1000,
+        "default": 0,
+        "unit": "hz",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "EQ",
+        "controls": [
+          "low_gain",
+          "low_freq",
+          "mid1_gain",
+          "mid1_freq",
+          "mid2_gain",
+          "mid2_freq",
+          "high_gain",
+          "high_freq"
+        ]
+      },
+      {
+        "title": "EQ / SHAPE",
+        "controls": [
+          "mid1_q",
+          "mid2_q",
+          "lowcut",
+          "mix",
+          "output"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "compressor",
+    "uri": "urn:machinista:effect:compressor",
+    "name": "Machinista Compressor",
+    "art": "fx-compressor",
+    "parameters": [
+      {
+        "symbol": "threshold",
+        "name": "THRESHOLD",
+        "min": -60,
+        "max": 0,
+        "default": -18,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "ratio",
+        "name": "RATIO",
+        "min": 1,
+        "max": 20,
+        "default": 4,
+        "unit": "ratio",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "attack",
+        "name": "ATTACK",
+        "min": 0.1,
+        "max": 100,
+        "default": 10,
+        "unit": "ms",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "release",
+        "name": "RELEASE",
+        "min": 10,
+        "max": 1500,
+        "default": 120,
+        "unit": "ms",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "knee",
+        "name": "KNEE",
+        "min": 0,
+        "max": 12,
+        "default": 6,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "makeup",
+        "name": "MAKEUP",
+        "min": 0,
+        "max": 18,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "detector_hp",
+        "name": "DETECT HP",
+        "min": 0,
+        "max": 500,
+        "default": 0,
+        "unit": "hz",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "COMPRESSOR",
+        "controls": [
+          "threshold",
+          "ratio",
+          "attack",
+          "release",
+          "knee",
+          "makeup",
+          "mix",
+          "output"
+        ]
+      },
+      {
+        "title": "COMP / DETECTOR",
+        "controls": [
+          "detector_hp",
+          "threshold",
+          "ratio",
+          "attack",
+          "release",
+          "knee",
+          "mix",
+          "output"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "limiter",
+    "uri": "urn:machinista:effect:limiter",
+    "name": "Machinista Limiter",
+    "art": "fx-limiter",
+    "parameters": [
+      {
+        "symbol": "ceiling",
+        "name": "CEILING",
+        "min": -12,
+        "max": 0,
+        "default": -1,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "release",
+        "name": "RELEASE",
+        "min": 10,
+        "max": 1000,
+        "default": 100,
+        "unit": "ms",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "input",
+        "name": "INPUT",
+        "min": 0,
+        "max": 24,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "LIMITER",
+        "controls": [
+          "ceiling",
+          "input",
+          "release"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "transient",
+    "uri": "urn:machinista:effect:transient",
+    "name": "Machinista Transient",
+    "art": "fx-transient",
+    "parameters": [
+      {
+        "symbol": "attack",
+        "name": "ATTACK",
+        "min": -1,
+        "max": 1,
+        "default": 0,
+        "unit": "signed_percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "sustain",
+        "name": "SUSTAIN",
+        "min": -1,
+        "max": 1,
+        "default": 0,
+        "unit": "signed_percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "sensitivity",
+        "name": "SENSITIVITY",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "attack_time",
+        "name": "ATTACK TIME",
+        "min": 1,
+        "max": 50,
+        "default": 5,
+        "unit": "ms",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "sustain_time",
+        "name": "SUSTAIN TIME",
+        "min": 30,
+        "max": 500,
+        "default": 120,
+        "unit": "ms",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "TRANSIENT",
+        "controls": [
+          "attack",
+          "sustain",
+          "sensitivity",
+          "attack_time",
+          "sustain_time",
+          "mix",
+          "output"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "reverb",
+    "uri": "urn:machinista:effect:reverb",
+    "name": "Machinista Reverb",
+    "art": "fx-reverb",
+    "parameters": [
+      {
+        "symbol": "type",
+        "name": "TYPE",
+        "min": 0,
+        "max": 2,
+        "default": 1,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "ROOM"
+          ],
+          [
+            1,
+            "HALL"
+          ],
+          [
+            2,
+            "PLATE"
+          ]
+        ]
+      },
+      {
+        "symbol": "size",
+        "name": "SIZE",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "decay",
+        "name": "DECAY",
+        "min": 0.2,
+        "max": 12,
+        "default": 2.5,
+        "unit": "s",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "predelay",
+        "name": "PREDELAY",
+        "min": 0,
+        "max": 200,
+        "default": 20,
+        "unit": "ms",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "damping",
+        "name": "DAMPING",
+        "min": 1000,
+        "max": 18000,
+        "default": 6500,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "lowcut",
+        "name": "LOW CUT",
+        "min": 20,
+        "max": 1000,
+        "default": 100,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "width",
+        "name": "WIDTH",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 0.25,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "diffusion",
+        "name": "DIFFUSION",
+        "min": 0,
+        "max": 1,
+        "default": 0.75,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "REVERB",
+        "controls": [
+          "type",
+          "decay",
+          "size",
+          "predelay",
+          "damping",
+          "lowcut",
+          "width",
+          "mix"
+        ]
+      },
+      {
+        "title": "REVERB / TONE",
+        "controls": [
+          "diffusion",
+          "output",
+          "type",
+          "decay",
+          "damping",
+          "lowcut",
+          "width",
+          "mix"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "delay",
+    "uri": "urn:machinista:effect:delay",
+    "name": "Machinista Delay",
+    "art": "fx-delay",
+    "parameters": [
+      {
+        "symbol": "time",
+        "name": "TIME",
+        "min": 10,
+        "max": 2000,
+        "default": 375,
+        "unit": "ms",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "sync",
+        "name": "SYNC",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "OFF"
+          ],
+          [
+            1,
+            "ON"
+          ]
+        ]
+      },
+      {
+        "symbol": "division",
+        "name": "DIVISION",
+        "min": 0,
+        "max": 9,
+        "default": 5,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "1/64"
+          ],
+          [
+            1,
+            "1/32"
+          ],
+          [
+            2,
+            "1/16"
+          ],
+          [
+            3,
+            "1/8"
+          ],
+          [
+            4,
+            "1/8 D"
+          ],
+          [
+            5,
+            "1/4"
+          ],
+          [
+            6,
+            "1/4 D"
+          ],
+          [
+            7,
+            "1/2"
+          ],
+          [
+            8,
+            "1/2 D"
+          ],
+          [
+            9,
+            "1/1"
+          ]
+        ]
+      },
+      {
+        "symbol": "feedback",
+        "name": "FEEDBACK",
+        "min": 0,
+        "max": 0.92,
+        "default": 0.4,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mode",
+        "name": "MODE",
+        "min": 0,
+        "max": 3,
+        "default": 1,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "STEREO"
+          ],
+          [
+            1,
+            "PING PONG"
+          ],
+          [
+            2,
+            "TAPE"
+          ],
+          [
+            3,
+            "DUB"
+          ]
+        ]
+      },
+      {
+        "symbol": "color",
+        "name": "COLOR",
+        "min": 800,
+        "max": 18000,
+        "default": 9000,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "width",
+        "name": "WIDTH",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 0.3,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "drive",
+        "name": "DRIVE",
+        "min": 0,
+        "max": 1,
+        "default": 0.15,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "wow",
+        "name": "WOW",
+        "min": 0,
+        "max": 1,
+        "default": 0.08,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "DELAY",
+        "controls": [
+          "sync",
+          "division",
+          "time",
+          "feedback",
+          "mode",
+          "color",
+          "width",
+          "mix"
+        ]
+      },
+      {
+        "title": "DELAY / COLOR",
+        "controls": [
+          "drive",
+          "wow",
+          "output",
+          "time",
+          "feedback",
+          "mode",
+          "color",
+          "mix"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "chorus",
+    "uri": "urn:machinista:effect:chorus",
+    "name": "Machinista Chorus",
+    "art": "fx-chorus",
+    "parameters": [
+      {
+        "symbol": "rate",
+        "name": "RATE",
+        "min": 0.02,
+        "max": 12,
+        "default": 0.6,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "depth",
+        "name": "DEPTH",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "delay",
+        "name": "DELAY",
+        "min": 8,
+        "max": 30,
+        "default": 16,
+        "unit": "ms",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "feedback",
+        "name": "FEEDBACK",
+        "min": 0,
+        "max": 0.6,
+        "default": 0.1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "width",
+        "name": "WIDTH",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "color",
+        "name": "COLOR",
+        "min": 1000,
+        "max": 18000,
+        "default": 12000,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 0.4,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "CHORUS",
+        "controls": [
+          "rate",
+          "depth",
+          "delay",
+          "feedback",
+          "width",
+          "color",
+          "mix",
+          "output"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "flanger",
+    "uri": "urn:machinista:effect:flanger",
+    "name": "Machinista Flanger",
+    "art": "fx-flanger",
+    "parameters": [
+      {
+        "symbol": "rate",
+        "name": "RATE",
+        "min": 0.02,
+        "max": 12,
+        "default": 0.6,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "depth",
+        "name": "DEPTH",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "delay",
+        "name": "DELAY",
+        "min": 0.1,
+        "max": 10,
+        "default": 2,
+        "unit": "ms",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "feedback",
+        "name": "FEEDBACK",
+        "min": -0.9,
+        "max": 0.9,
+        "default": 0.45,
+        "unit": "signed_percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "stereo",
+        "name": "STEREO",
+        "min": 0,
+        "max": 180,
+        "default": 90,
+        "unit": "degree",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "FLANGER",
+        "controls": [
+          "rate",
+          "depth",
+          "delay",
+          "feedback",
+          "stereo",
+          "mix",
+          "output"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "phaser",
+    "uri": "urn:machinista:effect:phaser",
+    "name": "Machinista Phaser",
+    "art": "fx-phaser",
+    "parameters": [
+      {
+        "symbol": "rate",
+        "name": "RATE",
+        "min": 0.02,
+        "max": 12,
+        "default": 0.6,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "depth",
+        "name": "DEPTH",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "center",
+        "name": "CENTER",
+        "min": 80,
+        "max": 4000,
+        "default": 800,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "feedback",
+        "name": "FEEDBACK",
+        "min": -0.8,
+        "max": 0.8,
+        "default": 0.25,
+        "unit": "signed_percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "stages",
+        "name": "STAGES",
+        "min": 0,
+        "max": 3,
+        "default": 1,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "4"
+          ],
+          [
+            1,
+            "6"
+          ],
+          [
+            2,
+            "8"
+          ],
+          [
+            3,
+            "12"
+          ]
+        ]
+      },
+      {
+        "symbol": "stereo",
+        "name": "STEREO",
+        "min": 0,
+        "max": 180,
+        "default": 90,
+        "unit": "degree",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "PHASER",
+        "controls": [
+          "rate",
+          "depth",
+          "center",
+          "feedback",
+          "stages",
+          "stereo",
+          "mix",
+          "output"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "tremolo",
+    "uri": "urn:machinista:effect:tremolo",
+    "name": "Machinista Tremolo",
+    "art": "fx-tremolo",
+    "parameters": [
+      {
+        "symbol": "rate",
+        "name": "RATE",
+        "min": 0.02,
+        "max": 12,
+        "default": 0.6,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "depth",
+        "name": "DEPTH",
+        "min": 0,
+        "max": 1,
+        "default": 0.65,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "shape",
+        "name": "SHAPE",
+        "min": 0,
+        "max": 2,
+        "default": 0,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "SINE"
+          ],
+          [
+            1,
+            "TRIANGLE"
+          ],
+          [
+            2,
+            "SQUARE"
+          ]
+        ]
+      },
+      {
+        "symbol": "sync",
+        "name": "SYNC",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "OFF"
+          ],
+          [
+            1,
+            "ON"
+          ]
+        ]
+      },
+      {
+        "symbol": "division",
+        "name": "DIVISION",
+        "min": 0,
+        "max": 9,
+        "default": 5,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "1/64"
+          ],
+          [
+            1,
+            "1/32"
+          ],
+          [
+            2,
+            "1/16"
+          ],
+          [
+            3,
+            "1/8"
+          ],
+          [
+            4,
+            "1/8 D"
+          ],
+          [
+            5,
+            "1/4"
+          ],
+          [
+            6,
+            "1/4 D"
+          ],
+          [
+            7,
+            "1/2"
+          ],
+          [
+            8,
+            "1/2 D"
+          ],
+          [
+            9,
+            "1/1"
+          ]
+        ]
+      },
+      {
+        "symbol": "stereo",
+        "name": "STEREO",
+        "min": 0,
+        "max": 180,
+        "default": 0,
+        "unit": "degree",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "TREMOLO",
+        "controls": [
+          "sync",
+          "division",
+          "rate",
+          "depth",
+          "shape",
+          "stereo",
+          "mix",
+          "output"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "vibrato",
+    "uri": "urn:machinista:effect:vibrato",
+    "name": "Machinista Vibrato",
+    "art": "fx-vibrato",
+    "parameters": [
+      {
+        "symbol": "rate",
+        "name": "RATE",
+        "min": 0.02,
+        "max": 12,
+        "default": 0.6,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "depth",
+        "name": "DEPTH",
+        "min": 0,
+        "max": 1,
+        "default": 0.25,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "stereo",
+        "name": "STEREO",
+        "min": 0,
+        "max": 180,
+        "default": 0,
+        "unit": "degree",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "sync",
+        "name": "SYNC",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "OFF"
+          ],
+          [
+            1,
+            "ON"
+          ]
+        ]
+      },
+      {
+        "symbol": "division",
+        "name": "DIVISION",
+        "min": 0,
+        "max": 9,
+        "default": 5,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "1/64"
+          ],
+          [
+            1,
+            "1/32"
+          ],
+          [
+            2,
+            "1/16"
+          ],
+          [
+            3,
+            "1/8"
+          ],
+          [
+            4,
+            "1/8 D"
+          ],
+          [
+            5,
+            "1/4"
+          ],
+          [
+            6,
+            "1/4 D"
+          ],
+          [
+            7,
+            "1/2"
+          ],
+          [
+            8,
+            "1/2 D"
+          ],
+          [
+            9,
+            "1/1"
+          ]
+        ]
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "VIBRATO",
+        "controls": [
+          "sync",
+          "division",
+          "rate",
+          "depth",
+          "stereo",
+          "mix",
+          "output"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "autopan",
+    "uri": "urn:machinista:effect:autopan",
+    "name": "Machinista Auto Pan",
+    "art": "fx-autopan",
+    "parameters": [
+      {
+        "symbol": "rate",
+        "name": "RATE",
+        "min": 0.02,
+        "max": 12,
+        "default": 0.6,
+        "unit": "hz",
+        "log": true,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "depth",
+        "name": "DEPTH",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "shape",
+        "name": "SHAPE",
+        "min": 0,
+        "max": 2,
+        "default": 0,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "SINE"
+          ],
+          [
+            1,
+            "TRIANGLE"
+          ],
+          [
+            2,
+            "SQUARE"
+          ]
+        ]
+      },
+      {
+        "symbol": "sync",
+        "name": "SYNC",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "OFF"
+          ],
+          [
+            1,
+            "ON"
+          ]
+        ]
+      },
+      {
+        "symbol": "division",
+        "name": "DIVISION",
+        "min": 0,
+        "max": 9,
+        "default": 5,
+        "unit": "",
+        "log": false,
+        "integer": true,
+        "toggle": false,
+        "choice": true,
+        "choices": [
+          [
+            0,
+            "1/64"
+          ],
+          [
+            1,
+            "1/32"
+          ],
+          [
+            2,
+            "1/16"
+          ],
+          [
+            3,
+            "1/8"
+          ],
+          [
+            4,
+            "1/8 D"
+          ],
+          [
+            5,
+            "1/4"
+          ],
+          [
+            6,
+            "1/4 D"
+          ],
+          [
+            7,
+            "1/2"
+          ],
+          [
+            8,
+            "1/2 D"
+          ],
+          [
+            9,
+            "1/1"
+          ]
+        ]
+      },
+      {
+        "symbol": "phase",
+        "name": "PHASE",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "mix",
+        "name": "MIX",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "unit": "percent",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      },
+      {
+        "symbol": "output",
+        "name": "OUTPUT",
+        "min": -24,
+        "max": 12,
+        "default": 0,
+        "unit": "db",
+        "log": false,
+        "integer": false,
+        "toggle": false
+      }
+    ],
+    "pages": [
+      {
+        "title": "AUTO PAN",
+        "controls": [
+          "sync",
+          "division",
+          "rate",
+          "depth",
+          "shape",
+          "phase",
+          "mix",
+          "output"
+        ]
+      }
+    ]
+  }
+]

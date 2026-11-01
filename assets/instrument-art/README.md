@@ -40,3 +40,18 @@ High-resolution edited sources are retained locally under
 `output/imagegen/synth-keyboards-20261101/`; the two PNGs in this folder are the
 production 448 × 120 RGBA assets. Preparation only crops transparent outer padding
 and scales the generated artwork; it does not redraw keys or lettering.
+
+## Machinista native effects — 1 November 2026
+
+Each native effect and Ducktor has its own generated machine illustration:
+EQ, Compressor, Limiter, Transient, Reverb, Delay, Chorus, Flanger, Phaser,
+Tremolo, Vibrato, Auto Pan and Ducktor. These use the `fx-*.png` files here,
+all 448 × 120 RGBA, and are selected by exact effect URI in Channel and in
+the first Plugin-chain page. They share charcoal metal, copper/brass machinery
+and orange illumination with small cyan accents. Unrelated external plug-ins
+retain their generic fallback.
+
+Created with built-in Imagegen; exact prompts are in
+[native-effects-prompts.json](native-effects-prompts.json). High-resolution source
+images are saved locally under `output/imagegen/native-effects-20261101/`.
+Only transparent padding crop and proportional downscaling follow generation.

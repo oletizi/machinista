@@ -19,7 +19,7 @@ public:
     std::array<unsigned,N> arrival{},output{};
     unsigned total=0;Status status=ready;
 private:
-    struct History {unsigned offset=0,size=0,write=0,valid=0;};
+    struct History {unsigned offset=0,size=0,write=0,valid=0,live=0;};
     std::unique_ptr<Stereo[]> pool=std::make_unique_for_overwrite<Stereo[]>(PoolFrames);
     std::array<History,N*3+2> histories{};
     std::array<unsigned,N*3+2> need{};
@@ -28,7 +28,10 @@ public:
     static constexpr unsigned pre(unsigned bus){return bus*3+1;}
     static constexpr unsigned post(unsigned bus){return bus*3+2;}
     static constexpr unsigned external=N*3,preview=N*3+1;
-    void reset(){for(auto& h:histories){h.write=0;h.valid=0;}}
+    void reset(){for(auto& h:histories){h.write=0;h.valid=0;h.live=0;}}
+    bool active(unsigned bus)const{
+        return histories[local(bus)].live||histories[pre(bus)].live||histories[post(bus)].live;
+    }
     void disable(){
         if(status!=unsupported||total){reset();arrival.fill(0);output.fill(0);total=0;}
         status=unsupported;
@@ -87,7 +90,11 @@ public:
     }
     void push(unsigned id,const float* l,const float* r){
         auto& h=histories[id];if(status!=ready||!h.size)return;
-        for(unsigned i=0;i<256;++i){pool[h.offset+h.write]={l[i],r[i]};if(++h.write==h.size)h.write=0;}
+        bool signal=false;
+        for(unsigned i=0;i<256;++i){signal|=l[i]!=0||r[i]!=0;pool[h.offset+h.write]={l[i],r[i]};if(++h.write==h.size)h.write=0;}
+        // Once the full ring contains silence it can remain idle indefinitely.
+        // Pending delayed samples must continue to advance until then.
+        h.live=signal?h.size:h.live>256?h.live-256:0;
         h.valid=std::min(h.size,h.valid+256);
     }
     Stereo read(unsigned id,const float* l,const float* r,unsigned frame,unsigned delay)const{

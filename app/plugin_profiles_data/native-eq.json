@@ -1,0 +1,283 @@
+{
+  "schema": 1,
+  "id": "native-eq",
+  "uri": "urn:machinista:effect:eq",
+  "title": "Machinista EQ",
+  "provider": "native-core",
+  "parameters": [
+    {
+      "symbol": "low_freq",
+      "name": "LOW FREQ",
+      "min": 30,
+      "max": 500,
+      "default": 100,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 0
+    },
+    {
+      "symbol": "low_gain",
+      "name": "LOW GAIN",
+      "min": -18,
+      "max": 18,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 1
+    },
+    {
+      "symbol": "mid1_freq",
+      "name": "MID 1 FREQ",
+      "min": 80,
+      "max": 4000,
+      "default": 400,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 2
+    },
+    {
+      "symbol": "mid1_gain",
+      "name": "MID 1 GAIN",
+      "min": -18,
+      "max": 18,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 3
+    },
+    {
+      "symbol": "mid1_q",
+      "name": "MID 1 Q",
+      "min": 0.2,
+      "max": 8,
+      "default": 0.7,
+      "unit": "",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 4
+    },
+    {
+      "symbol": "mid2_freq",
+      "name": "MID 2 FREQ",
+      "min": 400,
+      "max": 12000,
+      "default": 2500,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 5
+    },
+    {
+      "symbol": "mid2_gain",
+      "name": "MID 2 GAIN",
+      "min": -18,
+      "max": 18,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 6
+    },
+    {
+      "symbol": "mid2_q",
+      "name": "MID 2 Q",
+      "min": 0.2,
+      "max": 8,
+      "default": 1,
+      "unit": "",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 7
+    },
+    {
+      "symbol": "high_freq",
+      "name": "HIGH FREQ",
+      "min": 2000,
+      "max": 20000,
+      "default": 8000,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 8
+    },
+    {
+      "symbol": "high_gain",
+      "name": "HIGH GAIN",
+      "min": -18,
+      "max": 18,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 9
+    },
+    {
+      "symbol": "lowcut",
+      "name": "LOW CUT",
+      "min": 0,
+      "max": 1000,
+      "default": 0,
+      "unit": "hz",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 10
+    },
+    {
+      "symbol": "mix",
+      "name": "MIX",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 11
+    },
+    {
+      "symbol": "output",
+      "name": "OUTPUT",
+      "min": -24,
+      "max": 12,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 12
+    }
+  ],
+  "pages": [
+    {
+      "title": "EQ",
+      "controls": [
+        "low_gain",
+        "low_freq",
+        "mid1_gain",
+        "mid1_freq",
+        "mid2_gain",
+        "mid2_freq",
+        "high_gain",
+        "high_freq"
+      ]
+    },
+    {
+      "title": "EQ / SHAPE",
+      "controls": [
+        "mid1_q",
+        "mid2_q",
+        "lowcut",
+        "mix",
+        "output"
+      ]
+    }
+  ],
+  "overrides": {
+    "low_freq": {
+      "name": "LOW FREQ",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "low_gain": {
+      "name": "LOW GAIN",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "mid1_freq": {
+      "name": "MID 1 FREQ",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "mid1_gain": {
+      "name": "MID 1 GAIN",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "mid1_q": {
+      "name": "MID 1 Q",
+      "unit": "",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "mid2_freq": {
+      "name": "MID 2 FREQ",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "mid2_gain": {
+      "name": "MID 2 GAIN",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "mid2_q": {
+      "name": "MID 2 Q",
+      "unit": "",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "high_freq": {
+      "name": "HIGH FREQ",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "high_gain": {
+      "name": "HIGH GAIN",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "lowcut": {
+      "name": "LOW CUT",
+      "unit": "hz",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "mix": {
+      "name": "MIX",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "output": {
+      "name": "OUTPUT",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    }
+  }
+}

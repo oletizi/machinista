@@ -138,7 +138,10 @@ def controls(app,selected,ports,native=True):
     if p['provider']=='virtualjv':
         from app.virtualjv_controls import controls as provider
         return provider(app.root,selected,ports)
-    available,bank,patch=selection(app.root,selected,p);chosen=available[bank] if bank is not None else None
+    if p['provider']=='native-core':
+        available,bank,patch,chosen=[],None,0,None
+    else:
+        available,bank,patch=selection(app.root,selected,p);chosen=available[bank] if bank is not None else None
     by={v['symbol']:v for v in ports};result=[];seen=set()
     for page in p['pages']:
         for symbol in page['controls']:

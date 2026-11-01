@@ -1,0 +1,259 @@
+{
+  "schema": 1,
+  "id": "native-reverb",
+  "uri": "urn:machinista:effect:reverb",
+  "title": "Machinista Reverb",
+  "provider": "native-core",
+  "parameters": [
+    {
+      "symbol": "type",
+      "name": "TYPE",
+      "min": 0,
+      "max": 2,
+      "default": 1,
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "ROOM"
+        ],
+        [
+          1,
+          "HALL"
+        ],
+        [
+          2,
+          "PLATE"
+        ]
+      ],
+      "index": 0
+    },
+    {
+      "symbol": "size",
+      "name": "SIZE",
+      "min": 0,
+      "max": 1,
+      "default": 0.55,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 1
+    },
+    {
+      "symbol": "decay",
+      "name": "DECAY",
+      "min": 0.2,
+      "max": 12,
+      "default": 2.5,
+      "unit": "s",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 2
+    },
+    {
+      "symbol": "predelay",
+      "name": "PREDELAY",
+      "min": 0,
+      "max": 200,
+      "default": 20,
+      "unit": "ms",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 3
+    },
+    {
+      "symbol": "damping",
+      "name": "DAMPING",
+      "min": 1000,
+      "max": 18000,
+      "default": 6500,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 4
+    },
+    {
+      "symbol": "lowcut",
+      "name": "LOW CUT",
+      "min": 20,
+      "max": 1000,
+      "default": 100,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 5
+    },
+    {
+      "symbol": "width",
+      "name": "WIDTH",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 6
+    },
+    {
+      "symbol": "mix",
+      "name": "MIX",
+      "min": 0,
+      "max": 1,
+      "default": 0.25,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 7
+    },
+    {
+      "symbol": "output",
+      "name": "OUTPUT",
+      "min": -24,
+      "max": 12,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 8
+    },
+    {
+      "symbol": "diffusion",
+      "name": "DIFFUSION",
+      "min": 0,
+      "max": 1,
+      "default": 0.75,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 9
+    }
+  ],
+  "pages": [
+    {
+      "title": "REVERB",
+      "controls": [
+        "type",
+        "decay",
+        "size",
+        "predelay",
+        "damping",
+        "lowcut",
+        "width",
+        "mix"
+      ]
+    },
+    {
+      "title": "REVERB / TONE",
+      "controls": [
+        "diffusion",
+        "output",
+        "type",
+        "decay",
+        "damping",
+        "lowcut",
+        "width",
+        "mix"
+      ]
+    }
+  ],
+  "overrides": {
+    "type": {
+      "name": "TYPE",
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "ROOM"
+        ],
+        [
+          1,
+          "HALL"
+        ],
+        [
+          2,
+          "PLATE"
+        ]
+      ]
+    },
+    "size": {
+      "name": "SIZE",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "decay": {
+      "name": "DECAY",
+      "unit": "s",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "predelay": {
+      "name": "PREDELAY",
+      "unit": "ms",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "damping": {
+      "name": "DAMPING",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "lowcut": {
+      "name": "LOW CUT",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "width": {
+      "name": "WIDTH",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "mix": {
+      "name": "MIX",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "output": {
+      "name": "OUTPUT",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "diffusion": {
+      "name": "DIFFUSION",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    }
+  }
+}

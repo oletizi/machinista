@@ -1,0 +1,316 @@
+{
+  "schema": 1,
+  "id": "native-tremolo",
+  "uri": "urn:machinista:effect:tremolo",
+  "title": "Machinista Tremolo",
+  "provider": "native-core",
+  "parameters": [
+    {
+      "symbol": "rate",
+      "name": "RATE",
+      "min": 0.02,
+      "max": 12,
+      "default": 0.6,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 0
+    },
+    {
+      "symbol": "depth",
+      "name": "DEPTH",
+      "min": 0,
+      "max": 1,
+      "default": 0.65,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 1
+    },
+    {
+      "symbol": "shape",
+      "name": "SHAPE",
+      "min": 0,
+      "max": 2,
+      "default": 0,
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "SINE"
+        ],
+        [
+          1,
+          "TRIANGLE"
+        ],
+        [
+          2,
+          "SQUARE"
+        ]
+      ],
+      "index": 2
+    },
+    {
+      "symbol": "sync",
+      "name": "SYNC",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "OFF"
+        ],
+        [
+          1,
+          "ON"
+        ]
+      ],
+      "index": 3
+    },
+    {
+      "symbol": "division",
+      "name": "DIVISION",
+      "min": 0,
+      "max": 9,
+      "default": 5,
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "1/64"
+        ],
+        [
+          1,
+          "1/32"
+        ],
+        [
+          2,
+          "1/16"
+        ],
+        [
+          3,
+          "1/8"
+        ],
+        [
+          4,
+          "1/8 D"
+        ],
+        [
+          5,
+          "1/4"
+        ],
+        [
+          6,
+          "1/4 D"
+        ],
+        [
+          7,
+          "1/2"
+        ],
+        [
+          8,
+          "1/2 D"
+        ],
+        [
+          9,
+          "1/1"
+        ]
+      ],
+      "index": 4
+    },
+    {
+      "symbol": "stereo",
+      "name": "STEREO",
+      "min": 0,
+      "max": 180,
+      "default": 0,
+      "unit": "degree",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 5
+    },
+    {
+      "symbol": "mix",
+      "name": "MIX",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 6
+    },
+    {
+      "symbol": "output",
+      "name": "OUTPUT",
+      "min": -24,
+      "max": 12,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 7
+    }
+  ],
+  "pages": [
+    {
+      "title": "TREMOLO",
+      "controls": [
+        "sync",
+        "division",
+        "rate",
+        "depth",
+        "shape",
+        "stereo",
+        "mix",
+        "output"
+      ]
+    }
+  ],
+  "overrides": {
+    "rate": {
+      "name": "RATE",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "depth": {
+      "name": "DEPTH",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "shape": {
+      "name": "SHAPE",
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "SINE"
+        ],
+        [
+          1,
+          "TRIANGLE"
+        ],
+        [
+          2,
+          "SQUARE"
+        ]
+      ]
+    },
+    "sync": {
+      "name": "SYNC",
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "OFF"
+        ],
+        [
+          1,
+          "ON"
+        ]
+      ]
+    },
+    "division": {
+      "name": "DIVISION",
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "1/64"
+        ],
+        [
+          1,
+          "1/32"
+        ],
+        [
+          2,
+          "1/16"
+        ],
+        [
+          3,
+          "1/8"
+        ],
+        [
+          4,
+          "1/8 D"
+        ],
+        [
+          5,
+          "1/4"
+        ],
+        [
+          6,
+          "1/4 D"
+        ],
+        [
+          7,
+          "1/2"
+        ],
+        [
+          8,
+          "1/2 D"
+        ],
+        [
+          9,
+          "1/1"
+        ]
+      ]
+    },
+    "stereo": {
+      "name": "STEREO",
+      "unit": "degree",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "mix": {
+      "name": "MIX",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "output": {
+      "name": "OUTPUT",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    }
+  }
+}

@@ -52,11 +52,13 @@ def event_state(a):
 def output_art(app):
     track=app.plugin_target()
     if track.get('sample'):return None  # A loaded sample always keeps its waveform.
-    target=track;seen=set();effects=False
+    from app.instrument_art import effect_art
+    target=track;seen=set();effects=None
     for _ in range(4):
         if id(target) in seen:break
         seen.add(id(target))
-        chain=target.get('plugins',[]);effects=effects or bool(chain)
+        chain=target.get('plugins',[])
+        if chain and effects is None:effects=effect_art(chain[0].get('uri',''))
         for plugin in chain:
             uri=plugin.get('uri','');metadata=app.plugin_metadata(uri) or {}
             if plugin.get('kind',metadata.get('kind'))=='INSTRUMENT':
@@ -67,10 +69,11 @@ def output_art(app):
         except (ValueError,TypeError):break
         if not 0<=index<len(groups):break
         target=groups[index]
-    if effects:return 'generic-filter'
+    if effects:return effects
     return 'generic-synth' if track.get('source')=='MIDI' else None
 
 def chain_state(surface):
+    from app.instrument_art import effect_art
     a=surface.app;items=[]
     if a.sampler_slot_present():
         from app.audio_loop import is_audio_sound
@@ -78,7 +81,7 @@ def chain_state(surface):
     offset=len(items)
     for plugin in a.plugin_target().get('plugins',[]):
         uri=plugin['uri'];meta=a.plugin_metadata(uri) or {}
-        art=('machinista-synth' if uri=='urn:machinista:instrument:synth' else 'generic-synth') if plugin.get('kind',meta.get('kind'))=='INSTRUMENT' else 'generic-filter'
+        art=('machinista-synth' if uri=='urn:machinista:instrument:synth' else 'generic-synth') if plugin.get('kind',meta.get('kind'))=='INSTRUMENT' else effect_art(uri)
         items.append(dict(name=meta.get('name') or plugin.get('name') or uri.rsplit('/',1)[-1],art=art,bypass=bool(plugin.get('bypass'))))
     selected=0 if a.page in ('SAMPLER','AUDIO LOOP') else a.plugin_slot+offset
     return dict(items=tuple(items),selected=min(selected,max(0,len(items)-1)),

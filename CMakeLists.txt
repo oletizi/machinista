@@ -159,3 +159,10 @@ target_compile_options(mk3_pixels PRIVATE -O3 -Wall -Wextra -Wpedantic)
 
 add_executable(mk3_frame_encoder src/mk3_frame_encoder.cpp)
 target_compile_options(mk3_frame_encoder PRIVATE -O3 -Wall -Wextra -Wpedantic -fstack-protector-strong)
+
+if(BUILD_TESTING)
+  add_executable(native_effects_test tests/native_effects_test.cpp)
+  target_include_directories(native_effects_test PRIVATE src)
+  target_compile_options(native_effects_test PRIVATE -UNDEBUG -Wall -Wextra -Wpedantic)
+  add_test(NAME native_effect_suite COMMAND native_effects_test)
+endif()

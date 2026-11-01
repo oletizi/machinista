@@ -1,0 +1,158 @@
+{
+  "schema": 1,
+  "id": "native-transient",
+  "uri": "urn:machinista:effect:transient",
+  "title": "Machinista Transient",
+  "provider": "native-core",
+  "parameters": [
+    {
+      "symbol": "attack",
+      "name": "ATTACK",
+      "min": -1,
+      "max": 1,
+      "default": 0,
+      "unit": "signed_percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 0
+    },
+    {
+      "symbol": "sustain",
+      "name": "SUSTAIN",
+      "min": -1,
+      "max": 1,
+      "default": 0,
+      "unit": "signed_percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 1
+    },
+    {
+      "symbol": "sensitivity",
+      "name": "SENSITIVITY",
+      "min": 0,
+      "max": 1,
+      "default": 0.5,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 2
+    },
+    {
+      "symbol": "attack_time",
+      "name": "ATTACK TIME",
+      "min": 1,
+      "max": 50,
+      "default": 5,
+      "unit": "ms",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 3
+    },
+    {
+      "symbol": "sustain_time",
+      "name": "SUSTAIN TIME",
+      "min": 30,
+      "max": 500,
+      "default": 120,
+      "unit": "ms",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 4
+    },
+    {
+      "symbol": "mix",
+      "name": "MIX",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 5
+    },
+    {
+      "symbol": "output",
+      "name": "OUTPUT",
+      "min": -24,
+      "max": 12,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 6
+    }
+  ],
+  "pages": [
+    {
+      "title": "TRANSIENT",
+      "controls": [
+        "attack",
+        "sustain",
+        "sensitivity",
+        "attack_time",
+        "sustain_time",
+        "mix",
+        "output"
+      ]
+    }
+  ],
+  "overrides": {
+    "attack": {
+      "name": "ATTACK",
+      "unit": "signed_percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "sustain": {
+      "name": "SUSTAIN",
+      "unit": "signed_percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "sensitivity": {
+      "name": "SENSITIVITY",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "attack_time": {
+      "name": "ATTACK TIME",
+      "unit": "ms",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "sustain_time": {
+      "name": "SUSTAIN TIME",
+      "unit": "ms",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "mix": {
+      "name": "MIX",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "output": {
+      "name": "OUTPUT",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    }
+  }
+}

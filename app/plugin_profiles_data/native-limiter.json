@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "id": "native-limiter",
+  "uri": "urn:machinista:effect:limiter",
+  "title": "Machinista Limiter",
+  "provider": "native-core",
+  "parameters": [
+    {
+      "symbol": "ceiling",
+      "name": "CEILING",
+      "min": -12,
+      "max": 0,
+      "default": -1,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 0
+    },
+    {
+      "symbol": "release",
+      "name": "RELEASE",
+      "min": 10,
+      "max": 1000,
+      "default": 100,
+      "unit": "ms",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 1
+    },
+    {
+      "symbol": "input",
+      "name": "INPUT",
+      "min": 0,
+      "max": 24,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 2
+    }
+  ],
+  "pages": [
+    {
+      "title": "LIMITER",
+      "controls": [
+        "ceiling",
+        "input",
+        "release"
+      ]
+    }
+  ],
+  "overrides": {
+    "ceiling": {
+      "name": "CEILING",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "release": {
+      "name": "RELEASE",
+      "unit": "ms",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "input": {
+      "name": "INPUT",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    }
+  }
+}

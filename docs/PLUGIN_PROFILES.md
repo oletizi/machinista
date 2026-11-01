@@ -151,3 +151,35 @@ controller profile data or the public clean image.
 Installed Machinista Synth, Dexed, OB-Xd and RaffoSynth banks also appear under Browser → Sounds → instrument → bank. Choose a destination pad, then load a patch to replace that pad with the instrument and its complete parameter snapshot. Missing plug-ins are excluded. Factory wavetables are retained. Catalog updates run on the background preset worker while transport is idle.
 
 The same entries appear in WebUI Sounds and can be loaded there. Bank entries are read-only; load one and use Save current Sound / LV2 patch for an editable independent Sound. Removing a bank does not alter patches already loaded into projects.
+
+## Built-in Machinista effects
+
+Machinista includes twelve original stereo insert effects: EQ, Compressor,
+Limiter, Transient, Reverb, Delay, Chorus, Flanger, Phaser, Tremolo, Vibrato and
+Auto Pan. They work on a Sound, Group or Master without installing an LV2 bundle.
+Select the target, open the plug-in chain, choose **ADD PLUG**, then choose an
+effect from **EFFECT**. Turn the encoders to change its parameters. Existing
+bypass, copy/move, project saving and parameter automation also apply.
+
+EQ has four bands and a low-cut filter. Compressor provides stereo-linked
+compression, a soft knee, detector low-cut and parallel mix. Transient shapes
+attack and sustain. Limiter has a fixed 1 ms lookahead and a digital sample-peak
+ceiling; it is not a true-peak limiter. Reverb offers Room, Hall and Plate.
+Delay offers Stereo, Ping Pong, Tape and Dub modes. Delay, Tremolo, Vibrato and
+Auto Pan can synchronize to the current tempo; choose SYNC and a DIVISION.
+Chorus, Flanger and Phaser have independent rate and stereo controls.
+
+Limiter reports its 1 ms latency and Vibrato its fixed 5 ms base delay to the
+routing engine. Other new inserts report no fixed latency. Effect tails finish
+naturally while active; bypass returns the dry input. Parameters remain in the
+project and can be recorded as automation. These effects do not use patch banks.
+
+On MK3 and Maschine+ each built-in effect, including Ducktor, has its own
+Machinista machine illustration on the first plug-in page and on an effect-only
+Sound's Channel page. Samples still show their waveform; an instrument keeps its
+synth illustration. Other LV2 effects retain the generic image.
+
+Metadata and eight-encoder page order come from `app/native_effects_data.json`.
+Run `python3 tools/generate_native_effects.py` after editing it. DSP is in
+`src/audio/native_effects.hpp`; it allocates its buffers when the insert is
+created, not while processing audio.

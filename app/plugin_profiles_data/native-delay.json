@@ -1,0 +1,394 @@
+{
+  "schema": 1,
+  "id": "native-delay",
+  "uri": "urn:machinista:effect:delay",
+  "title": "Machinista Delay",
+  "provider": "native-core",
+  "parameters": [
+    {
+      "symbol": "time",
+      "name": "TIME",
+      "min": 10,
+      "max": 2000,
+      "default": 375,
+      "unit": "ms",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 0
+    },
+    {
+      "symbol": "sync",
+      "name": "SYNC",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "OFF"
+        ],
+        [
+          1,
+          "ON"
+        ]
+      ],
+      "index": 1
+    },
+    {
+      "symbol": "division",
+      "name": "DIVISION",
+      "min": 0,
+      "max": 9,
+      "default": 5,
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "1/64"
+        ],
+        [
+          1,
+          "1/32"
+        ],
+        [
+          2,
+          "1/16"
+        ],
+        [
+          3,
+          "1/8"
+        ],
+        [
+          4,
+          "1/8 D"
+        ],
+        [
+          5,
+          "1/4"
+        ],
+        [
+          6,
+          "1/4 D"
+        ],
+        [
+          7,
+          "1/2"
+        ],
+        [
+          8,
+          "1/2 D"
+        ],
+        [
+          9,
+          "1/1"
+        ]
+      ],
+      "index": 2
+    },
+    {
+      "symbol": "feedback",
+      "name": "FEEDBACK",
+      "min": 0,
+      "max": 0.92,
+      "default": 0.4,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 3
+    },
+    {
+      "symbol": "mode",
+      "name": "MODE",
+      "min": 0,
+      "max": 3,
+      "default": 1,
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "STEREO"
+        ],
+        [
+          1,
+          "PING PONG"
+        ],
+        [
+          2,
+          "TAPE"
+        ],
+        [
+          3,
+          "DUB"
+        ]
+      ],
+      "index": 4
+    },
+    {
+      "symbol": "color",
+      "name": "COLOR",
+      "min": 800,
+      "max": 18000,
+      "default": 9000,
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false,
+      "index": 5
+    },
+    {
+      "symbol": "width",
+      "name": "WIDTH",
+      "min": 0,
+      "max": 1,
+      "default": 1,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 6
+    },
+    {
+      "symbol": "mix",
+      "name": "MIX",
+      "min": 0,
+      "max": 1,
+      "default": 0.3,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 7
+    },
+    {
+      "symbol": "drive",
+      "name": "DRIVE",
+      "min": 0,
+      "max": 1,
+      "default": 0.15,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 8
+    },
+    {
+      "symbol": "wow",
+      "name": "WOW",
+      "min": 0,
+      "max": 1,
+      "default": 0.08,
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 9
+    },
+    {
+      "symbol": "output",
+      "name": "OUTPUT",
+      "min": -24,
+      "max": 12,
+      "default": 0,
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false,
+      "index": 10
+    }
+  ],
+  "pages": [
+    {
+      "title": "DELAY",
+      "controls": [
+        "sync",
+        "division",
+        "time",
+        "feedback",
+        "mode",
+        "color",
+        "width",
+        "mix"
+      ]
+    },
+    {
+      "title": "DELAY / COLOR",
+      "controls": [
+        "drive",
+        "wow",
+        "output",
+        "time",
+        "feedback",
+        "mode",
+        "color",
+        "mix"
+      ]
+    }
+  ],
+  "overrides": {
+    "time": {
+      "name": "TIME",
+      "unit": "ms",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "sync": {
+      "name": "SYNC",
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "OFF"
+        ],
+        [
+          1,
+          "ON"
+        ]
+      ]
+    },
+    "division": {
+      "name": "DIVISION",
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "1/64"
+        ],
+        [
+          1,
+          "1/32"
+        ],
+        [
+          2,
+          "1/16"
+        ],
+        [
+          3,
+          "1/8"
+        ],
+        [
+          4,
+          "1/8 D"
+        ],
+        [
+          5,
+          "1/4"
+        ],
+        [
+          6,
+          "1/4 D"
+        ],
+        [
+          7,
+          "1/2"
+        ],
+        [
+          8,
+          "1/2 D"
+        ],
+        [
+          9,
+          "1/1"
+        ]
+      ]
+    },
+    "feedback": {
+      "name": "FEEDBACK",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "mode": {
+      "name": "MODE",
+      "unit": "",
+      "log": false,
+      "integer": true,
+      "toggle": false,
+      "choice": true,
+      "choices": [
+        [
+          0,
+          "STEREO"
+        ],
+        [
+          1,
+          "PING PONG"
+        ],
+        [
+          2,
+          "TAPE"
+        ],
+        [
+          3,
+          "DUB"
+        ]
+      ]
+    },
+    "color": {
+      "name": "COLOR",
+      "unit": "hz",
+      "log": true,
+      "integer": false,
+      "toggle": false
+    },
+    "width": {
+      "name": "WIDTH",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "mix": {
+      "name": "MIX",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "drive": {
+      "name": "DRIVE",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "wow": {
+      "name": "WOW",
+      "unit": "percent",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    },
+    "output": {
+      "name": "OUTPUT",
+      "unit": "db",
+      "log": false,
+      "integer": false,
+      "toggle": false
+    }
+  }
+}
