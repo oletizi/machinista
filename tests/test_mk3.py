@@ -40,10 +40,11 @@ class SurfaceTests(unittest.TestCase):
  def test_dedicated_modes_and_settings_are_per_device(self):
   self.press('KEYBOARD');self.assertTrue(self.a.keyboard_enabled)
   self.press('KEYBOARD');self.assertFalse(self.a.keyboard_enabled)
-  self.press('EVENTS');self.assertEqual(self.a.page,'PATTERN GRID')
+  self.s.button('EVENTS',True);self.assertEqual(self.a.page,'PATTERN GRID')
   self.press('FOLLOW');self.assertFalse(self.a.grid_follow)
   self.press('SETTINGS');self.assertEqual(self.a.page,'SETTINGS')
   self.press('SETTINGS');self.assertNotEqual(self.a.page,'SETTINGS')
+  self.s.button('EVENTS',False)
   self.assertIn('mk3',self.a.settings['controllers'])
  def test_strip_release_centres_pitch_and_releases_note(self):
   self.s.strip_mode='PITCH';self.s.strip(1024);self.s.strip(0)

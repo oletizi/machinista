@@ -44,7 +44,7 @@ def sound_context(a):
 
 def pinned(a):
     from app.surface import TEMPORARY
-    return bool(a.wave_view_active and a.wave_view_pinned) or any(mode in a.pinned_modes and (a.page==page or mode=='VIEW' and a.page=='VIEW NAV') for mode,page in TEMPORARY.items())
+    return bool(a.wave_view_active and a.wave_view_pinned) or any(mode in a.pinned_modes and (a.page==page or mode=='EVENTS' and a.page=='GRID EDIT' or mode=='VIEW' and a.page=='VIEW NAV') for mode,page in TEMPORARY.items())
 
 
 def visible_message(a):

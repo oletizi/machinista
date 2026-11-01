@@ -566,14 +566,14 @@ class Mk2Surface:
                 self.tap_tempo_held=False
                 self.inputs.button(self.source,'TAP',False)
                 return
-        if name=='DISPLAY 1':
+        if name==getattr(self,'event_select_button','DISPLAY 1'):
             if pressed and a.page in ('PATTERN GRID','GRID EDIT') and not a.shift:
                 self.event_select_key=True;self.event_select_moved=False
                 self.inputs.button(self.source,'EVENT RANGE SELECT',True);return
             if not pressed and self.event_select_key:
                 self.event_select_key=False
                 self.inputs.button(self.source,'EVENT RANGE SELECT',False)
-                if not self.event_select_moved and a.page in ('PATTERN GRID','GRID EDIT'):self.softkey(0)
+                if not self.event_select_moved and a.page in ('PATTERN GRID','GRID EDIT'):self.softkey(getattr(self,'event_select_index',0))
                 return
         if name.startswith('DISPLAY '):
             if pressed:self.softkey(int(name.split()[1])-1)

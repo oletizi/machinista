@@ -179,7 +179,7 @@ def snapshot(surface):
     if p in ('PATTERN GRID','GRID EDIT'):
         from app.pattern_display import pattern_state
         state['grid']=pattern_state(a)
-        state['active_left']=tuple(i for i,on in enumerate((bool(a.grid_cursor_targets() & a.grid_selected),p=='GRID EDIT',a.grid_follow)) if on)
+        state['active_left']=tuple(getattr(surface,'event_select_index',0) if i==0 else i for i,on in enumerate((bool(a.grid_cursor_targets() & a.grid_selected),p=='GRID EDIT',a.grid_follow)) if on)
         state['headings']=('','')
     if p in ('NOTE REPEAT','ARP'):
         active=surface.repeat_active_keys();state['active_left']=tuple(i for i in active if i<4);state['active_right']=tuple(i-4 for i in active if i>=4)
@@ -301,7 +301,7 @@ def leds(surface,channels,now=None):
     elif a.page=='OPTIONS':active={{0:3,1:1,2:2}[a.grid_tab]}
     elif a.page=='VIEW NAV':active=navigate_active(a)
     elif a.page=='LIVE FX':active={a.live_fx_mode}
-    elif a.page in ('PATTERN GRID','GRID EDIT'):active={i for i,on in enumerate((bool(a.grid_cursor_targets() & a.grid_selected),a.page=='GRID EDIT',a.grid_follow)) if on}
+    elif a.page in ('PATTERN GRID','GRID EDIT'):active={getattr(surface,'event_select_index',0) if i==0 else i for i,on in enumerate((bool(a.grid_cursor_targets() & a.grid_selected),a.page=='GRID EDIT',a.grid_follow)) if on}
     elif a.page=='STEP':active=({3} if a.fixed_velocity else set())|({4} if a.follow else set())
     elif a.page=='MIXER':active={a.mixer_level,4+a.mixer_field}
     elif a.page in ('NOTE REPEAT','ARP'):active=surface.repeat_active_keys()

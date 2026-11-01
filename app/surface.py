@@ -6,7 +6,7 @@ from app.storage import save_json
 
 TEMPORARY = {'SCENE': 'SCENE', 'PATTERN': 'PATTERN', 'PAD MODE': 'PAD CONFIG',
              'VIEW': 'MIXER', 'SELECT': 'SELECT', 'MUTE': 'MUTE', 'SOLO': 'SOLO',
-             'GRID': 'OPTIONS', 'NOTE REPEAT': 'NOTE REPEAT', 'DUPLICATE': 'DUPLICATE'}
+             'GRID': 'OPTIONS', 'NOTE REPEAT': 'NOTE REPEAT', 'DUPLICATE': 'DUPLICATE', 'EVENTS': 'PATTERN GRID'}
 PROCESSING = ('TRUNCATE', 'NORMALIZE', 'REVERSE', 'FADE IN', 'FADE OUT', 'FIX DC', 'SILENCE', 'CUT','COPY','PASTE','DUPLICATE','STRETCH')
 
 
@@ -217,7 +217,7 @@ class OriginalSurface:
                 self.page = self.mode_origins.pop('GROUP')
             elif name in TEMPORARY and name not in self.pinned_modes and name in self.mode_origins:
                 origin = self.mode_origins.pop(name)
-                if self.page == TEMPORARY[name] or (name == 'NOTE REPEAT' and self.page == 'ARP'):
+                if self.page == TEMPORARY[name] or (name == 'NOTE REPEAT' and self.page == 'ARP') or (name == 'EVENTS' and self.page == 'GRID EDIT'):
                     self.page = origin
             if name == 'NOTE REPEAT' and not self.repeat_locked:
                 self.repeat_pads.clear()

@@ -99,3 +99,13 @@ to retain the selected notes. The orange time band appears immediately while
 holding SELECT. Tapping the SELECT display button toggles the current note.
 
 The shared group/transport/BPM/position row appears only on the left display. Right-side headings and body artwork move up by 26 native pixels; softkeys and encoder footers retain their hardware alignment. Sound OUTPUT uses a square 4x4 pad grid in the current group color, with the selected pad fully lit (pad 1 bottom left, pad 16 top right). A Sound without a sample waveform also uses the pad grid as its left-side overview.
+
+## EVENTS hold and PIN
+
+Hold EVENTS to work temporarily in the note editor. Without PIN, releasing
+EVENTS returns to the previous view, including from note-detail editing.
+Display button 1 is PIN. With PIN enabled, the editor stays open; press EVENTS
+again to leave it. Display button 4 is SELECT/SELECTED. Hold that button or the
+physical SELECT button and turn the 4D encoder to select a time range on the
+selected Sound. Display buttons 2 EDIT/DONE and 3 FOLLOW retain their actions.
+These bindings also apply to Maschine+ in controller mode.

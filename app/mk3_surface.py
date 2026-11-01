@@ -5,6 +5,8 @@ from app.controller_settings import on_controller
 
 class Mk3Surface(Mk2Surface):
     source='mk3'
+    event_select_button='DISPLAY 4'
+    event_select_index=3
     def __init__(self,*args):
         super().__init__(*args);self.strip_mode=None;self.strip_value=0;self.touched=set()
     @on_controller('mk3')
@@ -12,6 +14,19 @@ class Mk3Surface(Mk2Surface):
         import time
         a=self.app
         if pressed and time.monotonic()<getattr(a,'update_lock_until',0):return
+        if name=='EVENTS':
+            if pressed:
+                if name in self.held:return
+                if a.page=='LIVE FX':
+                    a.live_fx_off()
+                    if self.strip_mode=='PERFORM':self.strip_mode=None
+                was_editor=a.page in ('PATTERN GRID','GRID EDIT')
+                # Both editor pages belong to the same temporary mode.
+                if a.page=='GRID EDIT':a.page='PATTERN GRID'
+                super().button(name,True)
+                if not was_editor and a.page=='PATTERN GRID':a.open_pattern_grid()
+            else:super().button(name,False)
+            return
         if name=='FOLLOW':
             if pressed and name not in self.held and not getattr(self,'follow_grid',False):
                 self.follow_grid=a.shift
@@ -52,7 +67,7 @@ class Mk3Surface(Mk2Surface):
             if pressed:self.touched.add(name)
             else:self.touched.discard(name)
             return
-        if name in ('LOCK','CHANNEL','PLUG-IN','MIXER','ARRANGER','SETTINGS','FILE','KEYBOARD','CHORDS','FIXED VEL','EVENTS','PERFORM','MACRO','FOLLOW','STOP','PITCH','MOD','NOTES','MASTER UP','MASTER DOWN'):
+        if name in ('LOCK','CHANNEL','PLUG-IN','MIXER','ARRANGER','SETTINGS','FILE','KEYBOARD','CHORDS','FIXED VEL','PERFORM','MACRO','FOLLOW','STOP','PITCH','MOD','NOTES','MASTER UP','MASTER DOWN'):
             if pressed:
                 if name in self.held:return
                 self.held.add(name)
@@ -79,7 +94,6 @@ class Mk3Surface(Mk2Surface):
                 p=a.performance();p['chord_mode']='OFF' if a.keyboard_chord_mode()!='OFF' else 'CUSTOM'
                 a.page='PAD CONFIG';self.pad_page=0
             elif name=='FIXED VEL':a.fixed_velocity=not a.fixed_velocity
-            elif name=='EVENTS':a.open_pattern_grid()
             elif name=='PERFORM':
                 self.strip_mode=None if self.strip_mode=='PERFORM' else 'PERFORM'
                 if a.page!='LIVE FX':a.open_live_fx()
@@ -118,8 +132,29 @@ class Mk3Surface(Mk2Surface):
             try:return super().button(binding,pressed)
             finally:a.shift=shifted
         return super().button(name,pressed)
+    def held_mode(self):
+        mode=super().held_mode()
+        # Events keeps PIN on button 1 and SELECT on button 4.
+        return None if mode=='EVENTS' else mode
+
+    def softkey(self,index):
+        a=self.app
+        if a.page in ('PATTERN GRID','GRID EDIT'):
+            if index==0:
+                from app.storage import save_json
+                if 'EVENTS' in a.pinned_modes:a.pinned_modes.remove('EVENTS')
+                else:a.pinned_modes.add('EVENTS')
+                a.settings['pinned_modes']=sorted(a.pinned_modes)
+                save_json(a.settings_path,a.settings)
+                a.message='PIN ON' if 'EVENTS' in a.pinned_modes else 'PIN OFF'
+                return
+            if index==3:return super().softkey(0)
+        return super().softkey(index)
+
     def softkeys(self):
         keys=super().softkeys()
+        if self.app.page in ('PATTERN GRID','GRID EDIT'):
+            keys=('PIN',)+keys[1:3]+(keys[0],)+keys[4:]
         if self.app.page=='OPTIONS':keys=keys[:2]+('GRID',)+keys[3:]
         return keys
 
