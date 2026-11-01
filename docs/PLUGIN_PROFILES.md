@@ -192,3 +192,10 @@ encoder fields, the right-hand parameter graphics and chain arrows stay intact.
 Later pages retain their existing parameter layout. Mikro keeps its compact
 symbols; MK3 and Maschine+ retain their color illustrations. Ducktor's displayed
 name is **Machinista Ducktor**; its stable URI and saved settings are unchanged.
+
+The monochrome instrument overview also has distinct device drawings for
+Machinista Synth (MS badge/four oscillator modules), Dexed (six FM operators),
+OB-Xd (analog oscillator/filter panel) and RaffoSynth (three oscillators/ladder
+filter). Unknown instruments use a neutral synth drawing. All five have a
+25-key C-to-C keyboard with black-key groups 2/3/2/3. BANK/PATCH numbers, bank
+and patch names, chain selection and later parameter pages remain available.

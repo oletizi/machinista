@@ -41,8 +41,8 @@ class MonoPluginOverviewTests(unittest.TestCase):
         baseline=self.r.draw(without)
         self.assertEqual(right,baseline[1])
         self.assertEqual(self.crop(left,2,46,252,15),self.crop(baseline[0],2,46,252,15))
-        expected=b''.join(row.encode().translate(bytes.maketrans(b'01',b'\x00\x01')) for row in ICONS['synth'])
-        self.assertEqual(self.crop(left,17,25,32,20),expected)
+        from app.mono_effect_art import pixels
+        self.assertEqual(self.crop(left,17,25,104,20),pixels('synth-machinista'))
 
     def test_only_loaded_neighbours_show_arrows(self):
         for index,flags in ((0,(False,True)),(1,(True,True)),(2,(True,False))):
@@ -146,14 +146,15 @@ class MonoPluginOverviewTests(unittest.TestCase):
         for surface_type in (Mk1Surface,Mk2Surface):
             self.s=surface_type(self.a,ControllerInputs(self.a))
             self.a.page='CHANNEL';self.a.channel_page=0
-            state=snapshot(self.s);self.assertEqual(state['mono_channel_art'],'synth')
+            state=snapshot(self.s);self.assertEqual(state['mono_channel_art'],'synth-machinista')
             left,right=self.r.draw(state)
             plain=dict(state);plain.pop('mono_channel_art')
             baseline=self.r.draw(plain)
             self.assertEqual(right,baseline[1])
             self.assertEqual(self.crop(left,2,1,252,22),self.crop(baseline[0],2,1,252,22))
             self.assertEqual(self.crop(left,2,46,252,15),self.crop(baseline[0],2,46,252,15))
-            self.assertTrue(all(left[25*256+x] for x in range(4,108)))
+            from app.mono_effect_art import pixels
+            self.assertEqual(self.crop(left,4,25,104,20),pixels('synth-machinista'))
         self.a.channel_page=1;self.assertNotIn('mono_channel_art',snapshot(self.s))
 
     def test_channel_classification_handles_sample_empty_effect_and_group_routing(self):
@@ -171,7 +172,7 @@ class MonoPluginOverviewTests(unittest.TestCase):
         self.a.track()['sample']=None
         self.a.project['groups'][1]['plugins']=[dict(uri=SYNTH,kind='INSTRUMENT',controls={})]
         self.a.track()['routing']={'midi_target':'GROUP 1'}
-        self.assertEqual(snapshot(self.s)['mono_channel_art'],'synth')
+        self.assertEqual(snapshot(self.s)['mono_channel_art'],'synth-machinista')
         self.a.project['groups'][1]['plugins']=[]
         self.a.project['groups'][1]['routing']={'midi_target':'GROUP 1'}
         self.assertEqual(snapshot(self.s)['mono_channel_art'],'delay')

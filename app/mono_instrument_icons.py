@@ -43,7 +43,9 @@ def overview(app):
     meta=(app.plugin_metadata(plugin['uri']) or {}) if plugin else {}
     name=('AUDIO' if app.page=='AUDIO LOOP' else 'SAMPLER') if source else meta.get('name',plugin['uri'])
     from app.instrument_art import EFFECT_ART
-    return dict(name=name,art=EFFECT_ART.get(plugin['uri']) if plugin and plugin.get('kind',meta.get('kind'))!='INSTRUMENT' else None,icon=None if source else kind(plugin['uri'],name,plugin.get('kind',meta.get('kind','EFFECT'))),
+    from app.mono_effect_art import synth_art
+    art=(synth_art(plugin['uri']) if plugin.get('kind',meta.get('kind'))=='INSTRUMENT' else EFFECT_ART.get(plugin['uri'])) if plugin else None
+    return dict(name=name,art=art,icon=None if source else kind(plugin['uri'],name,plugin.get('kind',meta.get('kind','EFFECT'))),
                 selected=current,count=count,left=current>0,right=current+1<count,
                 bypass=bool(plugin and plugin.get('bypass',False)),source=source,
                 role='INSTRUMENT' if plugin and plugin.get('kind',meta.get('kind'))=='INSTRUMENT' else 'EFFECT')
@@ -59,7 +61,8 @@ def channel_art(app):
         for plugin in target.get('plugins',[]):
             uri=plugin.get('uri','');meta=app.plugin_metadata(uri) or {}
             if plugin.get('kind',meta.get('kind'))=='INSTRUMENT':
-                return kind(uri,meta.get('name',uri),'INSTRUMENT')
+                from app.mono_effect_art import synth_art
+                return synth_art(uri)
             if effect is None:
                 from app.instrument_art import EFFECT_ART
                 effect=EFFECT_ART.get(uri) or kind(uri,meta.get('name',uri),'EFFECT')
@@ -73,7 +76,8 @@ def channel_art(app):
 
 def paint_channel(canvas, name):
     """Wide native-pixel panel, within the existing 20-row content area."""
-    if name and name.startswith('fx-'):
+    from app.mono_effect_art import KINDS
+    if name in KINDS:
         from app.mono_effect_art import paint as machine
         machine(canvas,name);return
     x,y=4,25

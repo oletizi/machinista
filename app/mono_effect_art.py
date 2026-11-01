@@ -1,11 +1,17 @@
-"""Pixel-exact 104x20 machine drawings for the MK1/MK2 LCDs.
+"""Pixel-exact 104x20 effect and synth machines for the MK1/MK2 LCDs.
 
 Original code-native artwork: readable outlines and solid mechanisms, no grey
 conversion, scaling, bitmap file I/O or generated halftone noise at runtime.
 """
 from functools import lru_cache
 from app.instrument_art import EFFECT_ART
-KINDS=frozenset(EFFECT_ART.values())
+SYNTH_ART={'urn:machinista:instrument:synth':'synth-machinista',
+           'https://github.com/dcoredump/dexed.lv2':'synth-dexed',
+           'urn:machinista:ports:obxd-2dat':'synth-obxd',
+           'urn:machinista:ports:raffosynth':'synth-raffo'}
+KINDS=frozenset((*EFFECT_ART.values(),*SYNTH_ART.values(),'synth-generic'))
+
+def synth_art(uri):return SYNTH_ART.get(uri,'synth-generic')
 
 @lru_cache(maxsize=len(KINDS))
 def pixels(kind):
@@ -36,10 +42,46 @@ def pixels(kind):
     def wave(x,y,ww=22):
         for a in range(ww-1):
             b=(0,-2,0,2,0,-1,0,1)[a%8];bb=(0,-2,0,2,0,-1,0,1)[(a+1)%8];line(x+a,y+b,x+a+1,y+bb)
+    def keyboard():
+        # 25-key C-to-C keyboard: 15 white keys and black groups 2/3/2/3.
+        box(44,12,46,6,True)
+        for i in range(1,15):
+            for yy in (15,16):p[yy*w+44+i*3]=0
+        for i in (0,1,3,4,5,7,8,10,11,12):
+            for yy in range(12,15):p[yy*w+46+i*3]=0
     box(1,1,102,18);box(5,17,5,3,True);box(94,17,5,3,True)
     for x in (4,99):dot(x,4);dot(x,15)
     name=kind[3:]
-    if name=='eq':
+    if kind.startswith('synth-'):
+        keyboard()
+        if kind=='synth-machinista':
+            # MS badge, four oscillator modules and a low-pass response screen.
+            line(9,9,9,4);line(9,4,12,7);line(12,7,15,4);line(15,4,15,9)
+            line(23,4,18,4);line(18,4,18,6);line(18,6,23,6);line(23,6,23,9);line(23,9,18,9)
+            for x in (31,42,53,64):box(x,4,7,5);dot(x+3,6)
+            box(77,4,18,5);line(80,6,87,6);line(87,6,92,8)
+        elif kind=='synth-dexed':
+            # Six connected operator cells and a digital display.
+            for x in (10,19,28):
+                for yy in (4,10):box(x,yy,6,4)
+            line(15,6,19,6);line(24,6,28,6);line(12,8,12,10);line(21,8,21,10);line(30,8,30,10)
+            box(44,4,28,6);wave(47,7,22)
+            for x in (79,85,91):box(x,5,3,3,True)
+        elif kind=='synth-obxd':
+            # Two oscillator banks, filter knobs, classic broad front panel.
+            for x in (10,24,38):box(x,4,9,6);line(x+2,8,x+4,5);line(x+4,5,x+6,8)
+            for x in (56,69,82,94):wheel(x,7,2)
+            box(11,13,4,3,True);box(21,13,4,3,True);line(32,12,36,16)
+        elif kind=='synth-raffo':
+            # Three oscillators, mixer and ladder-filter stack.
+            for x in (12,26,40):wheel(x,7,3)
+            for x in (55,62,69):line(x,4,x,9);box(x-1,6,3,2,True)
+            for yy in (4,6,8):box(80,yy,12,1,True)
+            line(12,13,12,16);line(23,13,23,16)
+        else:
+            box(10,4,25,10);wave(13,9,19)
+            for x in (48,61,74,87):wheel(x,7,2)
+    elif name=='eq':
         for x,level in ((12,6),(26,11),(40,8),(54,5)):
             line(x,4,x,15);box(x-3,level,7,3,True)
         box(65,4,29,12);line(68,12,74,12);line(74,12,80,7);line(80,7,84,10);line(84,10,91,10)
