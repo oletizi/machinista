@@ -25,7 +25,7 @@ public:
     unsigned hold_left=0;
     explicit Ducktor(float sample_rate):rate(sample_rate){}
     static void inventory(std::ostream& out){
-        out<<"{\"uri\":\""<<uri<<"\",\"name\":\"Ducktor / Sidechain Ducker\",\"kind\":\"EFFECT\",\"builtin\":true,\"supported\":true,\"sidechain\":true,\"bundle\":\"builtin:ducktor\",\"binary\":\"\",\"ports\":[";
+        out<<"{\"uri\":\""<<uri<<"\",\"name\":\"Machinista Ducktor\",\"kind\":\"EFFECT\",\"builtin\":true,\"supported\":true,\"sidechain\":true,\"bundle\":\"builtin:ducktor\",\"binary\":\"\",\"ports\":[";
         for(unsigned i=0;i<ports.size();++i){auto p=ports[i];if(i)out<<',';out<<"{\"index\":"<<i<<",\"symbol\":\""<<p.symbol<<"\",\"name\":\""<<p.name<<"\",\"min\":"<<p.lo<<",\"max\":"<<p.hi<<",\"default\":"<<p.initial<<",\"integer\":false,\"toggle\":false,\"log\":"<<(p.logarithmic?"true":"false")<<'}';}
         out<<"]}";
     }

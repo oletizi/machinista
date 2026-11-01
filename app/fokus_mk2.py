@@ -412,7 +412,7 @@ def render(state,renderer):
             q.text(5,26,f'SLOT {selected+1} > SLOT {target+1}',242,font='bold7')
             q.fitted(5,37,items[target][0] if target<len(items) else 'EMPTY',242)
         elif state.get('ducktor'):
-            d=state['ducktor'];q.title('DUCKTOR / SIDECHAIN',counter)
+            d=state['ducktor'];q.title('MACHINISTA DUCKTOR',counter)
             q.fitted(4,25,'FROM '+d['source'],246,font='bold5')
             for y,label,fraction,value in ((33,'IN',(d['input_db']+60)/60,f"{d['input_db']:.1f} DB"),(40,'GR',d['reduction']/max(1,d['depth']),f"-{d['reduction']:.1f} DB")):
                 q.text(4,y,label,16);q.rect(23,y,145,5,q.ink,False)
@@ -439,9 +439,15 @@ def render(state,renderer):
         if not item['source']:
             p.rect(2,24,252,22,p.bg)
             p.title('PLUG-IN',f"{item['selected']+1}/{item['count']}")
-            paint(p,item['icon'],17,25)
-            p.fitted(59,26,item['name'],181,font='bold7')
-            p.text(59,37,'BYPASSED' if item['bypass'] else item['role'],181)
+            if item.get('art'):
+                from app.mono_effect_art import paint as machine
+                machine(p,item['art'],17,25)
+                p.fitted(129,26,item['name'],111,font='bold5')
+                p.text(129,37,'BYPASSED' if item['bypass'] else item['role'],111)
+            else:
+                paint(p,item['icon'],17,25)
+                p.fitted(59,26,item['name'],181,font='bold7')
+                p.text(59,37,'BYPASSED' if item['bypass'] else item['role'],181)
         arrows(p,item['left'],item['right'])
     if 'group_cards' in state:
         q.rect(2,24,252,37,q.bg)

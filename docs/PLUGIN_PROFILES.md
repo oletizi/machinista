@@ -183,3 +183,12 @@ Metadata and eight-encoder page order come from `app/native_effects_data.json`.
 Run `python3 tools/generate_native_effects.py` after editing it. DSP is in
 `src/audio/native_effects.hpp`; it allocates its buffers when the insert is
 created, not while processing audio.
+
+MK1 and MK2 show individual monochrome machine drawings for the twelve native
+effects and Machinista Ducktor. These are hand-drawn at the LCD's actual pixel
+resolution, rather than downscaled color pictures. They appear on the first
+plug-in page and the Channel/Output overview of an effect-only target. The eight
+encoder fields, the right-hand parameter graphics and chain arrows stay intact.
+Later pages retain their existing parameter layout. Mikro keeps its compact
+symbols; MK3 and Maschine+ retain their color illustrations. Ducktor's displayed
+name is **Machinista Ducktor**; its stable URI and saved settings are unchanged.

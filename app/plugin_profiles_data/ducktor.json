@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "ducktor",
   "uri": "urn:machinista:effect:ducktor",
-  "title": "Ducktor / Sidechain Ducker",
+  "title": "Machinista Ducktor",
   "provider": "native-ducktor",
   "parameters": [
     {

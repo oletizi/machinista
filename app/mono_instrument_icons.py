@@ -42,7 +42,8 @@ def overview(app):
     plugin=None if source else app.plugin_selected()
     meta=(app.plugin_metadata(plugin['uri']) or {}) if plugin else {}
     name=('AUDIO' if app.page=='AUDIO LOOP' else 'SAMPLER') if source else meta.get('name',plugin['uri'])
-    return dict(name=name,icon=None if source else kind(plugin['uri'],name,plugin.get('kind',meta.get('kind','EFFECT'))),
+    from app.instrument_art import EFFECT_ART
+    return dict(name=name,art=EFFECT_ART.get(plugin['uri']) if plugin and plugin.get('kind',meta.get('kind'))!='INSTRUMENT' else None,icon=None if source else kind(plugin['uri'],name,plugin.get('kind',meta.get('kind','EFFECT'))),
                 selected=current,count=count,left=current>0,right=current+1<count,
                 bypass=bool(plugin and plugin.get('bypass',False)),source=source,
                 role='INSTRUMENT' if plugin and plugin.get('kind',meta.get('kind'))=='INSTRUMENT' else 'EFFECT')
@@ -59,7 +60,9 @@ def channel_art(app):
             uri=plugin.get('uri','');meta=app.plugin_metadata(uri) or {}
             if plugin.get('kind',meta.get('kind'))=='INSTRUMENT':
                 return kind(uri,meta.get('name',uri),'INSTRUMENT')
-            if effect is None:effect=kind(uri,meta.get('name',uri),'EFFECT')
+            if effect is None:
+                from app.instrument_art import EFFECT_ART
+                effect=EFFECT_ART.get(uri) or kind(uri,meta.get('name',uri),'EFFECT')
         route=target.get('routing',{}).get('midi_target','NONE')
         if not isinstance(route,str) or not route.startswith('GROUP '):break
         try:target=app.project['groups'][int(route[6:])] if int(route[6:])>=0 else None
@@ -70,6 +73,9 @@ def channel_art(app):
 
 def paint_channel(canvas, name):
     """Wide native-pixel panel, within the existing 20-row content area."""
+    if name and name.startswith('fx-'):
+        from app.mono_effect_art import paint as machine
+        machine(canvas,name);return
     x,y=4,25
     canvas.rect(x,y,104,20,fill=False)
     if name in ('synth','fm'):
