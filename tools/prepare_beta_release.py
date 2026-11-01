@@ -43,7 +43,7 @@ def main():
   if not p.is_file():continue
   body=p.read_bytes();assert body[:4]==b'\x7fELF' and body[4]==2 and struct.unpack_from('<H',body,18)[0]==183,p
   add(p,'build/'+p.name)
- for needed in ('audio_engine','mikro_monitor','mk1_monitor','mk2_monitor'):assert 'build/'+needed in files
+ for needed in ('audio_engine','mikro_monitor','mk1_monitor','mk2_monitor','mk3_frame_encoder'):assert 'build/'+needed in files
  for p in release.glob('*.md'):add(p,p.name)
  add(release/'README.md','BETA-README.txt')
  edition=work/'image-edition.json';edition.write_text(json.dumps(dict(edition='standard',updater=True,channel='beta' if '-beta.' in version else 'release'),indent=2)+'\n');add(edition,'deploy/image-edition.json')
