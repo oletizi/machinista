@@ -62,7 +62,9 @@ def main():
   for source in ('tools/update_service.py','tools/update_rpc.py','app/update_manager.py'):
    shutil.copy2(app/source,manager.parent/Path(source).name)
   (root/'etc/machinista').mkdir(exist_ok=True)
-  shutil.copy2(app/'deploy/updater.example.json',root/'etc/machinista/updater.json')
+  updater_config=json.loads((app/'deploy/updater.example.json').read_text())
+  updater_config['current_version']=VERSION
+  (root/'etc/machinista/updater.json').write_text(json.dumps(updater_config,indent=2)+'\n')
   if (app/'deploy/update-public.pub').is_file():shutil.copy2(app/'deploy/update-public.pub',root/'etc/machinista/update-public.pem')
   (root/'etc/machinista/updater.json').chmod(0o644)
   state=root/'var/lib/machinista-updater';state.mkdir(parents=True,exist_ok=True)
