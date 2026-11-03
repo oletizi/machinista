@@ -20,6 +20,17 @@ MAX_SOURCE=64*1024**2
 RESERVE=256*1024**2
 
 
+def service_memory_limit():
+    if not sys.platform.startswith('linux'):return None
+    try:
+        group=next(line.split(':',2)[2] for line in Path('/proc/self/cgroup').read_text().splitlines() if line.startswith('0::'))
+        location=Path('/sys/fs/cgroup')/group.lstrip('/')/'memory.max'
+        if not location.exists():location=Path('/sys/fs/cgroup/memory.max')
+        value=location.read_text().strip()
+        return None if value=='max' else int(value)
+    except (OSError,ValueError,StopIteration):return None
+
+
 class Stems:
     def __init__(self,library):
         self.library=library;self.guard=threading.Lock();self.cancel=threading.Event()
@@ -31,7 +42,8 @@ class Stems:
                 try:self.last.update(self.future.result())
                 except Exception as error:self.last.update(state='ERROR',message=str(error),progress=0)
                 self.future=None
-            return dict(self.last,ready=ready(self.library.root),model=MODEL_NAME,busy=self.future is not None)
+            limit=service_memory_limit();allowed=limit is None or limit>=1024*1024**2
+            return dict(self.last,ready=ready(self.library.root),model=MODEL_NAME,busy=self.future is not None,can_separate=allowed,memory_limit=limit,blocked_reason='' if allowed else 'The WebUI service memory limit must be configured before separation can run.')
     def stopped(self):
         context=self.library.sounds.runtime()
         if not context.get('available'):raise ValueError('Controller engine unavailable.')
@@ -83,7 +95,7 @@ class Stems:
                             rss=next((int(l.split()[1])*1024 for l in status.splitlines() if l.startswith('VmRSS:')),0)
                             memory=Path('/proc/meminfo').read_text()
                             free=next(int(l.split()[1])*1024 for l in memory.splitlines() if l.startswith('MemAvailable:'))
-                            if rss>1024*1024**2 or free<512*1024**2:raise ValueError('Stem processing stopped before exhausting RAM.')
+                            if rss>768*1024**2 or free<512*1024**2:raise ValueError('Stem processing stopped before exhausting RAM.')
                         except FileNotFoundError:pass
                     if time.monotonic()-started>timeout:raise ValueError('Stem operation timed out.')
                     time.sleep(.1)
@@ -105,6 +117,8 @@ class Stems:
         if not ready(self.library.root):raise ValueError('Stem setup did not finish.')
         return dict(state='DONE',message='Stem engine installed. Separation now works offline.',progress=100)
     def start(self,value):
+        limit=service_memory_limit()
+        if limit is not None and limit<1024*1024**2:raise ValueError('WebUI service memory limit is too low for stem separation.')
         if not ready(self.library.root):raise ValueError('Install the local stem engine first.')
         self.stopped()
         if Path('/proc/meminfo').exists():
@@ -123,7 +137,7 @@ class Stems:
         try:return self.submit('SEPARATING',lambda:self._separate(stream,name))
         except BaseException:stream.close();raise
     def _separate(self,stream,name):
-        cache=self.library.root/'cache';cache.mkdir(exist_ok=True)
+        cache=self.library.root/'presets/.stem-work';cache.mkdir(parents=True,exist_ok=True)
         with stream,tempfile.TemporaryDirectory(prefix='stems-',dir=cache) as temp:
             job=Path(temp);source=job/('source'+Path(name).suffix.lower())
             with source.open('wb') as output:

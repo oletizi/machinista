@@ -16,6 +16,8 @@ class StemJobsTests(unittest.TestCase):
         (self.root/'samples/Library').mkdir(parents=True)
         self.library=Library(self.root,lambda:[]);self.stems=self.library.stems
         self.addCleanup(self.stems.pool.shutdown,wait=True)
+        self.encoder=patch('app.export_mp3.tools',return_value=('ffmpeg','ffprobe'));self.encoder.start();self.addCleanup(self.encoder.stop)
+        self.capacity=patch('app.web_stems.service_memory_limit',return_value=None);self.capacity.start();self.addCleanup(self.capacity.stop)
         self.context={'available':True,'playing':False,'recording':False,'capturing':False,'busy':False}
         self.library.sounds.runtime=lambda:self.context.copy()
         self.source=self.root/'samples/Library/Example.wav'
@@ -111,3 +113,12 @@ class SpectralRoundtripTests(unittest.TestCase):
                 restored=reconstruct(spectrum(audio),length)
                 self.assertEqual(restored.shape,audio.shape)
                 self.assertLess(float(np.max(np.abs(restored-audio))),5e-7)
+
+class ServiceBudgetTests(unittest.TestCase):
+    setUp=StemJobsTests.setUp
+    start=StemJobsTests.start
+    def test_low_service_ceiling_blocks_before_any_worker_starts(self):
+        with patch('app.web_stems.service_memory_limit',return_value=192*1024**2):
+            with self.assertRaisesRegex(ValueError,'service memory limit'):self.start()
+            self.assertFalse(self.stems.status()['can_separate'])
+            self.assertIsNone(self.stems.future)

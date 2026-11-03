@@ -7,10 +7,10 @@
   try{
    const s=await api('/api/stems');last=s;
    get('stems-setup').hidden=s.ready;get('stems-install').disabled=s.busy;
-   get('stems-start').disabled=s.busy||!s.ready||!selected;
+   get('stems-start').disabled=s.busy||!s.ready||!selected||s.can_separate===false;
    get('stems-cancel').hidden=!s.busy;get('stems-progress').hidden=!s.busy;
    if(s.busy&&s.progress>0){get('stems-progress').max=100;get('stems-progress').value=s.progress}else get('stems-progress').removeAttribute('value');
-   get('stems-status').textContent=s.message||'';
+   get('stems-status').textContent=s.blocked_reason||s.message||'';
    get('stems-result').hidden=!(s.state==='DONE'&&s.folder);
    if(s.state==='ERROR')get('stems-error').textContent=s.message;
    if(s.busy&&!timer)timer=setInterval(refresh,1500);

@@ -61,7 +61,12 @@ Pinned model revision: `486643021f18a4d057d282fff1d11b89a30e9887`.
 `app/stem_models.py` records the size and SHA-256 of each of the four graphs.
 Setup verifies every file before enabling the engine. The independent graphs
 run one at a time, in 512-frame spectrogram blocks. A RAM watchdog stops a
-worker exceeding 1 GiB RSS or leaving less than 512 MiB available on Linux.
+worker exceeding 768 MiB RSS or leaving less than 512 MiB available on Linux.
 
 No model, external inference library or third-party LV2 bundle is in the source
 repository. This tool does not bypass licenses for any music you process.
+
+The WebUI checks its systemd/cgroup memory ceiling before starting. A service
+limited below 1 GiB cannot launch separation; it shows a configuration message
+instead. This does not change that ceiling automatically. Scratch data uses
+`presets/.stem-work/` within the existing writable area.
