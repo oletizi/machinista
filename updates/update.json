@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "channel": "beta",
-  "version": "0.1.0-beta.12",
+  "version": "0.1.0-beta.13",
   "minimum_version": "0.1.0-beta.8",
   "os_codename": "trixie",
   "architecture": "arm64",
-  "notes": "Native studio effects and Machinista Ducktor, individual mono/color machine artwork, improved MK3 project selection, 128/256-frame hardware queue options, faster silent latency compensation, and updated EN/DE manuals.",
+  "notes": "MK3 PERFORM closes Live FX on the second press and releases active effects. Sampling peaks and threshold use the same -60..0 dBFS scale as MK1/MK2, with L/R labels and scale ticks. Includes all beta 12 features.",
   "artifact": {
-    "url": "https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/machinista-0.1.0-beta.12-arm64.tar.gz",
-    "size": 37317277,
-    "sha256": "2529bfbf741d3a08931c7c74bd74bbfa46eb0b297f15a2f37ceb1e9a3fbb821c"
+    "url": "https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/machinista-0.1.0-beta.13-arm64.tar.gz",
+    "size": 37317409,
+    "sha256": "73eea56464b9986f6f7844ed1813cea613355035a505138808254062464e397c"
   }
 }
