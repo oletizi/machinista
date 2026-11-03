@@ -1,9 +1,14 @@
 #pragma once
 #include <alsa/asoundlib.h>
+#include <algorithm>
+
+inline bool valid_playback_buffer(unsigned frames) {
+    return frames==0 || frames==128 || frames==256 || frames==512 || frames==1024 || frames==2048 || frames==4096;
+}
 
 // Buffer choice changes ALSA queue size; DSP / LV2 blocks remain 256 frames.
 inline int configure_playback(snd_pcm_t* pcm, unsigned rate, unsigned frames, unsigned channels=2) {
-    if (!channels || channels>64) return -EINVAL;
+    if (!channels || channels>64 || !valid_playback_buffer(frames)) return -EINVAL;
     if (!frames) return snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE,
         SND_PCM_ACCESS_RW_INTERLEAVED, channels, rate, 1, 20000);
     snd_pcm_hw_params_t* hw; snd_pcm_hw_params_alloca(&hw);
@@ -15,7 +20,9 @@ inline int configure_playback(snd_pcm_t* pcm, unsigned rate, unsigned frames, un
     unsigned actual_rate = rate;
     if (error >= 0) error = snd_pcm_hw_params_set_rate_near(pcm, hw, &actual_rate, nullptr);
     if (error >= 0 && actual_rate != rate) return -EINVAL;
-    snd_pcm_uframes_t period = 256, buffer = frames;
+    // Keep at least two requested hardware periods even below the DSP block.
+    // ALSA negotiates the nearest supported sizes; report those actual values.
+    snd_pcm_uframes_t period = std::min(256u,frames/2), buffer = frames;
     if (error >= 0) error = snd_pcm_hw_params_set_period_size_near(pcm, hw, &period, nullptr);
     if (error >= 0) error = snd_pcm_hw_params_set_buffer_size_near(pcm, hw, &buffer);
     if (error >= 0) error = snd_pcm_hw_params(pcm, hw);

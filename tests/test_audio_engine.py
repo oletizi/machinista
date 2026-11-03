@@ -120,6 +120,16 @@ class RenderTests(unittest.TestCase):
             finally:
                 if p.poll() is None:p.kill();p.communicate()
 
+    def test_explicit_small_buffers_reach_native_alsa_configuration(self):
+        for rate in (44100,48000):
+            for frames in (128,256):
+                with self.subTest(rate=rate,buffer=frames):
+                    run=subprocess.run([str(ENGINE)],input=f'device "null" {rate} {frames} 2 2\nquit\n',text=True,capture_output=True,timeout=10)
+                    self.assertEqual(run.returncode,0,run.stderr)
+                    ready=[json.loads(line) for line in run.stdout.splitlines() if line.startswith('{')]
+                    audio=next(row for row in ready if row.get('kind')=='audio' and row.get('status')=='ready')
+                    self.assertEqual(audio['buffer'],frames);self.assertEqual(audio['period'],frames//2)
+
 
 if __name__ == '__main__':
     unittest.main()

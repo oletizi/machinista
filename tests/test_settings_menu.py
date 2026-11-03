@@ -22,7 +22,7 @@ class SettingsMenuTests(unittest.TestCase):
             a.rotate(1);a.button('MAIN',True)
             self.assertEqual((a.page,a.menu),('SETTINGS',3))
             a.button('F1',True);self.assertEqual(a.setting_entries(),('AUDIO','AUDIO RATE','AUDIO BUFFER','MAIN OUTPUT','CUE OUTPUT','CUE LEVEL','PLUGIN DELAY','DAC','INTERFACE MIXER'))
-            a.rotate(2);a.button('ENTER',True);a.rotate(2)
+            a.rotate(2);a.button('ENTER',True);a.rotate(4)
             self.assertEqual(a.settings['audio_buffer'],1024)
             self.assertIn(('audio_buffer',1024),a.actions)
             a.capture_armed=True;a.rotate(1);self.assertEqual(a.settings['audio_buffer'],1024)
@@ -61,3 +61,16 @@ class SettingsMenuTests(unittest.TestCase):
             self.assertEqual(stats['ram']['percent'],75)
             self.assertEqual([d['name'] for d in stats['storage']],['SD CARD','USB A'])
             self.assertEqual(stats['storage'][1]['percent'],40)
+
+class SmallAudioBufferTests(unittest.TestCase):
+    def test_small_buffers_select_persist_and_show_actual_negotiated_queue(self):
+        from app.model import AUDIO_BUFFERS
+        with tempfile.TemporaryDirectory() as root:
+            a=Application(root);a.page='AUDIO BUFFER'
+            for target in AUDIO_BUFFERS[1:]:
+                a.rotate(1);self.assertEqual(a.settings['audio_buffer'],target)
+                self.assertIn(('audio_buffer',target),a.actions)
+                self.assertEqual(Application(root).settings['audio_buffer'],target)
+            a.rotate(-5);self.assertEqual(a.settings['audio_buffer'],128)
+            a.audio_status=dict(buffer=256,period=128);self.assertIn('ACTIVE 256',a.display()[1])
+            a.capture_armed=True;a.rotate(1);self.assertEqual(a.settings['audio_buffer'],128)

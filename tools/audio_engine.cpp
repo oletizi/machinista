@@ -175,9 +175,11 @@ int main(int argc,char** argv) {
             }else std::cout<<"{\"kind\":\"input\",\"status\":\"ready\"}"<<std::endl;
         }
         running.store(true);
+        snd_pcm_uframes_t write_chunk=256;
+        if(pcm){snd_pcm_uframes_t buffer=0,period=0;if(snd_pcm_get_params(pcm,&buffer,&period)>=0)write_chunk=std::min(write_chunk,buffer);}
         using PDC=maschine::LatencyCompensation<kBuses,kMaster>;
         auto pdc_storage=std::make_unique<PDC>();auto prepared=std::make_shared<std::latch>(1);
-        worker = std::thread([&,pdc=std::move(pdc_storage),prepared] {
+        worker = std::thread([&,pdc=std::move(pdc_storage),prepared,write_chunk] {
             std::array<Voice, 64> voices{};
             auto fx_storage=std::make_unique<LiveFxDSP>();auto& live_fx_dsp=*fx_storage;
             std::array<float,256> fx_main_l{},fx_main_r{};
@@ -577,7 +579,7 @@ int main(int argc,char** argv) {
                 }
                 snd_pcm_uframes_t offset = 0;
                 while (pcm && offset < 256 && running.load()) {
-                    auto count = snd_pcm_writei(pcm, hardware.data()+offset*output_channels, 256-offset);
+                    auto count = snd_pcm_writei(pcm, hardware.data()+offset*output_channels, std::min(write_chunk,256-offset));
                     if (count == -EAGAIN || count == 0) { snd_pcm_wait(pcm, 100); continue; }
                     if (count < 0) {
                         if(count==-EPIPE)audio_xruns.fetch_add(1);
@@ -755,7 +757,7 @@ int main(int argc,char** argv) {
             std::string device; if (input >> std::quoted(device)) {
                 unsigned rate = 48000, requested_buffer = 0; input >> rate >> requested_buffer;
                 if (rate != 44100 && rate != 48000) return true;
-                if (requested_buffer != 0 && requested_buffer != 512 && requested_buffer != 1024 && requested_buffer != 2048 && requested_buffer != 4096) return true;
+                if (!valid_playback_buffer(requested_buffer)) return true;
                 unsigned outs=2,ins=2;input>>outs>>ins;if(!outs||outs>64||!ins||ins>64)return true;
                 stop();output_channels=outs;input_channels=ins;
                 buffer_frames = requested_buffer; active = device; start(active,rate);

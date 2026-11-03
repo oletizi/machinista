@@ -7,6 +7,8 @@ import random
 import re
 from app.storage import save_json, load_json
 from app.devices import choose_audio
+
+AUDIO_BUFFERS=(0,128,256,512,1024,2048,4096)
 from app.browser import Browser, Source
 from app.workspaces import Workspaces
 from app.surface import OriginalSurface
@@ -175,7 +177,7 @@ class Application(MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,Mod
         self.settings.setdefault('plugin_delay',False)
         if type(self.settings['plugin_delay']) is not bool:raise ValueError('invalid plugin delay setting')
         self.settings.setdefault('audio_buffer', 0)
-        if type(self.settings['audio_buffer']) is not int or self.settings['audio_buffer'] not in (0,512,1024,2048,4096):raise ValueError('invalid audio buffer')
+        if type(self.settings['audio_buffer']) is not int or self.settings['audio_buffer'] not in AUDIO_BUFFERS:raise ValueError('invalid audio buffer')
         from app.codec_levels import CONTROLS,MUTES
         for key,_ in MUTES.values():
             if type(self.settings.setdefault(key,False)) is not bool:raise ValueError('invalid hardware mute')
@@ -493,7 +495,7 @@ class Application(MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,Mod
         elif self.page=='AUDIO BUFFER':
             if self.capture_started is not None or self.capture_armed:
                 self.message='STOP RECORDING FIRST';return
-            values=(0,512,1024,2048,4096);current=self.settings['audio_buffer']
+            values=AUDIO_BUFFERS;current=self.settings['audio_buffer']
             value=values[max(0,min(len(values)-1,values.index(current)+delta))]
             if value!=current:
                 self.settings['audio_buffer']=value;save_json(self.settings_path,self.settings)
