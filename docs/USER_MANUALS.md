@@ -1,6 +1,6 @@
 # Controller user manuals
 
-[Download all illustrated manuals (English and German)](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista-Manuals-EN-DE.zip)
+[Download all illustrated manuals (English and German)](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista-Manuals-EN-DE.zip)
 
 Choose the illustrated guide for your controller, in English or German. Start
 with setup and **Your first sound**: it uses a built-in patch, so no sample pack
@@ -16,10 +16,10 @@ Controller mode with Machinista running on the connected Pi.
 
 | Controller | English | Deutsch |
 | --- | --- | --- |
-| Mikro MK1 / MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_Mikro_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_Mikro_MK1_User_Manual_DE.pdf) |
-| MK1 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK1_User_Manual_DE.pdf) |
-| MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK2_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK2_User_Manual_DE.pdf) |
-| MK3 / Maschine+ controller mode | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK3_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK3_User_Manual_DE.pdf) |
+| Mikro MK1 / MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_DE.pdf) |
+| MK1 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_DE.pdf) |
+| MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_DE.pdf) |
+| MK3 / Maschine+ controller mode | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_DE.pdf) |
 
 ## What changed in this edition?
 
@@ -35,7 +35,7 @@ Controller mode with Machinista running on the connected Pi.
 
 ## Editions and rebuilding
 
-Edition: 3 November 2026, Machinista 0.1.0-beta.12 / Fokus V2.
+Edition: 3 November 2026, Machinista 0.1.0-beta.13 / Fokus V2.
 
 `output/pdf/` contains separate illustrated English and German manuals for
 Mikro MK1, full-size MK1, MK2 and MK3. Screens and menu names stay English in both

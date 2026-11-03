@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tarfile
 
-VERSION='0.1.0-beta.12'
+VERSION='0.1.0-beta.13'
 
 def main():
  root=Path(sys.argv[1]).resolve();payload=Path(sys.argv[2]).resolve()
