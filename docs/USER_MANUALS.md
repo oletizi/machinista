@@ -1,6 +1,6 @@
 # Controller user manuals
 
-[Download all illustrated manuals (English and German)](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.10/Machinista-Manuals-EN-DE-2026-10-30.zip)
+[Download all illustrated manuals (English and German)](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista-Manuals-EN-DE.zip)
 
 Choose the illustrated guide for your controller, in English or German. Start
 with setup and **Your first sound**: it uses a built-in patch, so no sample pack
@@ -14,7 +14,16 @@ bleiben unverändert, damit du sie am Gerät wiederfindest.
 MK3 and Maschine+ use the same guide; on Maschine+ this applies only to
 Controller mode with Machinista running on the connected Pi.
 
+| Controller | English | Deutsch |
+| --- | --- | --- |
+| Mikro MK1 / MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_Mikro_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_Mikro_MK1_User_Manual_DE.pdf) |
+| MK1 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK1_User_Manual_DE.pdf) |
+| MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK2_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK2_User_Manual_DE.pdf) |
+| MK3 / Maschine+ controller mode | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK3_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK3_User_Manual_DE.pdf) |
+
 ## What changed in this edition?
+
+- Built-in studio effects, individual machine artwork and 128/256-frame buffer options.
 
 - Musical tasks come before technical explanations.
 - A first-sound walkthrough works without uploading samples or plug-ins.
@@ -26,7 +35,7 @@ Controller mode with Machinista running on the connected Pi.
 
 ## Editions and rebuilding
 
-Edition: 30 October 2026, Machinista 0.1.0-beta.10 / Fokus V2.
+Edition: 3 November 2026, Machinista 0.1.0-beta.12 / Fokus V2.
 
 `output/pdf/` contains separate illustrated English and German manuals for
 Mikro MK1, full-size MK1, MK2 and MK3. Screens and menu names stay English in both
@@ -92,7 +101,7 @@ Ducktor and native SoundFont import have topic-local instructions. Existing
 WebUI sample/project transfers, chords, Sounds/Zones, Autosampler, live patches,
 synth editor/waves and network/system controls remain included.
 
-The MK3 atlas contains 190 distinct render states; its larger figures use two
+The MK3 atlas contains 202 distinct render states; its larger figures use two
 states per atlas page. MK3 contents are generated in two passes so continuation
 pages do not shift chapter links. English menu labels and screen pixels are
 identical in both language editions. Verification checks page margins, outline

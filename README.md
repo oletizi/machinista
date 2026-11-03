@@ -74,6 +74,22 @@ Existing installations use System / WebUI > Updates. A new SD image is needed
 for first installation, not every application update. Beta images still need
 real controller/audio and Pi-model testing.
 
+## User manuals / Bedienungsanleitungen
+
+Illustrated guides with workflows, button explanations and screen references.
+Bebilderte Anleitungen mit Arbeitsabläufen, Tasten und Displayübersichten.
+
+| Controller | English | Deutsch |
+| --- | --- | --- |
+| Mikro MK1 / MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_Mikro_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_Mikro_MK1_User_Manual_DE.pdf) |
+| MK1 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK1_User_Manual_DE.pdf) |
+| MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK2_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK2_User_Manual_DE.pdf) |
+| MK3 / Maschine+ controller mode | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK3_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista_MK3_User_Manual_DE.pdf) |
+
+[All manuals as ZIP / Alle Anleitungen als ZIP](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.12/Machinista-Manuals-EN-DE.zip) · [Guide details](docs/USER_MANUALS.md)
+
+![Illustrated Machinista manuals](assets/screens/user-manuals.png)
+
 ## Screens
 
 Actual application renderers with illustrative project data, not hardware photos.
