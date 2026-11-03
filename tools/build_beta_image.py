@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tarfile
 
-VERSION='0.1.0-beta.11'
+VERSION='0.1.0-beta.12'
 
 def main():
  root=Path(sys.argv[1]).resolve();payload=Path(sys.argv[2]).resolve()
@@ -24,6 +24,7 @@ def main():
  policy.write_text('#!/bin/sh\nexit 101\n');policy.chmod(0o755)
  try:
   run('apt-get','update','-qq')
+  run('env','DEBIAN_FRONTEND=noninteractive','apt-get','upgrade','-y','--with-new-pkgs','--no-remove','-o','Dpkg::Options::=--force-confold')
   run('env','DEBIAN_FRONTEND=noninteractive','apt-get','install','-y','--no-install-recommends','ffmpeg','rubberband-cli','fdisk','openssh-server','libasound2t64','liblilv-0-0','libhidapi-hidraw0','libusb-1.0-0','libstdc++6','bluez','alsa-utils','python3-dbus','python3-gi','python3-libgpiod','python3-pil','fonts-dejavu-core','samba','smbclient','dnsmasq-base','avahi-daemon','network-manager')
  finally:
   if old is None:policy.unlink(missing_ok=True)

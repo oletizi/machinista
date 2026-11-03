@@ -65,7 +65,7 @@ Machinista runs on the Pi; it does not replace the software inside Maschine+.
 
 ## Install the beta
 
-[Download the Pi 4 / Pi 5 beta image](https://github.com/photogeen/machinista/releases/tag/v0.1.0-beta.11)
+[Download the Pi 4 / Pi 5 beta image](https://github.com/photogeen/machinista/releases/tag/v0.1.0-beta.12)
 for first installation. Use the `.img.xz` and verify `SHA256SUMS`, then write it to
 a spare SD card with Raspberry Pi Imager. Writing erases that card. First boot,
 hotspot and account instructions are in [Installation](docs/INSTALL.md).

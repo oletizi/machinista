@@ -1,8 +1,8 @@
-# Machinista 0.1.0-beta.11 — Pi 4 / Pi 5
+# Machinista 0.1.0-beta.12 — Pi 4 / Pi 5
 
 ## First installation
 
-Download `machinista-0.1.0-beta.11-pi4-pi5.img.xz` and `SHA256SUMS` from this
+Download `machinista-0.1.0-beta.12-pi4-pi5.img.xz` and `SHA256SUMS` from this
 release. Verify the checksum, then write the compressed image with Raspberry Pi
 Imager (Use custom). Use a spare SD card of 8 GB or larger and complete write
 verification. Writing an image erases the selected card. Retain the image's
@@ -25,6 +25,9 @@ or the WebUI before unplugging power. The WebUI has no login; use a trusted LAN.
 - 32 newly programmed Oberheim-style OB-Xd patches in four original CC0 banks.
   OB-Xd itself is installed separately; these banks become playable after that.
 - WebUI sample/project transfers, Sounds/patch-bank management and synth editor.
+- Twelve built-in studio effects, plus Machinista Ducktor, with parameter automation.
+- Individual effect/synth machine graphics on monochrome and color controllers.
+- 128/256-frame hardware audio queues where supported; internal DSP blocks remain 256 frames.
 - Signed Beta/Release updater available to everyone.
 - Eight English/German controller manuals.
 
