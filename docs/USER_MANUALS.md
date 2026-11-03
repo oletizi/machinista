@@ -1,5 +1,7 @@
 # Controller user manuals
 
+[Read online / Online lesen](https://photogeen.github.io/machinista/) — English & Deutsch.
+
 [Download all illustrated manuals (English and German)](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista-Manuals-EN-DE.zip)
 
 Choose the illustrated guide for your controller, in English or German. Start
@@ -16,10 +18,10 @@ Controller mode with Machinista running on the connected Pi.
 
 | Controller | English | Deutsch |
 | --- | --- | --- |
-| Mikro MK1 / MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_DE.pdf) |
-| MK1 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_DE.pdf) |
-| MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_DE.pdf) |
-| MK3 / Maschine+ controller mode | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_DE.pdf) |
+| Mikro MK1 / MK2 | [HTML](https://photogeen.github.io/machinista/mikro-en.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_EN.pdf) | [HTML](https://photogeen.github.io/machinista/mikro-de.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_DE.pdf) |
+| MK1 | [HTML](https://photogeen.github.io/machinista/mk1-en.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_EN.pdf) | [HTML](https://photogeen.github.io/machinista/mk1-de.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_DE.pdf) |
+| MK2 | [HTML](https://photogeen.github.io/machinista/mk2-en.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_EN.pdf) | [HTML](https://photogeen.github.io/machinista/mk2-de.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_DE.pdf) |
+| MK3 / Maschine+ controller mode | [HTML](https://photogeen.github.io/machinista/mk3-en.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_EN.pdf) | [HTML](https://photogeen.github.io/machinista/mk3-de.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_DE.pdf) |
 
 ## What changed in this edition?
 
@@ -107,3 +109,11 @@ pages do not shift chapter links. English menu labels and screen pixels are
 identical in both language editions. Verification checks page margins, outline
 destinations, required workflows, date and controller-specific wording, then
 renders review sheets and updates both manifests and the all-manuals ZIP.
+
+## HTML editions
+
+All eight guides are also available as responsive, illustrated HTML with linked contents, complete screen references and offline-capable local images. GitHub Pages publishes `docs/manuals/` from the beta branch. Rebuild from the same chapter sources after rendering the manual assets:
+
+    PYTHONPATH=. python3 tools/build_html_manuals.py
+
+The downloadable PDFs remain available alongside the HTML editions.

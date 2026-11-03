@@ -76,15 +76,17 @@ real controller/audio and Pi-model testing.
 
 ## User manuals / Bedienungsanleitungen
 
+[Read online / Online lesen](https://photogeen.github.io/machinista/) — English & Deutsch.
+
 Illustrated guides with workflows, button explanations and screen references.
 Bebilderte Anleitungen mit Arbeitsabläufen, Tasten und Displayübersichten.
 
 | Controller | English | Deutsch |
 | --- | --- | --- |
-| Mikro MK1 / MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_DE.pdf) |
-| MK1 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_DE.pdf) |
-| MK2 | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_DE.pdf) |
-| MK3 / Maschine+ controller mode | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_EN.pdf) | [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_DE.pdf) |
+| Mikro MK1 / MK2 | [HTML](https://photogeen.github.io/machinista/mikro-en.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_EN.pdf) | [HTML](https://photogeen.github.io/machinista/mikro-de.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_Mikro_MK1_User_Manual_DE.pdf) |
+| MK1 | [HTML](https://photogeen.github.io/machinista/mk1-en.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_EN.pdf) | [HTML](https://photogeen.github.io/machinista/mk1-de.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK1_User_Manual_DE.pdf) |
+| MK2 | [HTML](https://photogeen.github.io/machinista/mk2-en.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_EN.pdf) | [HTML](https://photogeen.github.io/machinista/mk2-de.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK2_User_Manual_DE.pdf) |
+| MK3 / Maschine+ controller mode | [HTML](https://photogeen.github.io/machinista/mk3-en.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_EN.pdf) | [HTML](https://photogeen.github.io/machinista/mk3-de.html) · [PDF](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_MK3_User_Manual_DE.pdf) |
 
 [All manuals as ZIP / Alle Anleitungen als ZIP](https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista-Manuals-EN-DE.zip) · [Guide details](docs/USER_MANUALS.md)
 
