@@ -32,6 +32,23 @@ class Mk3Renderer:
             c.text(x+157,y,value,11,color=MUTED,width=63)
             c.rect(x,y+20,216,3,PANEL)
             c.rect(x,y+20,round(216*max(0,min(1,fraction))),3,color)
+    def capture_meter(self,c,peaks,threshold=None):
+        # Match the monochrome recording meters: amplitude and trigger marker
+        # both use a -60..0 dBFS axis, rather than linear signal amplitude.
+        def fraction(db):return max(0,min(1,(db+60)/60))
+        for i,value in enumerate(peaks[:2]):
+            y=100+i*43
+            c.text(3,y+5,'LR'[i],11,True,color=MUTED)
+            c.rect(18,y,440,25,PANEL)
+            level=fraction(20*math.log10(max(.001,value)))
+            c.rect(18,y,round(440*level),25,GREEN)
+            if threshold is not None:
+                x=18+round(439*fraction(threshold))
+                c.line((x,y-3,x,y+28),ACCENT,2)
+        for db in (-60,-48,-36,-24,-12,0):
+            x=18+round(439*fraction(db))
+            c.line((x,172,x,175),MUTED)
+            c.text(x,178,str(db),10,color=MUTED,center=db!=-60)
     def wave(self,c,ref,state):
         path,first,last=ref
         if not path:
@@ -240,12 +257,8 @@ class Mk3Renderer:
         elif 'wave' in s and s['page']!='SLICE TARGET':
             self.wave(p,s['wave'],s)
             if s['page']=='SAMPLING':
-                for i,value in enumerate(s.get('capture_peaks',(0,0))):
-                    y=100+i*43;q.rect(18,y,440,25,PANEL);q.rect(18,y,round(440*max(0,min(1,value))),25,GREEN)
-                    threshold=s.get('capture_threshold')
-                    if threshold is not None:
-                        x=18+440*10**(threshold/20);q.line((x,y-3,x,y+28),ACCENT,2)
-                q.text(18,182,s.get('capture_status') or 'Ready to record',16,True,width=440)
+                self.capture_meter(q,s.get('capture_peaks',(0,0)),s.get('capture_threshold'))
+                q.text(18,198,s.get('capture_status') or 'Ready to record',16,True,width=440)
             elif s['page']=='CHOP':
                 markers=s.get('markers',());base=s.get('slice_bank',0)*16
                 self.tiles(q,tuple((str(base+i+1),base+i<len(markers),base+i==s.get('slice_index',0)) for i in range(16)))
