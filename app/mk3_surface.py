@@ -101,8 +101,10 @@ class Mk3Surface(Mk2Surface):
                 a.page='PAD CONFIG';self.pad_page=0
             elif name=='FIXED VEL':a.fixed_velocity=not a.fixed_velocity
             elif name=='PERFORM':
-                self.strip_mode=None if self.strip_mode=='PERFORM' else 'PERFORM'
-                if a.page!='LIVE FX':a.open_live_fx()
+                if a.page=='LIVE FX':
+                    a.close_live_fx();self.strip_mode=None
+                else:
+                    self.strip_mode='PERFORM';a.open_live_fx()
             elif name=='MACRO':a.page=a.control_home() if a.page=='MACRO' else 'MACRO'
             elif name=='FOLLOW':
                 if a.page in ('PATTERN GRID','GRID EDIT'):a.grid_follow=not a.grid_follow

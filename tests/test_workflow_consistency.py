@@ -62,6 +62,24 @@ class WorkflowConsistencyTests(unittest.TestCase):
         s.strip(600);self.assertEqual(a.live_fx_current,3)
         press('MIXER');self.assertEqual(a.live_fx_current,0);self.assertIsNone(s.strip_mode)
         s.strip(700);self.assertEqual(a.live_fx_current,0)
+    def test_mk3_perform_toggles_workspace_and_releases_effects(self):
+        for origin in ('PAD','MIXER','PATTERN GRID'):
+            for mode in (0,1,2):
+                with self.subTest(origin=origin,mode=mode):
+                    a,s,press=self.app(Mk3Surface);a.page=origin
+                    press('PERFORM');self.assertEqual(a.page,'LIVE FX')
+                    self.assertEqual(s.strip_mode,'PERFORM');a.live_fx_mode=mode
+                    a.live_fx_pad_on(2,100,owner='mk3');s.strip(600)
+                    press('PERFORM')
+                    self.assertEqual(a.page,origin);self.assertIsNone(s.strip_mode)
+                    self.assertEqual(a.live_fx_current,0);self.assertFalse(a.live_fx_held)
+                    self.assertFalse(a.live_fx_pad_off(2,owner='mk3'))
+                    s.strip(700);self.assertEqual(a.live_fx_current,0)
+                    press('PERFORM');self.assertEqual(a.page,'LIVE FX')
+    def test_mk3_perform_closes_live_fx_opened_from_navigate(self):
+        a,s,press=self.app(Mk3Surface);a.page='MIXER';a.open_live_fx()
+        self.assertIsNone(s.strip_mode);press('PERFORM')
+        self.assertEqual(a.page,'MIXER');self.assertIsNone(s.strip_mode)
     def test_all_fullsize_f8_switches_reset_to_valid_first_page(self):
         for cls in CLASSES:
             a,s,press=self.app(cls);self.plugins(a);project=copy.deepcopy(a.project);actions=list(a.actions)
