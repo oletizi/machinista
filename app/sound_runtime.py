@@ -67,7 +67,7 @@ class SoundRuntime:
         a=self.app;t=a.track()
         return dict(available=True,group=a.group,pad=a.pad,generation=a.project_generation,revision=a.revision,name=a.sound_name(empty='Empty Sound'),
                     zones=copy.deepcopy(__import__('app.sampler',fromlist=['zones']).zones(t)),sampler=copy.deepcopy(t.get('sampler',{})),plugins=[dict(uri=p['uri'],kind=p['kind'],name=(a.plugin_metadata(p['uri']) or {}).get('name',p['uri']),controls=copy.deepcopy(p.get('controls',{})),synth_waves=copy.deepcopy(p.get('synth_waves',{})),profile_preset=copy.deepcopy(p.get('profile_preset',{}))) for p in t.get('plugins',[])],
-                    busy=self.busy,playing=a.playing,recording=a.recording,autosampler=copy.deepcopy(self.auto.state),job=copy.deepcopy(self.job),audio=a.audio.name if a.audio else '',inputs=a.audio.input_channels if a.audio else 0,midi_outputs=[dict(id=d.key,name=d.name) for d in a.midi_devices],midi_out=a.settings['midi_out'])
+                    busy=self.busy,playing=a.playing,recording=a.recording,capturing=bool(a.capture_armed or a.capture_started is not None),autosampler=copy.deepcopy(self.auto.state),job=copy.deepcopy(self.job),audio=a.audio.name if a.audio else '',inputs=a.audio.input_channels if a.audio else 0,midi_outputs=[dict(id=d.key,name=d.name) for d in a.midi_devices],midi_out=a.settings['midi_out'])
     def poll(self,now,other_busy=False):
         a=self.app
         if self.future and self.future.done():
@@ -137,7 +137,7 @@ class SoundRuntime:
             key=(a.project_generation,a.group,a.pad,a.revision,a.audio,tuple(a.midi_devices),a.settings['midi_out'])
             if key!=self.context_key:
                 self.context_body=self.capture_snapshot();self.context_key=key
-            self.snapshot=dict(self.context_body,busy=self.busy,playing=a.playing,recording=a.recording,autosampler=copy.deepcopy(self.auto.state),job=copy.deepcopy(self.job));self.next_snapshot=now+.25
+            self.snapshot=dict(self.context_body,busy=self.busy or other_busy,playing=a.playing,recording=a.recording,capturing=bool(a.capture_armed or a.capture_started is not None),autosampler=copy.deepcopy(self.auto.state),job=copy.deepcopy(self.job));self.next_snapshot=now+.25
     def event(self,event,now):
         try:
             if self.auto.event(event,now):return True

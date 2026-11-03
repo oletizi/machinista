@@ -23,7 +23,7 @@ class FormatOptionsTests(unittest.TestCase):
         self.assertEqual((a.export_format,a.export_bits),('AIFF',32))
     def test_invalid_options_cancel_without_publication(self):
         self.assertEqual(export_format({}),('WAV',16))
-        for kw in ({'format':'MP3'},{'bits':20},{'bits':True}):
+        for kw in ({'format':'OGG'},{'bits':20},{'bits':True}):
             with self.assertRaisesRegex(ValueError,'FORMAT'):render_export(self.request(**kw),self.root)
         self.assertEqual(list((self.root/'exports').iterdir()),[])
 

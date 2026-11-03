@@ -3,13 +3,16 @@ import math
 from pathlib import Path
 import struct
 
-FORMATS=('WAV','AIFF')
+FORMATS=('WAV','AIFF','MP3')
 DEPTHS=(16,24,32)
 
 
 def export_format(request):
     format=request.get('format','WAV');bits=request.get('bits',16)
     if format not in FORMATS or type(bits) is not int or bits not in DEPTHS:raise ValueError('INVALID EXPORT FORMAT')
+    if format=='MP3':
+        from app.export_mp3 import bitrate
+        bitrate(request.get('bitrate',320))
     return format,bits
 
 

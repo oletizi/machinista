@@ -25,7 +25,7 @@ def main():
  try:
   run('apt-get','update','-qq')
   run('env','DEBIAN_FRONTEND=noninteractive','apt-get','upgrade','-y','--with-new-pkgs','--no-remove','-o','Dpkg::Options::=--force-confold')
-  run('env','DEBIAN_FRONTEND=noninteractive','apt-get','install','-y','--no-install-recommends','ffmpeg','rubberband-cli','fdisk','openssh-server','libasound2t64','liblilv-0-0','libhidapi-hidraw0','libusb-1.0-0','libstdc++6','bluez','alsa-utils','python3-dbus','python3-gi','python3-libgpiod','python3-pil','fonts-dejavu-core','samba','smbclient','dnsmasq-base','avahi-daemon','network-manager')
+  run('env','DEBIAN_FRONTEND=noninteractive','apt-get','install','-y','--no-install-recommends','ffmpeg','python3-venv','rubberband-cli','fdisk','openssh-server','libasound2t64','liblilv-0-0','libhidapi-hidraw0','libusb-1.0-0','libstdc++6','bluez','alsa-utils','python3-dbus','python3-gi','python3-libgpiod','python3-pil','fonts-dejavu-core','samba','smbclient','dnsmasq-base','avahi-daemon','network-manager')
  finally:
   if old is None:policy.unlink(missing_ok=True)
   else:policy.write_bytes(old)

@@ -43,6 +43,8 @@ class Library:
         self.sounds=Sounds(self)
         from app.web_soundfonts import SoundFonts
         self.soundfonts=SoundFonts(self)
+        from app.web_stems import Stems
+        self.stems=Stems(self)
         self.previous=None;self.stats=None;self.next_stats=0
 
     def sources(self):
@@ -209,6 +211,13 @@ class Handler(BaseHTTPRequestHandler):
                 origin=self.headers.get('Origin')
                 if origin and origin!='http://'+self.headers.get('Host'):raise PermissionError('Invalid origin.')
                 if not secrets.compare_digest(self.headers.get('X-Machinista-Token',self.headers.get('X-Machinist-Token','')),library.token):raise PermissionError('Please reload the page.')
+                if path in ('/api/stems/start','/api/stems/install','/api/stems/cancel'):
+                    length=int(self.headers.get('Content-Length','0'))
+                    if self.headers.get('Transfer-Encoding') or not 0<length<=8192:raise ValueError('Invalid stem request size.')
+                    value=json.loads(self.rfile.read(length))
+                    if not isinstance(value,dict):raise ValueError('Invalid stem request.')
+                    result=library.stems.start(value) if path.endswith('/start') else library.stems.install() if path.endswith('/install') else library.stems.abort()
+                    self.json(result);return
                 if path=='/api/soundfonts/upload':
                     if self.headers.get('Transfer-Encoding'):raise ValueError('Content-Length required.')
                     self.json(library.soundfonts.upload(q.get('name',''),self.rfile,int(self.headers.get('Content-Length','0'))));return
@@ -342,6 +351,7 @@ class Handler(BaseHTTPRequestHandler):
                     value=json.loads(self.rfile.read(length))
                     self.json(request('connect',ssid=value.get('ssid'),password=value.get('password','')));return
             else:
+                if path=='/api/stems':self.json(library.stems.status());return
                 if path=='/api/soundfonts':self.json(library.soundfonts.status());return
                 if path=='/api/sounds':self.json(library.sounds.status());return
                 if path=='/api/sounds/current':self.json(library.sounds.current());return
@@ -398,7 +408,7 @@ class Handler(BaseHTTPRequestHandler):
                     from app.network_client import request
                     self.json(request('scan' if path.endswith('/scan') else 'status'));return
                 if path=='/api/file':self.download(q);return
-                assets={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/sounds.js':('sounds.js','text/javascript; charset=utf-8'),'/soundfonts.js':('soundfonts.js','text/javascript; charset=utf-8'),'/oscillators.js':('oscillators.js','text/javascript; charset=utf-8'),'/synth.js':('synth.js','text/javascript; charset=utf-8'),'/virtualjv.js':('virtualjv.js','text/javascript; charset=utf-8'),'/updates.js':('updates.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/logo.png':('logo.png','image/png')}
+                assets={'/stems.js':('stems.js','text/javascript; charset=utf-8'),'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/sounds.js':('sounds.js','text/javascript; charset=utf-8'),'/soundfonts.js':('soundfonts.js','text/javascript; charset=utf-8'),'/oscillators.js':('oscillators.js','text/javascript; charset=utf-8'),'/synth.js':('synth.js','text/javascript; charset=utf-8'),'/virtualjv.js':('virtualjv.js','text/javascript; charset=utf-8'),'/updates.js':('updates.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/logo.png':('logo.png','image/png')}
                 if path in assets:
                     name,mime=assets[path];body=(library.root/'web'/name).read_bytes();self.response_headers(200,mime,len(body));self.wfile.write(body);return
             self.json({'error':'Not found.'},404)

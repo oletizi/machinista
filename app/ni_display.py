@@ -421,7 +421,7 @@ def legacy_frame(app,envelope=None):
             label(p,2,28,app.export_status,font='regular5',max_width=124)
             label(p,2,40,'F1 CANCEL',font='regular5')
         else:
-            label(p,2,26,'MIDI / 96 PPQ' if app.export_kind=='MIDI' else f'{app.export_format} {app.export_bits}'+('F' if app.export_bits==32 else ' BIT')+' / STEREO',font='regular5')
+            label(p,2,26,'MIDI / 96 PPQ' if app.export_kind=='MIDI' else ('MP3 '+str(app.export_bitrate)+'K' if app.export_format=='MP3' else f'{app.export_format} {app.export_bits}'+('F' if app.export_bits==32 else ' BIT'))+' / STEREO',font='regular5')
             fields=app.export_fields()
             parameter(f'{app.export_field+1}/{len(fields)}: '+fields[app.export_field],app.export_value())
     elif app.page=='PROJECT MANAGE':

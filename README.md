@@ -64,6 +64,8 @@ this setup lets you play without a laptop, monitor or mouse beside it.
   add-on format; the public image does not include third-party plug-ins.
 - **External gear:** play from a MIDI keyboard, control an external instrument,
   use supported Bluetooth MIDI devices, and choose audio inputs and outputs.
+- **Share your music:** [export WAV, AIFF or MP3](docs/MP3_EXPORT.md), with MP3 quality from 128 to 320 kbit/s.
+- **Separate samples:** optional [local four-stem separation](docs/STEM_SEPARATION.md) in the WebUI creates vocals, drums, bass and other parts from short samples. Requires a separate engine/model download and enough free RAM.
 - **Easy file management:** open the WebUI (a browser control page) on a phone,
   tablet or computer to upload samples, back up projects and organize Sounds.
 

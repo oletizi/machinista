@@ -169,6 +169,10 @@ def _render_export(request,root,cancel,progress,location):
     report=progress.put if progress is not None else lambda value:None
     try:
         format,bits=export_format(request)
+        mp3=format=='MP3';render_format='WAV' if mp3 else format;render_bits=32 if mp3 else bits
+        if mp3:
+            from app.export_mp3 import tools
+            tools()
         if any(type(request.get(key,False)) is not bool for key in ('loop_optimize','normalize')):raise ValueError('INVALID EXPORT OPTION')
         with tempfile.TemporaryDirectory(prefix='export-',dir=root/'cache') as directory:
             job=Path(directory);save_json(job/'projects/current.json',request['project']);app=Application(job)
@@ -196,7 +200,7 @@ def _render_export(request,root,cancel,progress,location):
             loop_frames=round(ticks*60/(app.project['tempo']*96)*request['rate']) if request.get('loop_optimize') else 0
             final_frames=loop_frames or frames
             processing=request.get('normalize',False) or bool(loop_frames)
-            if shutil.disk_usage(base).free<final_frames*2*(bits//8)*len(targets)+(frames*8 if processing else 0)+(0 if request.get('destination') else cache_bytes)+16*1024**2:raise ValueError('NOT ENOUGH FREE SPACE')
+            if shutil.disk_usage(base).free<final_frames*2*(render_bits//8)*len(targets)+(frames*8 if processing else 0)+(final_frames*8 if mp3 else 0)+(0 if request.get('destination') else cache_bytes)+16*1024**2:raise ValueError('NOT ENOUGH FREE SPACE')
             commands=[];encoder=object.__new__(AudioBackend);encoder.command=commands.append
             encoder.root=job;encoder.cache=job/'pcm';encoder.cache.mkdir();encoder.loaded={};encoder.plugin_chains={};encoder.plugin_metadata=request['metadata'];encoder.sample_rate=request['rate'];encoder.tempo=app.project['tempo'];encoder.instrument_tokens=NoteTokens()
             encoder.routing_signature=None;encoder.input_device='-';encoder.desired=encoder.recorder=encoder.capture_pending=encoder.native_capture=None
@@ -225,7 +229,7 @@ def _render_export(request,root,cancel,progress,location):
                             if fields[0]!='plugin_note_ch' or int(fields[1])!=destination[0] or int(fields[2])!=destination[1] or int(fields[5])!=bus:continue
                         selected_plan.append(command)
                 initial=[*prefix,*selected_plan,'sequence_seek 0 1',f'sequence_transport {app.project["tempo"]} 1 0 0']
-                path=temporary/(label+('.wav' if format=='WAV' else '.aiff'));script='\n'.join([*initial,'render_start '+json.dumps(str(path))+f' {frames} {render_bus} {bits} {format} {loop_frames} {int(request.get("normalize",False))} {app.project["tempo"]} {ticks/384}','quit',''])
+                path=temporary/(label+('.wav' if render_format=='WAV' else '.aiff'));script='\n'.join([*initial,'render_start '+json.dumps(str(path))+f' {frames} {render_bus} {render_bits} {render_format} {loop_frames} {int(request.get("normalize",False))} {app.project["tempo"]} {ticks/384}','quit',''])
                 process=subprocess.Popen(['nice','-n','19',str(root/'build/audio_engine'),'--offline-render'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                 try:
                     started=time.monotonic();first=True
@@ -241,13 +245,19 @@ def _render_export(request,root,cancel,progress,location):
                     if any(e.get('status') in ('error','memory_limit') for e in events):raise ValueError('EXPORT ENGINE ERROR')
                     result=next((e for e in reversed(events) if e.get('kind')=='export'),None)
                     if result is None or result['status']!='finished' or result['frames']!=final_frames or result.get('overflow'):raise ValueError('EXPORT INCOMPLETE')
-                    verify_audio_export(path,format,bits,request['rate'],final_frames)
+                    verify_audio_export(path,render_format,render_bits,request['rate'],final_frames)
+                    if mp3:
+                        from app.export_mp3 import encode
+                        report(f'ENCODE MP3 {index+1}/{len(targets)}')
+                        output_path=temporary/(label+'.mp3')
+                        encode(path,output_path,request['rate'],final_frames,request.get('bitrate',320),cancel,location.verify)
+                        path.unlink();path=output_path
                     with path.open('rb') as rendered:os.fsync(rendered.fileno())
                     results.append(dict(file=path.name,bus=bus,peak=result['peak'],gain=result.get('gain',1)))
                 finally:
                     if process.poll() is None:process.kill();process.communicate()
             check_cancel(cancel)
-            save_json(temporary/'Export.json',dict(format='Machinista-audio-export',version=2,container=format,bits=bits,encoding='float' if bits==32 else 'PCM',project=app.project['name'],mode=request['mode'],source=request['source'],rate=request['rate'],frames=final_frames,render_frames=frames,tempo=app.project['tempo'],bars=ticks/384,loop_optimize=request.get('loop_optimize',False),normalize=request.get('normalize',False),tail=request['tail'],files=results,external_midi='not rendered',modulation='256-frame blocks'))
+            save_json(temporary/'Export.json',dict(format='Machinista-audio-export',version=2,container=format,bits=None if mp3 else bits,bitrate=request.get('bitrate',320) if mp3 else None,encoding='MP3' if mp3 else 'float' if bits==32 else 'PCM',project=app.project['name'],mode=request['mode'],source=request['source'],rate=request['rate'],frames=final_frames,render_frames=frames,tempo=app.project['tempo'],bars=ticks/384,loop_optimize=request.get('loop_optimize',False),normalize=request.get('normalize',False),tail=request['tail'],files=results,external_midi='not rendered',modulation='256-frame blocks'))
         location.verify()
         name=request['project']['name']+'-'+request['mode'].title()
         for number in range(1,10000):
@@ -268,11 +278,11 @@ def _render_export(request,root,cancel,progress,location):
 class AudioExport:
     def init_export(self):
         self.export_mode=0;self.export_source=0;self.export_rate=48000;self.export_tail=2;self.export_field=0
-        self.export_busy=False;self.export_status='';self.export_result='';self.export_kind='AUDIO';self.export_midi_source=1;self.export_groove=False;self.export_format='WAV';self.export_bits=16;self.export_loop=False;self.export_normalize=False;self.export_destination=None;self.export_result_device='SD CARD'
+        self.export_busy=False;self.export_status='';self.export_result='';self.export_kind='AUDIO';self.export_midi_source=1;self.export_groove=False;self.export_format='WAV';self.export_bits=16;self.export_bitrate=320;self.export_loop=False;self.export_normalize=False;self.export_destination=None;self.export_result_device='SD CARD'
     def open_export(self,kind='AUDIO'):
         self.export_kind=kind;self.page='EXPORT';self.export_field=0
     def export_fields(self):
-        return ('RANGE','SOURCE','TIMING','DESTINATION') if self.export_kind=='MIDI' else FIELDS
+        return ('RANGE','SOURCE','TIMING','DESTINATION') if self.export_kind=='MIDI' else tuple('BITRATE' if f=='DEPTH' and self.export_format=='MP3' else f for f in FIELDS)
     def export_destinations(self):
         return [None]+[dict(path=str(s.path),identity=s.identity,name=s.name,read_only=s.read_only) for s in self.browser.sources if s.identity]
     def export_destination_label(self):
@@ -292,7 +302,7 @@ class AudioExport:
             if self.export_midi_source<2:source+=' '+self.group_name()+(f':{self.pad+1:02}' if self.export_midi_source==0 else '')
             return (mode,source, 'GROOVE' if self.export_groove else 'GRID')[self.export_field]
         source=SOURCES[self.export_source]+(f' {self.group_name()}:{self.pad+1:02}' if self.export_source==1 else f' {self.group_name()}' if self.export_source==2 else '')
-        return (mode,source,str(self.export_rate),('WRAP ' if self.export_loop else '')+str(self.export_tail)+' SEC',self.export_format,str(self.export_bits)+(' FLOAT' if self.export_bits==32 else ' BIT'),'ON' if self.export_loop else 'OFF','ON' if self.export_normalize else 'OFF')[self.export_field]
+        return (mode,source,str(self.export_rate),('WRAP ' if self.export_loop else '')+str(self.export_tail)+' SEC',self.export_format,(str(self.export_bitrate)+' KBPS') if self.export_format=='MP3' else str(self.export_bits)+(' FLOAT' if self.export_bits==32 else ' BIT'),'ON' if self.export_loop else 'OFF','ON' if self.export_normalize else 'OFF')[self.export_field]
     def export_request(self):
         if self.playing or self.recording or self.capture_started is not None or self.capture_armed:self.message='STOP RECORD/PLAY FIRST';return
         if self.export_busy:self.message='EXPORT BUSY';return
@@ -301,7 +311,7 @@ class AudioExport:
             if any(d and (d['path'],d['identity'])==(self.export_destination['path'],self.export_destination['identity']) and d['read_only'] for d in self.export_destinations()):self.message='USB READ ONLY';return
         self.export_result_device=self.export_destination_label()
         project=self.project_for_save()
-        request=dict(destination=copy.deepcopy(self.export_destination),project=project,mode=MODES[self.export_mode],source=SOURCES[self.export_source],rate=self.export_rate,tail=self.export_tail,format=self.export_format,bits=self.export_bits,loop_optimize=self.export_loop,normalize=self.export_normalize,group=self.group,pad=self.pad,pattern=self.pattern,scene=self.scene,scene_retrigger=self.settings['scene_retrigger'])
+        request=dict(destination=copy.deepcopy(self.export_destination),project=project,mode=MODES[self.export_mode],source=SOURCES[self.export_source],rate=self.export_rate,tail=self.export_tail,format=self.export_format,bits=self.export_bits,bitrate=self.export_bitrate,loop_optimize=self.export_loop,normalize=self.export_normalize,group=self.group,pad=self.pad,pattern=self.pattern,scene=self.scene,scene_retrigger=self.settings['scene_retrigger'])
         if self.export_kind=='MIDI':
             request.update(source=('SOUND','GROUP','ALL GROUPS')[self.export_midi_source],groove=self.export_groove)
             self.actions.append(('midi_export',request));self.export_busy=True;self.export_status='PREPARING';self.message='';return
@@ -335,7 +345,10 @@ class AudioExport:
         elif self.export_field==1:self.export_source=max(0,min(4,self.export_source+delta))
         elif self.export_field==2:self.export_rate=48000 if delta>0 else 44100
         elif self.export_field==3:self.export_tail=TAILS[max(0,min(4,TAILS.index(self.export_tail)+delta))]
-        elif self.export_field==4:self.export_format=FORMATS[max(0,min(1,FORMATS.index(self.export_format)+delta))]
+        elif self.export_field==4:self.export_format=FORMATS[max(0,min(len(FORMATS)-1,FORMATS.index(self.export_format)+delta))]
+        elif self.export_field==5 and self.export_format=='MP3':
+            from app.export_mp3 import BITRATES
+            self.export_bitrate=BITRATES[max(0,min(len(BITRATES)-1,BITRATES.index(self.export_bitrate)+delta))]
         elif self.export_field==5:self.export_bits=DEPTHS[max(0,min(2,DEPTHS.index(self.export_bits)+delta))]
         elif self.export_field==6:self.export_loop=delta>0
         else:self.export_normalize=delta>0
