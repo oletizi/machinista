@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "fda5668295a8d1303378181fffd216a5",
+  "name": "Hollow Lattice",
+  "folder": "Spectral Machines",
+  "tags": [
+    "original",
+    "spectral",
+    "hollow"
+  ],
+  "frames": 32,
+  "cycle": 1024,
+  "rate": 44100,
+  "kind": "Wavetable"
+}

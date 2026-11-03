@@ -1791,6 +1791,16 @@
         "voice_drift": 1.5
       },
       "description": "Fundamental, octave and fifth pipe-organ registration.",
+      "effects": [
+        {
+          "controls": {
+            "decay": 2.9,
+            "lowcut": 180,
+            "mix": 0.18
+          },
+          "uri": "urn:machinista:effect:reverb"
+        }
+      ],
       "name": "ORGAN Pure Pipes",
       "origin": "Jovista Pipe Organ"
     },

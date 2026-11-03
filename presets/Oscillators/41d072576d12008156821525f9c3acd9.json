@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "41d072576d12008156821525f9c3acd9",
+  "name": "Fold Engine",
+  "folder": "Spectral Machines",
+  "tags": [
+    "original",
+    "spectral",
+    "fold"
+  ],
+  "frames": 32,
+  "cycle": 1024,
+  "rate": 44100,
+  "kind": "Wavetable"
+}

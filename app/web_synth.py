@@ -28,7 +28,7 @@ def apply(app,value):
     updates=value.get('controls',{});wave=value.get('wave');preset=value.get('preset')
     if not isinstance(updates,dict) or len(updates)>128 or not(updates or wave or preset):raise ValueError('Invalid synth edit.')
     if preset and (updates or wave):raise ValueError('Apply a preset separately.')
-    changes={};wave_changes={};preset_value=None
+    changes={};wave_changes={};preset_value=None;fx_plan=None
     for symbol,number in updates.items():
         port=specs.get(symbol)
         if not port or type(number) not in (float,int) or not math.isfinite(number) or not port['min']<=number<=port['max'] or port.get('integer') and number!=round(number):
@@ -48,6 +48,8 @@ def apply(app,value):
         patch=bank['patches'][preset['patch']];changes=copy.deepcopy(patch['controls'])
         from app.synth_library import preset_waves
         wave_changes=preset_waves(app.root,patch)
+        from app.synth_patch_fx import prepare
+        fx_plan=prepare(app,plugin,patch,target=app.track(),bus=app.group*16+app.pad)
         preset_value=dict(bank=bank['id'],program=patch.get('_program',preset['patch']),name=patch['name'])
     gesture=value.get('gesture','')
     if not isinstance(gesture,str) or len(gesture)>80:raise ValueError('Invalid edit gesture.')
@@ -60,6 +62,10 @@ def apply(app,value):
     if preset_value:plugin['synth_waves']=wave_changes
     elif wave_changes:plugin.setdefault('synth_waves',{}).update(wave_changes)
     if preset_value:plugin['profile_preset']=preset_value
+    if fx_plan is not None:
+        from app.synth_patch_fx import commit
+        commit(app,fx_plan)
+        plugins=app.track()['plugins']
     app._web_synth_gesture=(context,app.revision,app.undo[-1] if app.undo else None,now)
     bus=app.group*16+app.pad
     for symbol in changes:app.midi_touch_until[(bus,'plugin',slot,symbol)]=now+1

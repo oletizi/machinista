@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "7a059d06edebdabd68ed0bad23162450",
+  "name": "Binary Relay",
+  "folder": "Spectral Machines",
+  "tags": [
+    "original",
+    "spectral",
+    "binary"
+  ],
+  "frames": 32,
+  "cycle": 1024,
+  "rate": 44100,
+  "kind": "Wavetable"
+}

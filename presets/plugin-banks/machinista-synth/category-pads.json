@@ -594,6 +594,23 @@
         "voice_drift": 1.5
       },
       "description": "Moving formant wavetable with a quiet breath layer; not a recorded choir.",
+      "effects": [
+        {
+          "controls": {
+            "depth": 0.3,
+            "mix": 0.17
+          },
+          "uri": "urn:machinista:effect:chorus"
+        },
+        {
+          "controls": {
+            "decay": 2.8,
+            "lowcut": 240,
+            "mix": 0.14
+          },
+          "uri": "urn:machinista:effect:reverb"
+        }
+      ],
       "name": "PAD Air Choir",
       "synth_waves": {
         "1": {
@@ -1196,6 +1213,16 @@
         "voice_drift": 1.5
       },
       "description": "Workstation-style layered bell attack and sustained soft pulse; no D-50 PCM data.",
+      "effects": [
+        {
+          "controls": {
+            "decay": 3.1,
+            "lowcut": 200,
+            "mix": 0.16
+          },
+          "uri": "urn:machinista:effect:reverb"
+        }
+      ],
       "name": "PAD Bell and Air",
       "synth_waves": {
         "1": {
@@ -1798,6 +1825,16 @@
         "voice_drift": 1.5
       },
       "description": "Wide moving PWM chords.",
+      "effects": [
+        {
+          "controls": {
+            "depth": 0.35,
+            "mix": 0.18,
+            "rate": 0.23
+          },
+          "uri": "urn:machinista:effect:chorus"
+        }
+      ],
       "name": "PAD Moving Pulse",
       "origin": "Oberista Pulsefield"
     },
@@ -2988,6 +3025,16 @@
         "voice_drift": 1.5
       },
       "description": "Long swelling four-oscillator ensemble.",
+      "effects": [
+        {
+          "controls": {
+            "decay": 3.8,
+            "lowcut": 220,
+            "mix": 0.2
+          },
+          "uri": "urn:machinista:effect:reverb"
+        }
+      ],
       "name": "PAD Slow Cinema",
       "origin": "Cineista Slow Cinema"
     },
@@ -3583,6 +3630,16 @@
         "voice_drift": 1.5
       },
       "description": "Vowel-like pad made from harmonic waves and serial filters.",
+      "effects": [
+        {
+          "controls": {
+            "decay": 3.2,
+            "lowcut": 250,
+            "mix": 0.16
+          },
+          "uri": "urn:machinista:effect:reverb"
+        }
+      ],
       "name": "PAD Vowel Curtain",
       "origin": "Cineista Vowel Curtain"
     },
@@ -4178,6 +4235,16 @@
         "voice_drift": 1.5
       },
       "description": "Soft saw pad with sub and a gently moving pulse.",
+      "effects": [
+        {
+          "controls": {
+            "depth": 0.4,
+            "mix": 0.23,
+            "rate": 0.32
+          },
+          "uri": "urn:machinista:effect:chorus"
+        }
+      ],
       "name": "PAD Warm Velvet",
       "origin": "Junista Velvet"
     },

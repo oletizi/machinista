@@ -87,7 +87,7 @@ class Plugins:
         if request['generation']!=self.project_generation or request['revision']!=self.revision:
             self.message='PLUGIN CHANGED: CANCELED';return
         if request['operation']=='COPY':
-            self.plugin_clipboard=copy.deepcopy(request['chain'][request['slot']]);self.message='PLUGIN COPIED';return
+            self.plugin_clipboard=copy.deepcopy(request['chain'][request['slot']]);self.plugin_clipboard.pop('synth_patch_fx',None);self.message='PLUGIN COPIED';return
         bus=request['bus'];target=bus_targets(self.project)[bus];chain=request['chain'];source=request['slot'];dest=request['destination']
         order=list(range(len(chain)));order.insert(dest,order.pop(source))
         if chain[source]['kind']=='INSTRUMENT' and dest!=0 or any(chain[i]['kind']=='INSTRUMENT' and n!=0 for n,i in enumerate(order)):
@@ -99,6 +99,7 @@ class Plugins:
     def paste_plugin(self):
         if not self.plugin_clipboard:self.message='COPY PLUGIN FIRST';return
         slots=self.plugin_target().get('plugins',[]);plugin=copy.deepcopy(self.plugin_clipboard);dest=min(self.plugin_slot,len(slots))
+        plugin.pop('synth_patch_fx',None)
         if len(slots)>=16:self.message='MAX 16 PLUGINS';return
         if plugin['kind']=='INSTRUMENT' and (not (self.control_level==2 or self.control_level==1 and plugin['uri']=='urn:machinista:ports:virtualjv-multi') or dest!=0) or dest==0 and slots and slots[0]['kind']=='INSTRUMENT':
             self.message='INSTRUMENT MUST BE FIRST';return
@@ -255,6 +256,9 @@ def validate_plugins(target,instrument=False,group=False):
         if not isinstance(plugin,dict) or not isinstance(plugin.get('uri'),str) or not plugin['uri'] or plugin.get('kind') not in ('EFFECT','INSTRUMENT') or (plugin['kind']=='INSTRUMENT' and (index!=0 or not (instrument and plugin['uri']!='urn:machinista:ports:virtualjv-multi' or group and plugin['uri']=='urn:machinista:ports:virtualjv-multi'))):raise ValueError('invalid plugin')
         if not isinstance(plugin.get('sidechain','NONE'),str):raise ValueError('invalid sidechain source')
         if type(plugin.get('bypass',False)) is not bool or not isinstance(plugin.get('controls',{}),dict):raise ValueError('invalid plugin state')
+        if 'synth_patch_fx' in plugin:
+            from app.synth_patch_fx import specifications
+            if type(plugin['synth_patch_fx']) is not bool or plugin['synth_patch_fx'] and (plugin['kind']!='EFFECT' or plugin['uri'] not in specifications()):raise ValueError('invalid Synth patch effect')
         if any(not isinstance(k,str) or not isinstance(v,(float,int)) or not math.isfinite(v) for k,v in plugin.get('controls',{}).items()):raise ValueError('invalid plugin control')
         if 'synth_waves' in plugin:
             import re

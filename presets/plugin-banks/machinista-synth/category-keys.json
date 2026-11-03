@@ -1798,6 +1798,17 @@
         "voice_drift": 1.5
       },
       "description": "Barking reed electric-piano approximation with velocity-brightened odd harmonics. No recorded Wurlitzer samples.",
+      "effects": [
+        {
+          "controls": {
+            "decay": 1.1,
+            "mix": 0.08,
+            "predelay": 12,
+            "type": 0
+          },
+          "uri": "urn:machinista:effect:reverb"
+        }
+      ],
       "name": "KEY Reed Piano",
       "synth_waves": {
         "1": {
@@ -2400,6 +2411,16 @@
         "voice_drift": 1.5
       },
       "description": "Synthesized tine electric piano: changing partials, soft fundamental and a brief inharmonic bell layer. No recorded Rhodes samples.",
+      "effects": [
+        {
+          "controls": {
+            "depth": 0.32,
+            "mix": 0.2,
+            "rate": 0.7
+          },
+          "uri": "urn:machinista:effect:chorus"
+        }
+      ],
       "name": "KEY Tine Piano",
       "synth_waves": {
         "1": {

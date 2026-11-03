@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "309ee9fe6414c65f247f6b02e0be080d",
+  "name": "Spectral Vapor",
+  "folder": "Spectral Machines",
+  "tags": [
+    "original",
+    "spectral",
+    "cloud"
+  ],
+  "frames": 32,
+  "cycle": 1024,
+  "rate": 44100,
+  "kind": "Wavetable"
+}

@@ -1,0 +1,18 @@
+{
+  "PAD Warm Velvet": [{"uri":"urn:machinista:effect:chorus","controls":{"mix":0.23,"rate":0.32,"depth":0.4}}],
+  "PAD Moving Pulse": [{"uri":"urn:machinista:effect:chorus","controls":{"mix":0.18,"rate":0.23,"depth":0.35}}],
+  "PAD Slow Cinema": [{"uri":"urn:machinista:effect:reverb","controls":{"mix":0.2,"decay":3.8,"lowcut":220}}],
+  "PAD Vowel Curtain": [{"uri":"urn:machinista:effect:reverb","controls":{"mix":0.16,"decay":3.2,"lowcut":250}}],
+  "PAD Air Choir": [{"uri":"urn:machinista:effect:chorus","controls":{"mix":0.17,"depth":0.3}},{"uri":"urn:machinista:effect:reverb","controls":{"mix":0.14,"decay":2.8,"lowcut":240}}],
+  "PAD Bell and Air": [{"uri":"urn:machinista:effect:reverb","controls":{"mix":0.16,"decay":3.1,"lowcut":200}}],
+  "PAD Air Strings": [{"uri":"urn:machinista:effect:chorus","controls":{"mix":0.21,"depth":0.32,"rate":0.4}}],
+  "KEY Tine Piano": [{"uri":"urn:machinista:effect:chorus","controls":{"mix":0.2,"rate":0.7,"depth":0.32}}],
+  "KEY Reed Piano": [{"uri":"urn:machinista:effect:reverb","controls":{"mix":0.08,"type":0,"decay":1.1,"predelay":12}}],
+  "KEY Glass Mallet": [{"uri":"urn:machinista:effect:delay","controls":{"mix":0.14,"sync":1,"division":4,"feedback":0.2,"color":6500}}],
+  "KEY Lunar Bells": [{"uri":"urn:machinista:effect:reverb","controls":{"mix":0.15,"decay":2.7,"lowcut":200}}],
+  "PLUCK Sitar Wire": [{"uri":"urn:machinista:effect:delay","controls":{"mix":0.12,"sync":1,"division":5,"feedback":0.2,"color":5500}}],
+  "LEAD Saw Glide": [{"uri":"urn:machinista:effect:delay","controls":{"mix":0.13,"sync":1,"division":5,"feedback":0.24,"color":5200}}],
+  "LEAD Soft Whistle": [{"uri":"urn:machinista:effect:reverb","controls":{"mix":0.1,"decay":1.8,"lowcut":240}}],
+  "ORGAN Pure Pipes": [{"uri":"urn:machinista:effect:reverb","controls":{"mix":0.18,"decay":2.9,"lowcut":180}}],
+  "SYN Moving Spectrum": [{"uri":"urn:machinista:effect:reverb","controls":{"mix":0.18,"decay":3.3,"lowcut":250}}]
+}

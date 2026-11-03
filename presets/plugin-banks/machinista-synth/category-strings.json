@@ -594,6 +594,16 @@
         "voice_drift": 1.5
       },
       "description": "Filtered noise and airy high strings.",
+      "effects": [
+        {
+          "controls": {
+            "depth": 0.32,
+            "mix": 0.21,
+            "rate": 0.4
+          },
+          "uri": "urn:machinista:effect:chorus"
+        }
+      ],
       "name": "PAD Air Strings",
       "origin": "Jovista Airlock"
     },

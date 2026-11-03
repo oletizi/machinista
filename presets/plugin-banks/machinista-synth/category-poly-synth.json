@@ -594,6 +594,16 @@
         "voice_drift": 1.5
       },
       "description": "Slow continuous wavetable motion across a harmonically complex texture.",
+      "effects": [
+        {
+          "controls": {
+            "decay": 3.3,
+            "lowcut": 250,
+            "mix": 0.18
+          },
+          "uri": "urn:machinista:effect:reverb"
+        }
+      ],
       "name": "SYN Moving Spectrum",
       "synth_waves": {
         "1": {

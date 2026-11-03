@@ -61,7 +61,11 @@ def project(root,data):
     if p['id']=='machinista-synth':
         from app.synth_library import preset_waves
         plugin['synth_waves']=preset_waves(root,preset)
-    result=new_project();result['groups'][0]['pads'][0].update(name=preset['name'],plugins=[plugin])
+    extra=[]
+    if p['id']=='machinista-synth':
+        from app.synth_patch_fx import effects
+        extra=effects(preset)
+    result=new_project();result['groups'][0]['pads'][0].update(name=preset['name'],plugins=[plugin]+extra)
     validate_project(result)
     return result
 

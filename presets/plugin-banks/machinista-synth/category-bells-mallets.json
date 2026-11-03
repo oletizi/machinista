@@ -594,6 +594,18 @@
         "voice_drift": 1.5
       },
       "description": "Bright sparse-partial mallet with a long soft fundamental.",
+      "effects": [
+        {
+          "controls": {
+            "color": 6500,
+            "division": 4,
+            "feedback": 0.2,
+            "mix": 0.14,
+            "sync": 1
+          },
+          "uri": "urn:machinista:effect:delay"
+        }
+      ],
       "name": "KEY Glass Mallet",
       "synth_waves": {
         "1": {
@@ -1196,6 +1208,16 @@
         "voice_drift": 1.5
       },
       "description": "Soft harmonic bell keys without FM.",
+      "effects": [
+        {
+          "controls": {
+            "decay": 2.7,
+            "lowcut": 200,
+            "mix": 0.15
+          },
+          "uri": "urn:machinista:effect:reverb"
+        }
+      ],
       "name": "KEY Lunar Bells",
       "origin": "Jovista Lunar Bells"
     },

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "247e973ae356d98ff996122ce56093a2",
+  "name": "Prism Alloy",
+  "folder": "Spectral Machines",
+  "tags": [
+    "original",
+    "spectral",
+    "prism"
+  ],
+  "frames": 32,
+  "cycle": 1024,
+  "rate": 44100,
+  "kind": "Wavetable"
+}

@@ -1,0 +1,122 @@
+{
+  "BASS Binary Relay": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.600476
+  },
+  "BASS Comb Reactor": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.802933
+  },
+  "BASS Hollow Lattice": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.706361
+  },
+  "KEY Binary Relay": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.55913
+  },
+  "KEY Comb Reactor": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.792904
+  },
+  "KEY Fold Engine": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.688649
+  },
+  "KEY Hollow Lattice": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.992721
+  },
+  "KEY Prism Alloy": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.806738
+  },
+  "KEY Sideband Forge": {
+    "env1_depth": 4,
+    "osc1_level": 0.899687,
+    "output": 1
+  },
+  "KEY Spectral Vapor": {
+    "env1_depth": 4,
+    "osc1_level": 0.902328,
+    "output": 1
+  },
+  "KEY Vox Turbine": {
+    "env1_depth": 4,
+    "osc1_level": 0.735423,
+    "output": 1
+  },
+  "LEAD Fold Engine": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.870166
+  },
+  "LEAD Prism Alloy": {
+    "env1_depth": 4,
+    "osc1_level": 0.751348,
+    "output": 1
+  },
+  "LEAD Sideband Forge": {
+    "env1_depth": 4,
+    "osc1_level": 1,
+    "output": 1
+  },
+  "LEAD Spectral Vapor": {
+    "env1_depth": 4,
+    "osc1_level": 0.869805,
+    "output": 1
+  },
+  "LEAD Vox Turbine": {
+    "env1_depth": 4,
+    "osc1_level": 1,
+    "output": 1
+  },
+  "PAD Binary Relay": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.47973
+  },
+  "PAD Comb Reactor": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.984702
+  },
+  "PAD Fold Engine": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.566413
+  },
+  "PAD Hollow Lattice": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.757713
+  },
+  "PAD Prism Alloy": {
+    "env1_depth": 4,
+    "osc1_level": 0.62,
+    "output": 0.645732
+  },
+  "PAD Sideband Forge": {
+    "env1_depth": 4,
+    "osc1_level": 0.651383,
+    "output": 1
+  },
+  "PAD Spectral Vapor": {
+    "env1_depth": 4,
+    "osc1_level": 0.693861,
+    "output": 1
+  },
+  "PAD Vox Turbine": {
+    "env1_depth": 4,
+    "osc1_level": 0.716081,
+    "output": 1
+  }
+}

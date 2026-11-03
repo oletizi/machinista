@@ -35,7 +35,10 @@ def validate_bank(data,p):
         if p['uri']=='urn:machinista:instrument:synth':
             from app.synth_library import validate_preset_waves
             validate_preset_waves(c,patch.get('synth_waves',{}))
+            from app.synth_patch_fx import effects
+            effects(patch)
         elif 'synth_waves' in patch:raise ValueError('Waveforms require Machinista Synth')
+        elif 'effects' in patch:raise ValueError('Patch effects require Machinista Synth')
     return data
 
 def is_init_name(name):
@@ -44,7 +47,7 @@ def is_init_name(name):
 
 def patch_identity(patch):
     """Compare sound data, rather than titles or descriptive metadata."""
-    return json.dumps(dict(controls=patch['controls'],synth_waves=patch.get('synth_waves',{})),sort_keys=True)
+    return json.dumps(dict(controls=patch['controls'],synth_waves=patch.get('synth_waves',{}),effects=patch.get('effects',[])),sort_keys=True)
 
 def consolidate_factory(result,p):
     if p['uri']!='urn:machinista:instrument:synth':return result
@@ -184,12 +187,20 @@ def rotate(app,selected,port,delta):
         app.message='SELECT BANK FIRST';return True
     else:patch=max(0,min(len(available[bank]['patches'])-1,patch+delta))
     chosen=available[bank];preset=chosen['patches'][patch]
-    waves=None
+    waves=None;fx_plan=None
     if selected['uri']=='urn:machinista:instrument:synth':
         from app.synth_library import preset_waves
-        try:waves=preset_waves(app.root,preset)
+        try:
+            waves=preset_waves(app.root,preset)
         except ValueError:app.message='PRESET WAVE MISSING';return True
+        try:
+            from app.synth_patch_fx import prepare
+            fx_plan=prepare(app,selected,preset)
+        except ValueError as error:app.message=str(error);return True
     app.remember();selected['controls'].update(copy.deepcopy(preset['controls']))
     if waves is not None:selected['synth_waves']=waves
+    if fx_plan is not None:
+        from app.synth_patch_fx import commit
+        commit(app,fx_plan)
     selected['profile_preset']=dict(bank=chosen['id'],program=preset.get('_program',patch),name=preset['name'])
     app.plugin_update();return True

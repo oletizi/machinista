@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "b6d91b7d21a355b1c606c728664375ad",
+  "name": "Comb Reactor",
+  "folder": "Spectral Machines",
+  "tags": [
+    "original",
+    "spectral",
+    "comb"
+  ],
+  "frames": 32,
+  "cycle": 1024,
+  "rate": 44100,
+  "kind": "Wavetable"
+}

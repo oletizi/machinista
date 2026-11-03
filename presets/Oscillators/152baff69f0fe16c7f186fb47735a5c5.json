@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "152baff69f0fe16c7f186fb47735a5c5",
+  "name": "Vox Turbine",
+  "folder": "Spectral Machines",
+  "tags": [
+    "original",
+    "spectral",
+    "formant"
+  ],
+  "frames": 32,
+  "cycle": 1024,
+  "rate": 44100,
+  "kind": "Wavetable"
+}

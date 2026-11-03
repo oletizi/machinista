@@ -85,7 +85,11 @@ percussion=set(json.loads(Path(__file__).with_name('factory-omissions.json').rea
 patches=[p for p in patches if p.get('origin',p['name']) not in percussion]
 restored=[p for p in restored if p.get('origin',p['name']) not in percussion]
 # Keep the first collection's order; append restored sounds with their familiar names.
-patches.sort(key=lambda p:p['name']);patches.extend(sorted(restored,key=lambda p:p['name']));bank=dict(schema=1,uri=URI,name='Machinista Factory',description='Original synthesized sounds and generated wavetable instruments; not hardware emulations.',patches=patches)
+patches.sort(key=lambda p:p['name']);patches.extend(sorted(restored,key=lambda p:p['name']))
+from tools.synth.apply_factory_patch_effects import recipes
+for preset in patches:
+ if preset['name'] in recipes():preset['effects']=copy.deepcopy(recipes()[preset['name']])
+bank=dict(schema=1,uri=URI,name='Machinista Factory',description='Original synthesized sounds and generated wavetable instruments; not hardware emulations.',patches=patches)
 validate_bank(bank,P)
 path=ROOT/'presets/plugin-banks/machinista-synth/factory.json';path.write_text(json.dumps(bank,ensure_ascii=True,sort_keys=True,indent=2)+'\n')
 categories=json.loads(Path(__file__).with_name('factory-categories.json').read_text())

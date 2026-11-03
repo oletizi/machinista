@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "b00345347361a8ad65ec46663bde4173",
+  "name": "Sideband Forge",
+  "folder": "Spectral Machines",
+  "tags": [
+    "original",
+    "spectral",
+    "sideband"
+  ],
+  "frames": 32,
+  "cycle": 1024,
+  "rate": 44100,
+  "kind": "Wavetable"
+}

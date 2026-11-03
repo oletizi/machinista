@@ -3590,6 +3590,18 @@
         "voice_drift": 1.5
       },
       "description": "Bright plucked nasal string with a ringing fifth.",
+      "effects": [
+        {
+          "controls": {
+            "color": 5500,
+            "division": 5,
+            "feedback": 0.2,
+            "mix": 0.12,
+            "sync": 1
+          },
+          "uri": "urn:machinista:effect:delay"
+        }
+      ],
       "name": "PLUCK Sitar Wire",
       "origin": "Jovista Silk Sitar"
     },
