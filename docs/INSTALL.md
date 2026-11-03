@@ -1,10 +1,18 @@
 # Get started with Machinista
 
+![Machinista connection diagram](../assets/setup/connections-en.svg)
+
+Machinista runs on the **Pi**, not inside the controller. No controller firmware
+is replaced; reconnect USB to your computer to return to your original software.
+Maschine+ also needs an external Pi and must be in Controller mode.
+
 ## Before you begin
 
 You need a Raspberry Pi 4 or 5, its power supply, an SD card of at least 8 GB,
 a supported controller, and an audio device for headphones or speakers.
-An audio device can be a compatible USB interface or a supported audio board
+On MK3 / Maschine+, the built-in audio interface can be your audio device: use
+the controller’s headphones or line outputs. Mikro / MK1 / MK2 need a separate
+audio device. An audio device can be a compatible USB interface or a supported audio board
 attached to the Pi (often called a HAT). A USB stick is optional.
 
 The **image** is one ready-made system file. It contains Machinista and the
@@ -14,7 +22,7 @@ Use a spare SD card: writing the image erases the card you choose.
 ## Prepare the SD card on your computer
 
 1. Download the `.img.xz` file and `SHA256SUMS` from the
-   [current beta release](https://github.com/photogeen/machinista/releases/tag/v0.1.0-beta.10).
+   [current beta release](https://github.com/photogeen/machinista/releases/tag/v0.1.0-beta.13).
    The public image includes Machinista Synth sounds, but no drum sample pack
    or third-party plug-ins. Private tester editions list their extras separately.
 2. Open Raspberry Pi Imager. Choose **Use custom** and select the `.img.xz` file.

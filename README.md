@@ -17,6 +17,31 @@ controllers and audio devices. Save backups of work you want to keep.
 
 [Beschreibung auf Deutsch](docs/OVERVIEW_DE.md)
 
+## How does it connect?
+
+![Machinista connection diagram](assets/setup/connections-en.svg)
+
+**Machinista runs on the Raspberry Pi. Your controller supplies the pads, knobs
+and displays.** Its firmware is not replaced. To use your usual Maschine
+software again, reconnect the controller to your computer.
+
+- **MK3 / Maschine+:** you can use the controller's built-in audio inputs,
+  headphone output and line outputs. Audio and controls use the same USB link.
+- **Mikro / MK1 / MK2:** connect a supported USB audio interface or audio HAT to
+  the Pi. Plug headphones or speakers into that audio device.
+- **Storage:** the SD card holds the system and can also hold your music.
+  Optional USB storage adds room for samples and backups.
+- **Browser:** a phone, tablet or computer is optional for file transfers and
+  detailed editing. The controller handles normal music making.
+- **Maschine+:** use Controller mode with an external Pi. This does not install
+  Machinista inside the Maschine+.
+
+A computer is needed once to prepare the SD card. A Pi is still a computer;
+this setup lets you play without a laptop, monitor or mouse beside it.
+
+[Step-by-step setup](docs/INSTALL.md) · [Deutsch](docs/OVERVIEW_DE.md) ·
+[Compatible plug-in downloads](docs/PLUGIN_PORTS.md)
+
 ## What can I make with it?
 
 - **Beats:** play drums on the pads, record a repeating phrase, or place hits one

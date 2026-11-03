@@ -5,6 +5,28 @@ auf einem Raspberry Pi und wird mit deinem Controller bedient. Beim Musikmachen
 brauchst du keinen angeschlossenen Laptop. Der eingebaute Synthesizer bringt
 fertige Klänge mit. Eigene Samples kannst du aufnehmen oder hochladen.
 
+## So wird es angeschlossen
+
+![Anschlussübersicht](../assets/setup/connections-de.svg)
+
+**Der Pi erzeugt den Klang. Der Controller stellt Pads, Regler und Displays bereit.**
+Die Controller-Firmware wird nicht ersetzt. Für die ursprüngliche Maschine-Software
+schließt du den Controller einfach wieder per USB an deinen Computer an.
+
+- **MK3 / Maschine+:** Das eingebaute Audiointerface funktioniert. Kopfhörer oder
+  Lautsprecher kommen an den Controller; Audio und Bedienung nutzen dasselbe USB-Kabel.
+- **Mikro / MK1 / MK2:** Du brauchst ein unterstütztes USB-Audiointerface oder
+  Audio-HAT am Pi. Dort schließt du Kopfhörer oder Lautsprecher an.
+- **Speicher:** Die SD-Karte enthält das System und kann auch Samples und Projekte
+  speichern. Ein USB-Laufwerk ist eine optionale Erweiterung.
+- **WebUI:** Handy, Tablet oder Computer sind für Dateiverwaltung und detailliertes
+  Bearbeiten optional. Zum normalen Musikmachen genügt der Controller mit dem Pi.
+- **Maschine+:** Controller-Modus und externer Pi; kein Austausch des internen Systems.
+
+Ein Computer wird einmal zum Beschreiben der SD-Karte benötigt. Der Pi ist selbst
+auch ein Computer, aber beim Spielen brauchst du daneben keinen Laptop oder Monitor.
+[Einrichtung Schritt für Schritt](INSTALL.md) · [Passende Plug-in-Downloads](PLUGIN_PORTS.md)
+
 ## Was kann ich damit machen?
 
 - **Beats bauen:** Drums auf den Pads einspielen oder Anschläge Schritt für
