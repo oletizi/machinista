@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "channel": "beta",
-  "version": "0.1.0-beta.13",
+  "version": "0.1.0-beta.14",
   "minimum_version": "0.1.0-beta.8",
   "os_codename": "trixie",
   "architecture": "arm64",
-  "notes": "MK3 PERFORM closes Live FX on the second press and releases active effects. Sampling peaks and threshold use the same -60..0 dBFS scale as MK1/MK2, with L/R labels and scale ticks. Includes all beta 12 features.",
+  "notes": "Clip Arranger, Furnace on new installations, controller color schemes, optional stem separation, MP3 export, confirmed WebUI deletion, reliable export progress and updated manuals. After updating, missing Spectral Machines bank can be imported from the separate release JSON.",
   "artifact": {
-    "url": "https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/machinista-0.1.0-beta.13-arm64.tar.gz",
-    "size": 37317409,
-    "sha256": "73eea56464b9986f6f7844ed1813cea613355035a505138808254062464e397c"
+    "url": "https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.14/machinista-0.1.0-beta.14-arm64.tar.gz",
+    "size": 46088767,
+    "sha256": "56b5a45642a592de4d25ac080de194488e9dfba66f7141574fb85cc172fcf587"
   }
 }
