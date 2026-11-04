@@ -308,7 +308,7 @@ class Mk3Renderer:
             if s['page'] in ('CLIP ARRANGER','CLIP MENU'):title='CLIP ARRANGER' if side==0 else 'CLIP ACTIONS' if s['page']=='CLIP MENU' else 'SELECTED CLIP'
             if 'mixer' in s:
                 m=s['mixer'];title=('MASTER MIXER' if m.get('master_mixer') else 'GROUP MIXER' if s.get('scope')==1 else 'SOUND MIXER')
-            if side==0 and 'project_list' in s:title='PROJECTS'
+            if side==0 and 'project_list' in s:title='MANAGE PROJECTS' if s['page']=='PROJECT MANAGE' else 'PROJECTS'
             if side==0 and 'updater' in s:title='SOFTWARE UPDATE'
             if side==0 and 'settings_menu' in s:title='SETTINGS / '+s['settings_menu'][0]
             if 'events_native' in s:
@@ -517,16 +517,17 @@ class Mk3Renderer:
             q.text(18,183,'Machinista + Raspberry Pi OS',14,True,width=442)
         elif 'project_list' in s:
             entries,index=s['project_list']
+            manage=s['page']=='PROJECT MANAGE'
             if entries:
                 # Keep each page stationary while the colored cursor visits all
                 # six rows. Never feed the monochrome, pre-scrolled arrow list.
                 self.list(p,entries,index,first=index//6*6)
-                q.text(20,96,'SELECTED PROJECT',12,True,color=MUTED,width=440)
+                q.text(20,96,'SELECTED ACTION' if manage else 'SELECTED PROJECT',12,True,color=MUTED,width=440)
                 size=23
                 while size>14 and q.draw.textlength(entries[index],font=font(size,True))>440:size-=1
                 q.text(20,121,entries[index],size,True,width=440)
                 q.text(20,166,f'{index+1} / {len(entries)}',15,color=ACCENT,width=440)
-                q.text(20,194,'Press encoder to load',13,color=MUTED,width=440)
+                q.text(20,194,'Press encoder to open' if manage else 'Press encoder to load',13,color=MUTED,width=440)
             else:
                 p.text(20,100,'No saved projects',19,color=MUTED,width=440)
                 q.text(20,100,'Create or import a project',17,color=MUTED,width=440)

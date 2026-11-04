@@ -98,6 +98,10 @@ def snapshot(surface):
         state['choice']='LOAD PROJECT'
         entries=tuple(a.project_label(path) for path in a.project_files())
         state['project_list']=(entries,max(0,min(a.project_choice,len(entries)-1)))
+    elif a.page=='PROJECT MANAGE':
+        from app.project_manager import MANAGE
+        state['choice']='PROJECT ACTION'
+        state['project_list']=(MANAGE,max(0,min(a.manage_index,len(MANAGE)-1)))
     if a.page in ('SAMPLER','PLUGIN','AUDIO LOOP') and state.get('page_index',0)==0:
         state['chain_cards']=chain_state(surface)
     if a.page in ('PATTERN GRID','GRID EDIT'):

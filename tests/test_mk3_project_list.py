@@ -73,4 +73,20 @@ class ProjectListTests(unittest.TestCase):
         self.assertIn('No saved projects',[call.args[3] for call in text.call_args_list])
         self.projects(2);self.assertEqual(snapshot(self.surface)['project_list'][1],1)
 
+    def test_manage_actions_use_real_selection_and_fixed_pages_without_arrows(self):
+        from app.project_manager import MANAGE
+        self.app.page='PROJECT MANAGE'
+        for index in (*range(len(MANAGE)),*reversed(range(len(MANAGE)))):
+            self.app.manage_index=index;state=snapshot(self.surface)
+            self.assertEqual(state['project_list'],(MANAGE,index))
+            with patch.object(Canvas,'text',autospec=True) as text:left,_=self.renderer.draw(state)
+            rendered=[str(call.args[3]) for call in text.call_args_list]
+            self.assertFalse(any(t.startswith(('>','▸')) for t in rendered))
+            first=index//6*6
+            for row in range(min(6,len(MANAGE)-first)):
+                self.assertEqual(left.getpixel((450,95+row*21)),ImageColor.getrgb(ACCENT if first+row==index else BG))
+                self.assertIn(MANAGE[first+row],rendered)
+            self.assertIn('Press encoder to open',rendered)
+        self.assertNotIn('project_list',mono_snapshot(self.surface))
+
 if __name__=='__main__':unittest.main()
