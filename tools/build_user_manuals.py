@@ -599,7 +599,7 @@ class Manual:
         width=CW if self.device!='mikro' else 300;height=width*(272/976 if self.device=='mk3' else 64/528 if self.device!='mikro' else .5)
         c.drawImage(item['paths'][self.device],M,H-320-height,width,height)
         c.setFillColor(HexColor('#b8d2d6'));c.setFont('Manual',11)
-        for i,line in enumerate(['Play. Record. Slice. Sequence. Arrange.','English edition','Machinista 0.1.0-beta.14 / Fokus V2','4 November 2026']):c.drawString(M,160-i*22,line)
+        for i,line in enumerate(['Play. Record. Slice. Sequence. Arrange.','English edition','Machinista 0.1.0-beta.15 / Fokus V2','4 November 2026']):c.drawString(M,160-i*22,line)
         c.showPage()
 
     def contents(self):
