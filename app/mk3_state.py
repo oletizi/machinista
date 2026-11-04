@@ -90,6 +90,7 @@ def chain_state(surface):
 
 def snapshot(surface):
     state=shared_snapshot(surface);a=surface.app
+    state['color_scheme']=a.settings['controllers'][surface.source].get('color_scheme','current')
     state['group_label']=a.group_name();state['group_bank']=a.group_bank
     state['wave_preload']=a.track().get('sample')
     if a.page in ('PAD','CHANNEL'):state['output_art']=output_art(a)
@@ -112,9 +113,10 @@ def snapshot(surface):
     if 'mixer' in state:
         m=state['mixer'];first=m['first'];level=a.mixer_level
         targets=([a.project] if level==0 else a.project['groups'][first:first+len(m['levels'])] if level==1 else a.project['groups'][a.group]['pads'][first:first+len(m['levels'])])
+        m['gains']=tuple(max(0,min(100,t.get('gain',100)))/100 for t in targets)
         m['status']=tuple((bool(t.get('mute')),bool(t.get('solo'))) for t in targets)
         m['colors']=tuple((first+i)%8 if level==1 else a.group%8 for i in range(len(targets)))
         if a.mixer_field==0:
             from app.ni_display import formatted
-            state['fields']=tuple((f[0],formatted(f[1],'gain')) if f and isinstance(f[1],(int,float)) else f for f in state['fields'])
+            state['fields']=tuple((f[0],formatted(t.get('gain',100),'gain')) if f else None for f,t in zip(state['fields'],targets))+(None,)*max(0,8-len(targets))
     return state

@@ -109,3 +109,10 @@ again to leave it. Display button 4 is SELECT/SELECTED. Hold that button or the
 physical SELECT button and turn the 4D encoder to select a time range on the
 selected Sound. Display buttons 2 EDIT/DONE and 3 FOLLOW retain their actions.
 These bindings also apply to Maschine+ in controller mode.
+
+
+## Display color presets
+
+Open SETTINGS > SYSTEM > DISPLAY > COLOR SCHEME. Turn encoder 1 or the 4D encoder to choose Current, Furnace, Polar, Voltage, Amber or Daylight. The choice is saved automatically for this controller; MK3 and Maschine+ retain independent choices. RESET restores Current. Current keeps the existing palette; the remaining screen layouts and encoder assignments are unchanged. Group and pad LED identities remain unchanged.
+
+The mixer uses continuous stereo meters in each group's color, peak-hold markers, red clipping warnings and a fader indicator reflecting the actual channel gain. Its eight encoder strips remain aligned across both displays; LEVEL, PAN, ROUTE, mute/solo and peak reset keep their existing behavior.

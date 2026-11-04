@@ -1,6 +1,7 @@
 """Native color MK3 views. Immutable snapshots, real meters/waveforms only."""
 import math
 import time
+from app.mk3_theme import themed,resolve,foreground,GroupColor
 from pathlib import Path
 from app.mk3_graphics import Canvas,BG,PANEL,LINE,INK,MUTED,ACCENT,GROUPS,font
 from app.mk3_style import CYAN,PURPLE,YELLOW,GREEN,RED,tint,parameter_color
@@ -188,6 +189,55 @@ class Mk3Renderer:
                 if icon is not None:c.image.paste(icon,(x+19,102),icon)
                 c.text(x+57,182,s['keys'][index],12,True,INK,width=106,center=True)
 
+    def mixer(self,p,q,s):
+        """Eight physical encoder strips, continuous group-colored stereo meters."""
+        m=s['mixer'];master=m.get('master_mixer');field=m.get('mixer_field',0)
+        for side,c in enumerate((p,q)):
+            for i in range(4):
+                index=side*4+i
+                if master:
+                    if side or i>1:continue
+                    slot=0;pair=(m['levels'][0][i],);caption=('L','R')[i];color=self.accent
+                elif index<len(m['levels']):
+                    slot=index;pair=m['levels'][slot][:2];caption=m['names'][slot]
+                    color=GROUPS[m.get('colors',(s.get('group',0)%8,)*len(m['levels']))[slot]]
+                else:continue
+                x=11+i*118;selected=master or m['first']+index==m['selected']
+                mute,solo=m.get('status',((False,False),)*len(m['levels']))[slot]
+                c.rect(x,94,104,107,PANEL,radius=3)
+                header=color if selected else tint(color,.35)
+                c.rect(x,94,104,23,header,radius=2)
+                c.text(x+7,98,caption,11,True,foreground(header),width=88)
+                for channel,value in enumerate(pair):
+                    xx=x+12+channel*18;c.rect(xx,124,12,67,LINE)
+                    db=20*math.log10(max(value,1e-9));h=round(max(0,min(1,(db+60)/60))*67)
+                    if h:c.rect(xx,191-h,12,h,color)
+                    peak=m['peaks'][slot][i if master else channel]
+                    if peak>0:
+                        held=round(max(0,min(1,(60+20*math.log10(peak))/60))*67)
+                        c.rect(xx,191-held,12,2,RED if peak>=1 else INK)
+                    if value>=1:c.rect(xx,123,12,3,RED)
+                gain=m.get('gains',(1,)*len(m['levels']))[slot]
+                c.line((x+77,127,x+77,189),LINE,3)
+                fy=186-round(gain*56);c.rect(x+66,fy,23,7,INK,radius=1)
+                if mute or solo:
+                    c.rect(x+48,177,15,19,RED if mute else YELLOW,radius=2)
+                    c.text(x+55,179,'M' if mute else 'S',10,True,BG,center=True,width=14)
+                # The physical encoder footer keeps LEVEL/PAN/ROUTE bindings.
+                f=s.get('fields',())[index] if index<len(s.get('fields',())) else None
+                if f:
+                    fx=i*120+5;c.rect(fx,222,110,44,PANEL,radius=3)
+                    c.text(fx+7,225,f[0],10,color=MUTED,width=98)
+                    c.text(fx+7,241,f[1],16,True,width=98)
+                    c.rect(fx+7,261,96,3,LINE)
+                    if field==0:c.rect(fx+7,261,round(96*gain),3,color)
+                    else:c.rect(fx+7,261,96,3,color)
+        if master:
+            q.text(20,106,'MASTER OUTPUT',22,True,width=440)
+            q.text(20,143,'L / R  ·  −60 TO 0 dBFS',13,color=MUTED,width=440)
+            q.text(20,174,'PEAK HOLD / RESET',12,color=MUTED,width=440)
+
+    @themed
     def draw(self,s):
         # Mixer strips span both displays and share one vertical baseline.
         p,q=Canvas(),Canvas(compact_header='mixer' not in s and 'view_origin' not in s);accent=GROUPS[s.get('group',0)%8]
@@ -206,7 +256,7 @@ class Mk3Renderer:
                     x=10+i*28;status=statuses[i] if i<len(statuses) else None
                     selected=i==s.get('group',0)%8
                     c.rect(x,35,22,17,color,INK if selected else None,radius=3)
-                    c.text(x+11,35,chr(65+i),11,selected,BG,width=20,center=True)
+                    c.text(x+11,35,chr(65+i),11,selected,foreground(color) if s.get('color_scheme')=='daylight' else BG,width=20,center=True)
                     if status and status[1]:c.line((x+3,49,x+18,38),RED,1)
                     elif status and status[2]:c.rect(x+16,36,3,3,YELLOW)
                 running=s.get('recording') or s.get('capture_status')=='RECORDING'
@@ -216,6 +266,8 @@ class Mk3Renderer:
                 c.text(316,34,f'{s.get("tempo",0):.2f}',13,True,width=67)
                 c.text(438,34,s.get('position',''),13,True,width=73,center=True)
             title=(s.get('group_label',chr(65+s.get('group',0)%8))+' / '+s.get('title','Machinista')) if side==0 else s.get('choice',s.get('page',''))
+            if 'mixer' in s:
+                m=s['mixer'];title=('MASTER MIXER' if m.get('master_mixer') else 'GROUP MIXER' if s.get('scope')==1 else 'SOUND MIXER')
             if side==0 and 'project_list' in s:title='PROJECTS'
             if side==0 and 'updater' in s:title='SOFTWARE UPDATE'
             if side==0 and 'settings_menu' in s:title='SETTINGS / '+s['settings_menu'][0]
@@ -231,13 +283,24 @@ class Mk3Renderer:
                 if f:
                     label,value=f;color=parameter_color(label,s.get('group',0))
                     if 'mixer' in s and side*4+i<len(s['mixer'].get('colors',())):color=GROUPS[s['mixer']['colors'][side*4+i]]
+                    if 'mixer' in s:continue
                     c.rect(i*120+5,222,110,44,color,radius=4)
-                    c.text(i*120+10,224,label.replace('_',' ').upper(),11,color=BG,width=102)
+                    c.text(i*120+10,224,label.replace('_',' ').upper(),11,color=foreground(color) if isinstance(color,GroupColor) and s.get('color_scheme')=='daylight' else BG,width=102)
                     size=17
                     while size>12 and c.draw.textlength(str(value),font=font(size,True))>104:size-=1
-                    c.text(i*120+10,242,value,size,True,color=BG,width=104)
+                    c.text(i*120+10,242,value,size,True,color=foreground(color) if isinstance(color,GroupColor) and s.get('color_scheme')=='daylight' else BG,width=104)
                     if f'KNOB {side*4+i+1} TOUCH' in s.get('touches',()):c.rect(i*120+7,219,105,2,ACCENT)
-        if s['page']=='SLICE TARGET':
+        if s['page']=='COLOR SCHEME':
+            from app.mk3_theme import SCHEMES,LABELS,PALETTES
+            scheme=s.get('color_scheme','current');index=SCHEMES.index(scheme) if scheme in SCHEMES else 0
+            self.list(p,[LABELS[v] for v in SCHEMES],index,y=86,first=0)
+            q.rect(18,92,444,48,ACCENT,radius=3)
+            q.text(31,101,LABELS[SCHEMES[index]],25,True,BG,width=414)
+            q.text(20,152,'THIS CONTROLLER ONLY',12,color=MUTED,width=440)
+            for i,(label,color) in enumerate((('ACCENT',ACCENT),('SIGNAL',CYAN),('FILTER',YELLOW),('LEVEL',GREEN))):
+                q.rect(20+i*113,180,100,12,color,radius=2)
+                q.text(20+i*113,196,label,10,color=MUTED,width=102)
+        elif s['page']=='SLICE TARGET':
             target=s['target_group'];bank=s['target_bank']
             for i in range(min(8,s['groups']-bank*8)):
                 x=12+(i%4)*116;y=94+(i//4)*50;chosen=bank*8+i==target
@@ -287,29 +350,7 @@ class Mk3Renderer:
             q.text(20,116,s['grid']['footer'],20,True,width=440)
             q.text(20,160,'FOLLOW '+('ON' if s['grid']['follow'] else 'OFF'),16,True,color=accent)
             q.text(20,188,'Select / insert / erase with the softkeys',13,color=MUTED,width=440)
-        elif 'mixer' in s:
-            m=s['mixer'];levels=m['levels'];master=m.get('master_mixer')
-            for screen,c in enumerate((p,q)):
-                for i in range(4):
-                    index=screen*4+i
-                    if master:
-                        if screen or i>1:continue
-                        pair=levels[0];pair=(pair[i],pair[i]);caption=('L','R')[i];color=accent;slot=0
-                    elif index<len(levels):
-                        pair=levels[index];caption=m['names'][index];color=GROUPS[m.get('colors',(s.get('group',0)%8,)*len(levels))[index]];slot=index
-                    else:continue
-                    x=11+i*118;selected=not master and m['first']+index==m['selected']
-                    c.rect(x,94,104,111,tint(color,.38),INK if selected else None,3);c.rect(x,94,104,4,color)
-                    c.text(x+8,101,caption,11,True,color,width=94)
-                    for channel,v in enumerate(pair[:2]):
-                        xx=x+16+channel*28;c.rect(xx,123,21,69,PANEL)
-                        h=round(max(0,min(1,(60+20*math.log10(max(v,1e-9)))/60))*65) if v>0 else 0
-                        for y in range(0,h,5):c.rect(xx,189-y,21,3,RED if v>=1 and y>59 else YELLOW if y>49 else GREEN)
-                        peak=m['peaks'][0 if master else slot][channel if not master else i]
-                        if peak>0:
-                            py=round(max(0,min(1,(60+20*math.log10(max(peak,1e-9)))/60))*65);c.rect(xx,189-py,21,2,RED if peak>=1 else INK)
-                    mute,solo=m.get('status',((False,False),)*len(levels))[slot]
-                    if mute or solo:c.text(x+94,177,'M' if mute else 'S',11,True,RED if mute else YELLOW,width=14,center=True)
+        elif 'mixer' in s:self.mixer(p,q,s)
         elif 'keyboard_root' in s and not s.get('keyboard_slices'):
             p.text(20,105,s.get('chord_name','KEYBOARD') if s.get('keyboard_custom') else 'KEYBOARD',22,True,width=440)
             p.text(20,150,'Play the selected Sound',15,color=MUTED,width=440)
@@ -498,7 +539,7 @@ class Mk3Renderer:
             start,old,direction=self.chain_transition;progress=min(1,(now-start)/.18)
             if progress<1:
                 from PIL import Image
-                frame=Image.new('RGB',target.size,BG);vertical=direction in ('MASTER UP','MASTER DOWN')
+                frame=Image.new('RGB',target.size,resolve(BG));vertical=direction in ('MASTER UP','MASTER DOWN')
                 extent=target.height if vertical else target.width;shift=round(extent*progress)
                 sign=-1 if direction in ('MASTER RIGHT','MASTER DOWN') else 1
                 frame.paste(old,(0,sign*shift) if vertical else (sign*shift,0))
@@ -545,6 +586,7 @@ class Mk3Renderer:
             q.rect(8,179,464,33,PANEL,LINE,3);q.text(18,184,state['message'],15,True,width=444)
         return p.image,q.image
 
+    @themed
     def images(self,state):
         self.waveforms.collect()
         if not any(state.get(k) for k in ('wave','browser','sound_wave')):

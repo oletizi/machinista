@@ -1,10 +1,11 @@
 """Color Layers roles; group identity is independent from selection/status."""
 from PIL import ImageColor
+from app.mk3_theme import resolve
 from app.mk3_graphics import BG,ACCENT,GROUPS
 CYAN='#00dcff';PURPLE='#bc63ff';YELLOW='#ffda00';GREEN='#25ee77';RED='#ff304f'
 
 def tint(color,amount=.14,background='#000000'):
-    a=ImageColor.getrgb(color);b=ImageColor.getrgb(background)
+    a=ImageColor.getrgb(resolve(color));b=ImageColor.getrgb(resolve(background))
     return tuple(round(x*amount+y*(1-amount)) for x,y in zip(a,b))
 
 def parameter_color(label,group=0):

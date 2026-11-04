@@ -238,6 +238,10 @@ class Mk2Surface:
             for col,(label,value) in enumerate(rows[base:base+8]):
                 if label:field(col,label,value,_auto=base+col)
             return tuple(result)
+        if a.page=='COLOR SCHEME' and self.source in ('mk3','plus'):
+            from app.mk3_theme import LABELS
+            field(0,'PRESET',LABELS[a.settings['controllers'][self.source].get('color_scheme','current')],_controller_key='color_scheme')
+            return tuple(result)
         if a.page in DEVICE_PAGES:
             values=a.settings['controllers'][self.source]
             for col,key,label in ((0,'brightness','BRIGHT.'),(1,'pad_sensitivity','PAD SENS'),(2,'contrast_left','CNTR. L'),(3,'contrast_right','CNTR. R'),(4,'pad_curve','PAD CURVE'),(5,'invert','INVERT')):
@@ -497,6 +501,9 @@ class Mk2Surface:
                 origin=a.page;a.page='PAD SENS' if key=='pad_sensitivity' else 'PAD CURVE'
                 try:a.preferences_rotate(delta)
                 finally:a.page=origin
+            elif key=='color_scheme':
+                from app.mk3_theme import rotate
+                rotate(a,delta)
             elif key=='invert':
                 if delta:save_display(a,key,delta>0)
             else:

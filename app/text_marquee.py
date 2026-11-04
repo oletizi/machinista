@@ -80,6 +80,7 @@ def bitmap_names(marquee,state,frames):
 def color_names(marquee,state,images):
     from PIL import Image,ImageDraw
     from app.mk3_graphics import font,BG,INK,content_y
+    from app.mk3_theme import resolve
     from app.mk3_style import parameter_color
     marquee.begin(context(state));result=list(images)
     if state['page']=='PAD CONFIG' and state.get('keyboard_custom'):
@@ -92,8 +93,8 @@ def color_names(marquee,state,images):
             value=str(value);face=font(size,True);extent=math.ceil(face.getlength(value))
             offset=marquee.offset(key,value,width,extent,speed=42)
             if offset is None:continue
-            tile=Image.new('RGB',(width,height),bg)
-            ImageDraw.Draw(tile).text((-offset,0),value,font=face,fill=ink)
+            tile=Image.new('RGB',(width,height),resolve(bg))
+            ImageDraw.Draw(tile).text((-offset,0),value,font=face,fill=resolve(ink))
             result[side].paste(tile,(x,content_y(y,side==1)))
     marquee.end()
     return tuple(result)

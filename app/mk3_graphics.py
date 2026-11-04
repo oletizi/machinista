@@ -2,10 +2,11 @@
 import math
 from pathlib import Path
 from functools import lru_cache
+from app.mk3_theme import GroupColor,resolve,active
 from PIL import Image,ImageDraw,ImageFont,ImageChops
 WIDTH,HEIGHT=480,272
 BG='#11161e';PANEL='#202b3a';LINE='#344151';INK='#f1f4f7';MUTED='#a7b2c0';ACCENT='#ff8000'
-GROUPS=('#ff8000','#ff3048','#ffd000','#73e52b','#00dfaa','#1599ff','#a84fff','#ff36bb')
+GROUPS=tuple(GroupColor(v) for v in ('#ff8000','#ff3048','#ffd000','#73e52b','#00dfaa','#1599ff','#a84fff','#ff36bb'))
 @lru_cache(maxsize=48)
 def font(size=16,bold=False):
  name='DejaVuSans'+('-Bold' if bold else '')+'.ttf'
@@ -29,23 +30,23 @@ def content_y(y,compact_header=False):
 
 class Canvas:
  def __init__(self,compact_header=False):
-  self.compact_header=compact_header
-  self.image=Image.new('RGB',(WIDTH,HEIGHT),BG);self.draw=ImageDraw.Draw(self.image)
+  self.compact_header=compact_header;self.scheme=active()
+  self.image=Image.new('RGB',(WIDTH,HEIGHT),resolve(BG,self.scheme));self.draw=ImageDraw.Draw(self.image)
  def rect(self,x,y,w,h,fill=PANEL,outline=None,radius=0):
   if w<=0 or h<=0:return
   y=content_y(y,self.compact_header)
-  self.draw.rounded_rectangle((x,y,x+w-1,y+h-1),radius=radius,fill=fill,outline=outline)
+  self.draw.rounded_rectangle((x,y,x+w-1,y+h-1),radius=radius,fill=resolve(fill,self.scheme),outline=resolve(outline,self.scheme))
  def text(self,x,y,value,size=16,bold=False,color=INK,width=None,center=False):
-  stamp,length=text_stamp(str(value).replace('\n',' '),size,bold,color,width)
+  stamp,length=text_stamp(str(value).replace('\n',' '),size,bold,resolve(color,self.scheme),width)
   if center:x-=length/2
   self.image.paste(stamp,(round(x),round(content_y(y,self.compact_header))),stamp)
  def line(self,points,color=INK,width=1):
   if points and isinstance(points[0],(tuple,list)):
    points=tuple((x,content_y(y,self.compact_header)) for x,y in points)
   else:points=tuple(content_y(v,self.compact_header) if i%2 else v for i,v in enumerate(points))
-  self.draw.line(points,fill=color,width=width)
+  self.draw.line(points,fill=resolve(color,self.scheme),width=width)
  def polygon(self,points,color=INK):
-  self.draw.polygon(tuple((x,content_y(y,self.compact_header)) for x,y in points),fill=color)
+  self.draw.polygon(tuple((x,content_y(y,self.compact_header)) for x,y in points),fill=resolve(color,self.scheme))
  def wire(self,invert=False):return rgb565(self.image,invert)
 
 def rgb565(image,invert=False):

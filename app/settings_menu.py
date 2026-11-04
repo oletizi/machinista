@@ -16,7 +16,7 @@ SYSTEM_SECTIONS = {
     'DAC': ('HEADPHONE LEVEL','SPEAKER LEVEL','INPUT GAIN'),
     'POWER': ('REBOOT','SHUTDOWN'),
 }
-SETTING_PAGES = tuple(dict.fromkeys(p for pages in (*SETTINGS_FOLDERS.values(),*SYSTEM_SECTIONS.values()) for p in pages if p not in SYSTEM_SECTIONS))+('CONTRAST L','CONTRAST R')
+SETTING_PAGES = tuple(dict.fromkeys(p for pages in (*SETTINGS_FOLDERS.values(),*SYSTEM_SECTIONS.values()) for p in pages if p not in SYSTEM_SECTIONS))+('CONTRAST L','CONTRAST R','COLOR SCHEME')
 # Project retains its editing keys after opening from MAIN.
 SETTINGS_VIEWS = ('SETTINGS',) + tuple(p for p in SETTING_PAGES if p != 'PROJECT')
 SETTINGS_LABELS = {'AUDIO': 'INTERFACE', 'AUDIO RATE': 'SAMPLE RATE', 'AUDIO BUFFER': 'BUFFER', 'MIDI IN': 'INPUT', 'MIDI OUT': 'OUTPUT', 'MIDI CHANNEL': 'CHANNEL', 'MIDI SYNC': 'CLOCK', 'MIDI OFFSET': 'CLOCK OFFSET', 'SYSTEM': 'SYSTEM INFO', 'PADS': 'PAD RESPONSE', 'POWER': 'POWER', 'REBOOT': 'RESTART', 'SHUTDOWN': 'SHUT DOWN', 'DAC': 'DAC SETTINGS', 'PROJECT SETTINGS': 'PROJECT', 'PROJECT':'PROJECT MANAGER', 'BACK':'< BACK'}
@@ -46,6 +46,7 @@ class SettingsMenu:
     def setting_entries(self):
         entries=SYSTEM_SECTIONS[self.settings_section] if self.settings_section else SETTINGS_FOLDERS[self.settings_folder]
         if self.settings_section=='DISPLAY' and is_mk2(self):entries=('BRIGHTNESS','CONTRAST L','CONTRAST R','INVERT')
+        if self.settings_section=='DISPLAY' and self.controller_source in ('mk3','plus'):entries+=('COLOR SCHEME',)
         if not self.update_status.get('enabled'):entries=tuple(v for v in entries if v!='UPDATE')
         return entries+('BACK',) if self.settings_section else entries
 

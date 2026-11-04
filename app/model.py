@@ -844,6 +844,9 @@ class Application(MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,Mod
             key = 'midi_in' if self.page == 'MIDI IN' else 'midi_out'
             name = next((d.name for d in self.midi_devices if d.key == self.settings[key]), 'OFF' if self.settings[key] == 'OFF' else 'DEVICE MISSING')
             body, footer = [name, f'CHANNEL {self.settings["midi_channel"]}'], 'ENC PORT ENTER BACK'
+        elif self.page=='COLOR SCHEME':
+            from app.mk3_theme import LABELS
+            body=[LABELS.get(display_value(self),'Current'),'THIS CONTROLLER ONLY','SHIFT F1 RESET'];footer='ENTER BACK'
         elif self.page in DISPLAY_PAGES:
             value = display_value(self)
             body, footer = [('ON' if value else 'OFF') if self.page=='INVERT' else f'{value}%', (getattr(self,'controller_source','mk2').upper()+' '+('RIGHT' if self.page=='CONTRAST R' else 'BOTH' if self.page=='BRIGHTNESS' else 'BOTH' if self.page=='INVERT' else 'LEFT')) if is_mk2(self) else 'MIKRO ONLY', 'SHIFT F1 RESET'], 'ENTER BACK'
