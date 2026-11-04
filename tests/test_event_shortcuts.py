@@ -29,7 +29,7 @@ class EventShortcutTests(unittest.TestCase):
         self.select(1);self.assertEqual(a.grid_selected,{(1,31)})
         self.shortcut(9);self.assertNotIn((1,72),a.notes());self.assertNotIn((1,31),a.notes());self.assertIn((0,0),a.notes())
     def test_copy_paste_retargets_sound_and_retains_event_properties(self):
-        a=self.a;a.pad=1;self.select(2);self.shortcut(11);a.pad=4;self.shortcut(12)
+        a=self.a;a.pad=1;self.shortcut(11);a.pad=4;self.shortcut(12)
         for tick in (31,72):self.assertEqual(a.notes()[(4,tick)],a.notes()[(1,tick)])
         before=copy.deepcopy(a.project);self.shortcut(12);self.assertEqual(a.project,before);self.assertEqual(a.message,'TARGET OCCUPIED')
         validate_project(a.project)
@@ -40,6 +40,68 @@ class EventShortcutTests(unittest.TestCase):
         for tick in (31,72):self.assertEqual(a.notes()[(5,tick)],a.notes()[(1,tick)])
         self.assertNotIn((6,120),a.notes());self.assertIn((2,120),a.notes())
         self.shortcut(1);self.assertFalse(any(k[0]==5 for k in a.notes()))
+
+    def test_editor_copy_selection_pastes_at_cursor_and_preserves_spacing(self):
+        a=self.a;a.pad=1;a.page='PATTERN GRID';a.grid_follow=False;a.grid_step=1
+        a.grid_selected={(1,31),(1,72)};before=copy.deepcopy(a.project)
+        self.shortcut(11)
+        self.assertEqual(a.project,before);self.assertEqual(a.event_clipboard['scope'],'SELECTION')
+        a.grid_step=8;self.shortcut(12)
+        pasted={key:event for key,event in a.event_notes().items() if key in a.grid_selected}
+        self.assertEqual({key[1] for key in pasted},{192,233})
+        self.assertTrue(all(key[0]==1 for key in pasted))
+        for key,event in pasted.items():
+            original=a.event_notes()[(1,31 if key[1]==192 else 72)]
+            self.assertEqual({k:v for k,v in event.items() if k!='_id'},original)
+        self.assertIn((1,31),a.event_notes());self.assertIn((2,120),a.event_notes())
+        a.undo_action();self.assertEqual(a.project,before)
+        a.undo_action(redo=True);self.assertEqual(len(a.grid_selected & set(a.event_notes())),2)
+        validate_project(a.project)
+
+    def test_editor_copies_one_voice_not_unselected_chord_notes(self):
+        from app.polyphony import event_key,note_id
+        a=self.a;a.pad=1;a.page='PATTERN GRID';a.grid_notes=True;a.grid_step=3
+        keys=[]
+        for pitch,velocity in ((60,51),(64,109),(67,82)):
+            event=dict(note=pitch,velocity=velocity,length=65,probability=73,_id=note_id())
+            key=event_key(1,96,event);a.put_event(key,event);keys.append(key)
+        a.grid_selected={keys[1]};self.shortcut(11);a.grid_step=8;self.shortcut(12)
+        self.assertEqual(len(a.grid_selected),1)
+        key=next(iter(a.grid_selected));event=a.event_notes()[key]
+        self.assertEqual(key[:2],(1,192));self.assertNotEqual(key[2],keys[1][2])
+        self.assertEqual((event['note'],event['velocity'],event['length'],event['probability']),(64,109,65,73))
+        self.assertTrue(set(keys)<=set(a.event_notes()));validate_project(a.project)
+
+    def test_editor_no_selection_copies_whole_pad_at_original_times(self):
+        a=self.a;a.pad=1;a.page='PATTERN GRID';a.grid_step=0;a.grid_selected=set()
+        # A note under the cursor is not an explicit selection.
+        self.shortcut(11);self.assertEqual(a.event_clipboard['scope'],'SOUND')
+        a.pad=4;a.grid_step=8;self.shortcut(12)
+        self.assertEqual({key[1] for key in a.event_notes() if key[0]==4},{31,72})
+
+    def test_editor_stale_or_foreign_selection_does_not_copy_other_pad(self):
+        a=self.a;a.pad=1;a.page='PATTERN GRID'
+        for selected,context in (({(1,31)},(0,1)),({(2,120),(1,300)},(0,0))):
+            a.grid_context=context;a.grid_selected=selected;self.shortcut(11)
+            self.assertEqual(a.event_clipboard['scope'],'SOUND')
+            self.assertEqual({tick for row,tick,event in a.event_clipboard['notes']},{31,72})
+
+    def test_editor_selected_paste_out_of_range_is_atomic_and_clipboard_reusable(self):
+        a=self.a;a.pad=1;a.page='PATTERN GRID';a.grid_selected={(1,31),(1,72)}
+        self.shortcut(11);clip=copy.deepcopy(a.event_clipboard);before=copy.deepcopy(a.project)
+        a.grid_step=a.grid_length()-1;self.shortcut(12)
+        self.assertEqual(a.message,'PASTE OUT OF RANGE');self.assertEqual(a.project,before)
+        self.assertEqual(a.event_clipboard,clip)
+        a.pattern=1;a.pad=3;a.grid_step=4;self.shortcut(12)
+        self.assertEqual({key[:2] for key in a.event_notes()},{(3,96),(3,137)})
+        self.assertEqual(a.event_clipboard,clip);validate_project(a.project)
+
+    def test_editor_paste_overlapping_original_gets_independent_id(self):
+        a=self.a;a.pad=1;a.page='GRID EDIT';a.grid_step=3;a.grid_selected={(1,72)}
+        self.shortcut(11);self.shortcut(12)
+        notes=[(key,event) for key,event in a.event_notes().items() if key[:2]==(1,72)]
+        self.assertEqual(len(notes),2);self.assertEqual(len({key for key,event in notes}),2)
+        validate_project(a.project)
 
     def test_clear_ignores_foreign_event_selection_and_copy_empty_discards_clip(self):
         a=self.a;a.pad=0;a.grid_selected={(1,31),(1,72)};a.grid_context=(a.group,a.pattern)

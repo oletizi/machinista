@@ -52,8 +52,15 @@ class EventShortcuts:
         self.message='NOTES TRANSPOSED' if transpose else 'NOTES NUDGED'
     def copy_shortcut_events(self,focused=False):
         keys=self.focused_sound_events() if focused else self.event_shortcut_targets();notes=self.event_notes()
+        scope='SOUND' if focused else 'EVENTS'
+        if focused and self.page in ('PATTERN GRID','GRID EDIT'):
+            if self.grid_context!=(self.group,self.pattern):
+                self.grid_selected.clear();self.grid_context=(self.group,self.pattern)
+            self.grid_selected.intersection_update(notes)
+            selected=self.grid_selected & keys
+            if selected:keys=selected;scope='SELECTION'
         if not keys:self.event_clipboard=None;self.message='NO EVENTS';return
-        self.event_clipboard={'scope':'SOUND' if focused else 'EVENTS','notes':[(key[0],key[1],copy.deepcopy(notes[key])) for key in sorted(keys)],'group':self.group,'pattern':self.pattern,'focus':self.pad,'position':self.event_paste_position()}
+        self.event_clipboard={'scope':scope,'notes':[(key[0],key[1],copy.deepcopy(notes[key])) for key in sorted(keys)],'group':self.group,'pattern':self.pattern,'focus':self.pad,'position':self.event_paste_position()}
         self.message=f'{len(keys)} NOTES COPIED'
     def event_paste_position(self):
         return self.grid_step*self.grid_ticks() if self.page in ('PATTERN GRID','GRID EDIT') else max(0,self.clock_phase)
@@ -66,16 +73,19 @@ class EventShortcuts:
         if clip.get('scope')=='SOUND':
             # Copy a pad's phrase at its original Pattern times, even while playing.
             offset=0;row_offset=self.pad-clip['focus']
+        elif clip.get('scope')=='SELECTION':
+            # The earliest selected note lands on the editor cursor; keep spacing and pitches.
+            offset=position-first;row_offset=self.pad-clip['focus']
         else:
             offset=position-first if changed_position else 0 if self.playing or changed_focus or self.pattern!=clip['pattern'] else self.grid_ticks()
             row_offset=self.pad-min(r for r,t,e in clip['notes']) if changed_focus else 0
         payload=[(r+row_offset,t+offset,copy.deepcopy(e)) for r,t,e in clip['notes']]
         if any(not 0<=r<16 or not 0<=t<self.pattern_ticks() for r,t,e in payload):self.message='PASTE OUT OF RANGE';return
         notes=self.event_notes()
-        if any((r,t) in notes for r,t,e in payload if '_id' not in e):self.message='TARGET OCCUPIED';return
+        if clip.get('scope')!='SELECTION' and any((r,t) in notes for r,t,e in payload if '_id' not in e):self.message='TARGET OCCUPIED';return
         from app.polyphony import note_id,event_key
         for r,t,event in payload:
-            if '_id' in event or any(key[:2]==(r,t) for key in notes):event['_id']=note_id()
+            if clip.get('scope')=='SELECTION' or '_id' in event or any(key[:2]==(r,t) for key in notes):event['_id']=note_id()
         if not self.note_capacity([event_key(r,t,e) for r,t,e in payload]):self.message='NOTE LIMIT';return
         self.remember()
         selected=set()
