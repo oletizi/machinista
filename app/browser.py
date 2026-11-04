@@ -56,7 +56,7 @@ class Browser:
             self.error = ''
         except OSError:
             self.error = 'FOLDER UNAVAILABLE'
-        return sorted(result, key=lambda p: (not p.is_dir(), p.name.casefold()))
+        return sorted(result, key=lambda p: (not p.is_dir(), self.label(p).casefold()))
 
     def label(self, path):
         if self.directory is None:

@@ -25,7 +25,7 @@ class SampleSetTests(unittest.TestCase):
  def test_pack_splits_without_losing_samples_and_loads_as_group(self):
   result=self.upload([(f'{i:02}.wav',self.wav()) for i in range(17)])
   self.assertEqual(result['sets'],['My Kit 001','My Kit 002']);self.assertEqual([r['pads'] for r in self.lib.sets.listing()],[16,1])
-  a=Application(self.root);a.page='BROWSE';a.browser.refresh([]);a.browser.directory=self.root/'presets/Groups';a.enter()
+  a=Application(self.root);a.page='BROWSE';a.browser.refresh([]);a.browser.directory=self.root/'presets/Groups';self.assertEqual([a.browser.label(p) for p in a.browser.entries()],['My Kit 001','My Kit 002']);a.enter()
   action=next(v for k,v in a.actions if k=='preset_load');self.assertEqual(action['kind'],'GROUP')
   group=read_preset(action['path'],'GROUP',self.root);self.assertEqual(group['pads'][0]['name'],'00');self.assertTrue(Path(group['pads'][0]['sample']).is_file())
  def test_native_export_import_preserves_pad_order_and_audio(self):
