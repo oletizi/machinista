@@ -240,32 +240,42 @@ def _render_export(request,root,cancel,progress,location):
                         selected_plan.append(command)
                 initial=[*prefix,*selected_plan,'sequence_seek 0 1',f'sequence_transport {app.project["tempo"]} 1 0 0']
                 path=temporary/(label+('.wav' if render_format=='WAV' else '.aiff'));script='\n'.join([*initial,'render_start '+json.dumps(str(path))+f' {frames} {render_bus} {render_bits} {render_format} {loop_frames} {int(request.get("normalize",False))} {app.project["tempo"]} {ticks/384}','quit',''])
-                process=subprocess.Popen(['nice','-n','19',str(root/'build/audio_engine'),'--offline-render'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
-                try:
-                    started=time.monotonic();first=True
-                    while True:
-                        check_cancel(cancel);location.verify()
-                        try:
-                            output,error=process.communicate(script if first else None,timeout=.2);break
-                        except subprocess.TimeoutExpired:
-                            first=False
-                            if time.monotonic()-started>max(120,frames/request['rate']*3):raise ValueError('EXPORT TIMED OUT')
-                    if process.returncode:raise ValueError('EXPORT ENGINE FAILED')
-                    events=[json.loads(line) for line in output.splitlines() if line.startswith('{')]
-                    if any(e.get('status') in ('error','memory_limit') for e in events):raise ValueError('EXPORT ENGINE ERROR')
-                    result=next((e for e in reversed(events) if e.get('kind')=='export'),None)
-                    if result is None or result['status']!='finished' or result['frames']!=final_frames or result.get('overflow'):raise ValueError('EXPORT INCOMPLETE')
-                    verify_audio_export(path,render_format,render_bits,request['rate'],final_frames)
-                    if mp3:
-                        from app.export_mp3 import encode
-                        report(f'ENCODE MP3 {index+1}/{len(targets)}')
-                        output_path=temporary/(label+'.mp3')
-                        encode(path,output_path,request['rate'],final_frames,request.get('bitrate',320),cancel,location.verify)
-                        path.unlink();path=output_path
-                    with path.open('rb') as rendered:os.fsync(rendered.fileno())
-                    results.append(dict(file=path.name,bus=bus,peak=result['peak'],gain=result.get('gain',1)))
-                finally:
-                    if process.poll() is None:process.kill();process.communicate()
+                # A file-backed command stream survives polling timeouts even
+                # when plugin loading pauses input consumption. communicate()
+                # retries with no input can otherwise strand a partly sent pipe.
+                with tempfile.TemporaryFile(mode='w+',encoding='utf-8') as instructions:
+                    instructions.write(script);instructions.seek(0)
+                    process=subprocess.Popen(['nice','-n','19',str(root/'build/audio_engine'),'--offline-render'],stdin=instructions,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    try:
+                        started=time.monotonic();percent=-1
+                        while True:
+                            check_cancel(cancel);location.verify()
+                            try:
+                                output,error=process.communicate(timeout=.2);break
+                            except subprocess.TimeoutExpired:
+                                rendered=Path(str(path)+'.render.tmp') if processing else path
+                                try:
+                                    done=max(0,rendered.stat().st_size-64)//(2*(4 if processing else render_bits//8))
+                                    current=min(99,done*100//frames)
+                                except OSError:current=0
+                                if current!=percent:percent=current;report(f'RENDER {index+1}/{len(targets)} {percent}%')
+                                if time.monotonic()-started>max(120,frames/request['rate']*3):raise ValueError('EXPORT TIMED OUT')
+                        if process.returncode:raise ValueError('EXPORT ENGINE FAILED')
+                        events=[json.loads(line) for line in output.splitlines() if line.startswith('{')]
+                        if any(e.get('status') in ('error','memory_limit') for e in events):raise ValueError('EXPORT ENGINE ERROR')
+                        result=next((e for e in reversed(events) if e.get('kind')=='export'),None)
+                        if result is None or result['status']!='finished' or result['frames']!=final_frames or result.get('overflow'):raise ValueError('EXPORT INCOMPLETE')
+                        verify_audio_export(path,render_format,render_bits,request['rate'],final_frames)
+                        if mp3:
+                            from app.export_mp3 import encode
+                            report(f'ENCODE MP3 {index+1}/{len(targets)}')
+                            output_path=temporary/(label+'.mp3')
+                            encode(path,output_path,request['rate'],final_frames,request.get('bitrate',320),cancel,location.verify)
+                            path.unlink();path=output_path
+                        with path.open('rb') as rendered:os.fsync(rendered.fileno())
+                        results.append(dict(file=path.name,bus=bus,peak=result['peak'],gain=result.get('gain',1)))
+                    finally:
+                        if process.poll() is None:process.kill();process.communicate()
             check_cancel(cancel)
             save_json(temporary/'Export.json',dict(format='Machinista-audio-export',version=2,container=format,bits=None if mp3 else bits,bitrate=request.get('bitrate',320) if mp3 else None,encoding='MP3' if mp3 else 'float' if bits==32 else 'PCM',project=app.project['name'],mode=request['mode'],source=request['source'],rate=request['rate'],frames=final_frames,render_frames=frames,tempo=app.project['tempo'],bars=ticks/384,loop_optimize=request.get('loop_optimize',False),normalize=request.get('normalize',False),tail=request['tail'],files=results,external_midi='not rendered',modulation='256-frame blocks'))
         location.verify()

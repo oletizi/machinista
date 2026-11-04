@@ -8,6 +8,7 @@ import tempfile
 import threading
 import unittest
 import wave
+from unittest.mock import patch
 from app.model import Application
 from app.export_audio import compile_export,export_spans,export_targets,render_export
 from app.ni_display import frame
@@ -62,6 +63,39 @@ class ExportTests(unittest.TestCase):
         cancel=threading.Event();cancel.set()
         with self.assertRaisesRegex(ValueError,'CANCELED'):compile_export(self.a,self.request(),cancel)
         with self.assertRaisesRegex(ValueError,'EMPTY'):export_spans(self.a,self.request(mode='SONG'))
+
+
+class ExportTransportTests(unittest.TestCase):
+    setUp=ExportTests.setUp
+    request=ExportTests.request
+
+    def test_large_command_stream_survives_slow_engine_start_and_polling(self):
+        import sys
+        engine=self.root/'build/audio_engine';engine.parent.mkdir()
+        received=self.root/'received-bytes'
+        engine.write_text('#!'+sys.executable+'\n'+'''import sys,time,shlex,wave,json
+from pathlib import Path
+time.sleep(.4)
+script=sys.stdin.read()
+Path('''+repr(str(received))+''').write_text(str(len(script)))
+rate=int(script.splitlines()[0].split()[1])
+line=next(line for line in script.splitlines() if line.startswith('render_start '))
+fields=shlex.split(line);frames=int(fields[2])
+with wave.open(fields[1],'wb') as wav:
+ wav.setparams((2,2,rate,0,'NONE','not compressed'));wav.writeframes(bytes(frames*4))
+print(json.dumps(dict(kind='export',status='finished',frames=frames,peak=0,overflow=0)))
+''');engine.chmod(0o755)
+        cancel=threading.Event();timer=threading.Timer(3,cancel.set);timer.start()
+        progress=[]
+        class Progress:
+            def put(self,value):progress.append(value)
+        try:
+            with patch('app.export_audio.compile_export',return_value=([],['#'+'x'*4096]*64,48000)):
+                destination=render_export(self.request(),self.root,cancel,Progress())
+            self.assertGreater(int(received.read_text()),262144)
+            with wave.open(str(destination/'Mix.wav')) as wav:self.assertEqual(wav.getnframes(),48000)
+            self.assertTrue(any(v.startswith('RENDER 1/1 ') and v.endswith('%') for v in progress))
+        finally:timer.cancel()
 
 
 @unittest.skipUnless((ROOT/'build/audio_engine').exists() and Path('/usr/share/alsa/alsa.conf').exists(),'Linux native build required')
