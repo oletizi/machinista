@@ -72,9 +72,23 @@ class Projects:
             if p.is_symlink() or not p.is_file() or p.name!='current.json' and not PROJECT.fullmatch(p.name):continue
             try:
                 project=self.document(p.name);info=p.stat()
-                rows.append(dict(id=p.name,name=project['name'],current=p.name=='current.json',size=info.st_size,modified=info.st_mtime))
+                rows.append(dict(id=p.name,name=project['name'],current=p.name=='current.json',size=info.st_size,modified=info.st_mtime,version=str(info.st_mtime_ns)))
             except (ValueError,OSError):continue
         return sorted(rows,key=lambda r:(not r['current'],r['name'].casefold(),r['id']))
+    def delete(self,value):
+        if not isinstance(value,dict) or value.get('confirmed') is not True:raise ValueError('Confirm project deletion first.')
+        if not self.library.upload_lock.acquire(blocking=False):raise BlockingIOError('Another transfer is in progress.')
+        try:
+            socket=self.library.root/'samples/.sound-control.sock'
+            if socket.exists():
+                from app.sound_runtime import request
+                context=request(self.library.root,'status')
+                if not context.get('available'):raise ValueError('Controller engine unavailable. Try again shortly.')
+                coordinates={k:context[k] for k in ('generation','group','pad','revision')}
+                return request(self.library.root,'project_delete',**dict(value,**coordinates))
+            from app.project_delete import delete
+            return delete(self.library.root,value)
+        finally:self.library.upload_lock.release()
     def roots(self):return [self.folder,self.library.samples]+[s.path for s in self.library.scan()]
     def asset(self,value,base):
         if not isinstance(value,str):raise ValueError('Invalid asset reference.')

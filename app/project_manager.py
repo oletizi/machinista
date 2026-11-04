@@ -111,15 +111,7 @@ class ProjectManager:
             if self.active_project_file() is None:
                 self.project['file_id']=self.next_project_id()
             self.save()
-            self.project_generation+=1
-            self.automation_restore()
-            self.project=new_project();self.project.update(name=name,file_id=self.next_project_id())
-            self.playing=self.recording=False
-            self.group=self.pad=self.pattern=self.scene=0
-            self.active_patterns=[0]*8;self.step=-1;self.undo.clear()
-            self.init_workspaces();self.init_surface();self.init_live_fx();self.live_fx_send(0,0,pressed=False);self.init_sampler();self.init_slicing();self.init_navigation()
-            self.actions.extend([('panic',None),('reload',None)])
-            self.save();self.page=self.control_home()
+            project=new_project();project.update(name=name,file_id=self.next_project_id());self.reset_project(project)
         elif action=='SAVE AS':
             # Keep the old named slot intact; a new stable ID holds the copy.
             self.project.update(name=name,file_id=self.next_project_id())
@@ -136,6 +128,17 @@ class ProjectManager:
             self.page=self.name_origin
             self.message='PROJECT RENAMED'
         self.name_action=None
+
+    def reset_project(self,project=None):
+        from app.model import new_project
+        self.project_generation+=1;self.automation_restore()
+        self.project=new_project() if project is None else project
+        self.playing=self.recording=False
+        self.group=self.pad=self.pattern=self.scene=0
+        self.active_patterns=[0]*len(self.project['groups']);self.step=-1;self.undo.clear()
+        self.init_workspaces();self.init_surface();self.init_live_fx();self.live_fx_send(0,0,pressed=False);self.init_sampler();self.init_slicing();self.init_navigation()
+        self.actions.extend([('panic',None),('reload',None)])
+        self.save();self.page=self.control_home()
 
     def delete_project(self,path):
         active=path==self.active_project_file()

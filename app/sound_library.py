@@ -55,6 +55,36 @@ def mapping(rows,extend=True):
 
 class SoundLibrary:
     def __init__(self,root):self.root=Path(root).resolve();self.folder=self.root/'presets/Sounds'
+    def hidden_banks(self):
+        path=self.folder/'.hidden-bank-sounds.json'
+        if path.is_symlink():raise ValueError('Invalid Sound catalog.')
+        values=json.loads(path.read_text()) if path.exists() else []
+        if not isinstance(values,list):raise ValueError('Invalid Sound catalog.')
+        return {self.identity(v) for v in values}
+    def delete(self,value):
+        if not isinstance(value,dict) or value.get('confirmed') is not True:raise ValueError('Confirm Sound deletion first.')
+        identity=self.identity(value.get('id'))
+        with self.writing():
+            row=self.row(identity)
+            if row is None:raise FileNotFoundError('Sound not found.')
+            if row['name']!=value.get('name'):raise ValueError('Sound changed. Refresh and try again.')
+            relative=Path(row['link']);category=str(relative.parent) if str(relative.parent)!='.' else ''
+            with self.directory() as fd:
+                try:os.mkdir('.trash',mode=0o700,dir_fd=fd)
+                except FileExistsError:pass
+                child=os.open('.trash',os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=fd);os.close(child)
+            # A catalog deletion never removes samples already used by projects.
+            trash=self.folder/'.trash'/secrets.token_hex(16);trash.mkdir(mode=0o700)
+            with self.directory(category) as fd:
+                child=os.open(relative.name,os.O_RDONLY|os.O_NOFOLLOW,dir_fd=fd)
+                with os.fdopen(child,'rb') as source:body=source.read(MAX_JSON+1)
+                if len(body)>MAX_JSON:raise ValueError('Invalid Sound entry.')
+                (trash/'Sound.sound').write_bytes(body)
+                if row.get('readonly'):
+                    hidden=self.hidden_banks();hidden.add(identity)
+                    self.atomic(self.folder/'.hidden-bank-sounds.json',sorted(hidden))
+                os.unlink(relative.name,dir_fd=fd);os.fsync(fd)
+            return dict(ok=True,message='Sound deleted. A recovery copy was kept.')
     @staticmethod
     def identity(identity):
         if not isinstance(identity,str) or len(identity)!=32 or any(c not in '0123456789abcdef' for c in identity):raise ValueError('Invalid Sound ID.')
@@ -78,7 +108,7 @@ class SoundLibrary:
             if p.is_symlink() or not p.is_dir():raise ValueError('Invalid or missing Sound bundle.')
         return path
     def scan(self):
-        rows=[];directories={''};bank_presence={}
+        rows=[];directories={''};bank_presence={};hidden=self.hidden_banks()
         def walk(relative,depth):
             if depth>8:return
             with self.directory(relative) as fd:
@@ -95,6 +125,7 @@ class SoundLibrary:
                             with os.fdopen(f,'rb') as stream:value=json.loads(stream.read(MAX_JSON+1))
                             identity=self.identity(value['id'])
                             if value.get('format')=='Machinista-bank-sound':
+                                if identity in hidden:continue
                                 from app.bank_sounds import bank_exists
                                 from app.plugin_profiles import profile
                                 key=(value['uri'],value['bank'])

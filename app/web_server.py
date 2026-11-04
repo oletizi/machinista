@@ -228,12 +228,13 @@ class Handler(BaseHTTPRequestHandler):
                     if not isinstance(value,dict):raise ValueError('Invalid SoundFont request.')
                     action={'/api/soundfonts/inspect':library.soundfonts.inspect,'/api/soundfonts/import':library.soundfonts.import_sound,'/api/soundfonts/delete':library.soundfonts.delete}[path]
                     self.json(action(value));return
-                if path in ('/api/sounds/save','/api/sounds/command','/api/sounds/folder','/api/sounds/sample-info'):
+                if path in ('/api/sounds/save','/api/sounds/command','/api/sounds/folder','/api/sounds/sample-info','/api/sounds/delete'):
                     from app.sound_library import MAX_JSON,folders
                     length=int(self.headers.get('Content-Length','0'))
                     if self.headers.get('Transfer-Encoding') or not 0<length<=MAX_JSON:raise ValueError('Invalid Sound request size.')
                     value=json.loads(self.rfile.read(length))
-                    if path.endswith('/sample-info'):self.json(library.sounds.info(value))
+                    if path.endswith('/delete'):self.json(library.sounds.delete(value))
+                    elif path.endswith('/sample-info'):self.json(library.sounds.info(value))
                     elif path.endswith('/save'):self.json(library.sounds.save(value))
                     elif path.endswith('/folder'):
                         with library.sounds.store.directory(folders(value.get('folder','')),True):pass
@@ -301,6 +302,10 @@ class Handler(BaseHTTPRequestHandler):
                 if path=='/api/projects/upload':
                     if self.headers.get('Transfer-Encoding'):raise ValueError('Content-Length required.')
                     self.json(library.projects.upload(q.get('name',''),self.rfile,int(self.headers.get('Content-Length','0'))));return
+                if path=='/api/projects/delete':
+                    length=int(self.headers.get('Content-Length','0'))
+                    if self.headers.get('Transfer-Encoding') or not 0<length<=8192:raise ValueError('Invalid project request size.')
+                    self.json(library.projects.delete(json.loads(self.rfile.read(length))));return
                 if path in ('/api/oscillators/upload','/api/oscillators/delete','/api/oscillators/edit'):
                     from app import synth_library as synth
                     if not library.upload_lock.acquire(blocking=False):raise BlockingIOError('Another upload is in progress.')

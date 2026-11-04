@@ -12,7 +12,13 @@ All interface assets are local; no external packages or CDNs are loaded.
 - **Sounds:** create multisample instruments, edit key/velocity zones, save the
   selected live LV2 Sound and plug-in strip, or run the Autosampler. See
   SOUNDS_AND_AUTOSAMPLER.md for English/German workflows on WebUI and controllers.
+  Each Sound has a confirmed Delete action, including generated bank patches.
+  Deleted bank entries stay hidden after refresh/restart. The original bank and
+  assets used by existing projects remain; recovery links are in `presets/Sounds/.trash`.
 - **Projects:** upload and download project archives with their sample assets.
+  Delete is available for every project and always asks for confirmation. Deleting
+  the loaded project opens an empty project; stop playback and recording first.
+  Recovery manifests are kept under `projects/.trash`; sample/plugin assets remain.
 - **Chords:** import MPC progression and Ripchord chord presets and edit mappings.
 - **LV2 Plugins:** upload compatible compiled Linux ARM64 bundles, check them,
   list installed plug-ins and remove them. No plug-ins are bundled in the image.

@@ -57,7 +57,7 @@ class SoundRuntime:
                     if len(raw)>65536:raise ValueError('Request too large.')
                     value=json.loads(raw);operation=value.get('operation')
                     if operation=='status':result=copy.deepcopy(self.snapshot)
-                    elif operation in ('load','save_current','autosample','cancel','plugin_parameters','synth_edit','update_prepare'):
+                    elif operation in ('load','save_current','autosample','cancel','plugin_parameters','synth_edit','update_prepare','project_delete'):
                         done=queue.Queue(1);self.requests.put_nowait((value,done,time.monotonic()+4));result=done.get(timeout=5)
                     else:raise ValueError('Invalid Sound operation.')
                 except Exception as e:result={'error':str(e) or 'Sound runtime unavailable.'}
@@ -119,7 +119,10 @@ class SoundRuntime:
                         done.put_nowait(apply(a,value));self.context_key=None
                         continue
                     if a.playing or a.recording or self.audio.native_capture:raise ValueError('Stop playback and recording first.')
-                    if op=='load':
+                    if op=='project_delete':
+                        from app.project_delete import delete
+                        result=delete(self.root,value,a);self.context_key=None
+                    elif op=='load':
                         self.future_kind='LOAD';self.load_context=(a.project_generation,a.group,a.pad,a.revision);self.future=self.pool.submit(self.library.row,value.get('id'));result={'ok':True,'message':'Loading Sound on the selected pad.'}
                     elif op=='save_current':
                         metadata=dict(name=name(value.get('name')),folder=folders(value.get('folder','')),tags=tags(value.get('tags',[])))

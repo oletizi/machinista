@@ -86,11 +86,13 @@ def sync(root,entries,enabled):
                 wanted[relative]=dict(format=FORMAT,version=1,id=identity,name=preset['name'],uri=p['uri'],bank=bank['id'],bank_name=bank['name'],program=program,preset={k:copy.deepcopy(v) for k,v in preset.items() if k!='_program'})
     with library.writing():
         # An ownership list restricts cleanup to our own unchanged snapshots.
+        hidden=library.hidden_banks()
         manifest=library.folder/'.bank-sounds.json'
         if manifest.is_symlink():raise ValueError('Invalid bank Sound catalog.')
         old=json.loads(manifest.read_text()) if manifest.exists() else {}
         published={}
         for relative,data in wanted.items():
+            if data['id'] in hidden:continue
             if not bank_exists(root,data):continue
             category,leaf=relative.rsplit('/',1);body=json.dumps(data,ensure_ascii=False,sort_keys=True)
             with library.directory(category,True):

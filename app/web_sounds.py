@@ -57,6 +57,13 @@ class Sounds:
                 finally:self.library.upload_lock.release()
             self.future=self.pool.submit(work)
         return {'ok':True}
+    def delete(self,value):
+        if not self.library.upload_lock.acquire(blocking=False):raise BlockingIOError('Another upload or save is in progress.')
+        try:
+            with self.guard:
+                if self.future is not None:raise BlockingIOError('A Sound save is in progress.')
+                return self.store.delete(value)
+        finally:self.library.upload_lock.release()
     def current(self):
         context=self.runtime()
         if not context.get('available'):raise ValueError('Controller engine unavailable.')
