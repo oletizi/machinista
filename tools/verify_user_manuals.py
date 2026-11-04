@@ -23,6 +23,7 @@ def verify():
             path=OUT/f'Machinista_{device}_User_Manual_{lang}.pdf';reader=PdfReader(path)
             texts=[p.extract_text() for p in reader.pages];text='\n'.join(texts)
             assert len(reader.pages)>80
+            assert all('0.1.0-beta.15' in t for t in texts[1:]), (path.name, 'outdated footer version')
             for forbidden in ('Native Instruments','Editor notes','Banken'):
                 assert forbidden not in text,(path.name,forbidden)
             for other in ('MK1','MK2','MK3','Mikro'):
