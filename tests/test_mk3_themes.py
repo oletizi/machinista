@@ -24,11 +24,11 @@ class ThemeTests(unittest.TestCase):
         for source in ('mikro','mikro_mk2','mk1','mk2','mk3','plus'):
             with controller_context(a,source):self.assertEqual('COLOR SCHEME' in a.setting_entries(),source in ('mk3','plus'))
         a.page='COLOR SCHEME';f=self.s.fields()[0]
-        self.assertEqual(f.value,'Current');self.assertTrue(choice_binding(self.s,f))
+        self.assertEqual(f.value,'Furnace');self.assertTrue(choice_binding(self.s,f))
     def test_choice_save_restart_reset_and_device_isolation(self):
         a=self.a;a.page='COLOR SCHEME';before=copy.deepcopy(a.settings)
-        self.s.rotate(1,2);self.assertEqual(a.settings['controllers']['mk3']['color_scheme'],'polar')
-        self.plus.rotate(0,3);self.assertEqual(a.settings['controllers']['plus']['color_scheme'],'voltage')
+        self.s.rotate(1,1);self.assertEqual(a.settings['controllers']['mk3']['color_scheme'],'polar')
+        self.plus.rotate(0,2);self.assertEqual(a.settings['controllers']['plus']['color_scheme'],'voltage')
         self.assertEqual(a.controller_source,'mikro')
         for source in ('mk1','mk2','mikro_mk2'):self.assertEqual(a.settings['controllers'][source],before['controllers'][source])
         reopened=Application(self.tmp.name)
@@ -37,6 +37,15 @@ class ThemeTests(unittest.TestCase):
         self.s.softkey(1)
         self.assertEqual(a.settings['controllers']['mk3']['color_scheme'],'current')
         self.assertEqual(a.settings['controllers']['plus']['color_scheme'],'voltage')
+    def test_saved_color_scheme_survives_upgrade(self):
+        from app.storage import save_json
+        for device, scheme in (('mk3','current'),('plus','amber')):
+            self.a.settings['controllers'][device]['color_scheme']=scheme
+        save_json(self.a.settings_path,self.a.settings)
+        reopened=Application(self.tmp.name)
+        self.assertEqual(reopened.settings['controllers']['mk3']['color_scheme'],'current')
+        self.assertEqual(reopened.settings['controllers']['plus']['color_scheme'],'amber')
+
     def test_snapshot_uses_origin_device_and_no_global_theme_leak(self):
         self.a.page='CHANNEL';self.a.settings['controllers']['mk3']['color_scheme']='polar'
         self.a.settings['controllers']['plus']['color_scheme']='amber'

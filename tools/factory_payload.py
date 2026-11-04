@@ -14,6 +14,10 @@ def factory_files(root):
         path=root/row['file']
         if path.parent!=folder or not path.name.startswith('category-'):raise ValueError('Invalid Factory category path')
         banks.append(path)
+    for row in declared.get('supplemental_banks',[]):
+        path=root/row['file']
+        if path.parent!=folder or path.name!='spectral-machines.json':raise ValueError('Invalid supplemental bank path')
+        banks.append(path)
     allowed={row['id']:row for row in declared['waves']};identities=set()
     for path in banks:
         if path.is_symlink():raise ValueError('Factory banks must be regular files')

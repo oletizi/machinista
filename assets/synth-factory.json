@@ -216,7 +216,133 @@
       "cycle": 1024,
       "rate": 44100,
       "kind": "Wavetable"
+    },
+    {
+      "schema": 1,
+      "id": "b6d91b7d21a355b1c606c728664375ad",
+      "name": "Comb Reactor",
+      "folder": "Spectral Machines",
+      "tags": [
+        "original",
+        "spectral",
+        "comb"
+      ],
+      "frames": 32,
+      "cycle": 1024,
+      "rate": 44100,
+      "kind": "Wavetable"
+    },
+    {
+      "schema": 1,
+      "id": "247e973ae356d98ff996122ce56093a2",
+      "name": "Prism Alloy",
+      "folder": "Spectral Machines",
+      "tags": [
+        "original",
+        "spectral",
+        "prism"
+      ],
+      "frames": 32,
+      "cycle": 1024,
+      "rate": 44100,
+      "kind": "Wavetable"
+    },
+    {
+      "schema": 1,
+      "id": "152baff69f0fe16c7f186fb47735a5c5",
+      "name": "Vox Turbine",
+      "folder": "Spectral Machines",
+      "tags": [
+        "original",
+        "spectral",
+        "formant"
+      ],
+      "frames": 32,
+      "cycle": 1024,
+      "rate": 44100,
+      "kind": "Wavetable"
+    },
+    {
+      "schema": 1,
+      "id": "fda5668295a8d1303378181fffd216a5",
+      "name": "Hollow Lattice",
+      "folder": "Spectral Machines",
+      "tags": [
+        "original",
+        "spectral",
+        "hollow"
+      ],
+      "frames": 32,
+      "cycle": 1024,
+      "rate": 44100,
+      "kind": "Wavetable"
+    },
+    {
+      "schema": 1,
+      "id": "309ee9fe6414c65f247f6b02e0be080d",
+      "name": "Spectral Vapor",
+      "folder": "Spectral Machines",
+      "tags": [
+        "original",
+        "spectral",
+        "cloud"
+      ],
+      "frames": 32,
+      "cycle": 1024,
+      "rate": 44100,
+      "kind": "Wavetable"
+    },
+    {
+      "schema": 1,
+      "id": "b00345347361a8ad65ec46663bde4173",
+      "name": "Sideband Forge",
+      "folder": "Spectral Machines",
+      "tags": [
+        "original",
+        "spectral",
+        "sideband"
+      ],
+      "frames": 32,
+      "cycle": 1024,
+      "rate": 44100,
+      "kind": "Wavetable"
+    },
+    {
+      "schema": 1,
+      "id": "41d072576d12008156821525f9c3acd9",
+      "name": "Fold Engine",
+      "folder": "Spectral Machines",
+      "tags": [
+        "original",
+        "spectral",
+        "fold"
+      ],
+      "frames": 32,
+      "cycle": 1024,
+      "rate": 44100,
+      "kind": "Wavetable"
+    },
+    {
+      "schema": 1,
+      "id": "7a059d06edebdabd68ed0bad23162450",
+      "name": "Binary Relay",
+      "folder": "Spectral Machines",
+      "tags": [
+        "original",
+        "spectral",
+        "binary"
+      ],
+      "frames": 32,
+      "cycle": 1024,
+      "rate": 44100,
+      "kind": "Wavetable"
     }
   ],
-  "provenance": "Original mathematically generated harmonic tables"
+  "provenance": "Original mathematically generated harmonic tables",
+  "supplemental_banks": [
+    {
+      "file": "presets/plugin-banks/machinista-synth/spectral-machines.json",
+      "patches": 24
+    }
+  ]
 }

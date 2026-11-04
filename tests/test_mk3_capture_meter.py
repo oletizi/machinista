@@ -33,6 +33,7 @@ class CaptureMeterTests(unittest.TestCase):
     def test_sampling_screen_uses_meter_and_hides_marker_outside_detect(self):
         with tempfile.TemporaryDirectory() as root:
             a=Application(root);a.page='SAMPLING';a.capture_stereo_peak=(.1,.01)
+            a.settings['controllers']['mk3']['color_scheme']='current'
             s=Mk3Surface(a,ControllerInputs(a));a.capture_options().update(mode='DETECT',threshold=-24)
             images=self.r.images(snapshot(s));x=18+round(439*.6)
             self.assertEqual(images[1].getpixel((x,84)),ImageColor.getrgb(ACCENT))

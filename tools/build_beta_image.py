@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tarfile
 
-VERSION='0.1.0-beta.13'
+VERSION='0.1.0-beta.14'
 
 def main():
  root=Path(sys.argv[1]).resolve();payload=Path(sys.argv[2]).resolve()
@@ -95,7 +95,7 @@ def main():
  # Keep package/source provenance; apt clean removes download payloads only.
  packages=run('dpkg-query','-W','-f=${Package}\t${Version}\t${Architecture}\n',capture_output=True).stdout
  (app/'BETA-PACKAGES.tsv').write_text(packages)
- shutil.copy2(app/'deploy/README-beta.md',app/'BETA-README.txt')
+ if not (app/'BETA-README.txt').exists():shutil.copy2(app/'deploy/README-beta.md',app/'BETA-README.txt')
  (root/'etc/machinista-release').write_text(VERSION+'\n')
  run('apt-get','clean')
  for folder in ('var/log','var/lib/NetworkManager','var/lib/bluetooth','var/lib/samba','var/lib/cloud','etc/NetworkManager/system-connections','etc/netplan'):

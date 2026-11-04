@@ -38,8 +38,8 @@ class FactoryImagePayloadTests(unittest.TestCase):
   files=factory_files(ROOT);paths=[str(p.relative_to(ROOT)) for p in files]
   bank=json.loads((ROOT/'presets/plugin-banks/machinista-synth/factory.json').read_text())
   self.assertEqual(len(bank['patches']),264)
-  self.assertEqual(sum(p.startswith('presets/plugin-banks/') for p in paths),18)
-  self.assertEqual(sum(p.endswith('.mwave') for p in paths),9)
+  self.assertEqual(sum(p.startswith('presets/plugin-banks/') for p in paths),19)
+  self.assertEqual(sum(p.endswith('.mwave') for p in paths),17)
   self.assertFalse(any('dexed' in p or '.lv2' in p or p.endswith(('.wav','.syx','.rom')) for p in paths))
  def test_fresh_image_payload_resolves_every_factory_patch_without_personal_content(self):
   from app.synth_library import preset_waves
@@ -49,10 +49,10 @@ class FactoryImagePayloadTests(unittest.TestCase):
    for source in factory_files(ROOT):
     target=root/source.relative_to(ROOT);target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(source,target)
    p=profile('urn:machinista:instrument:synth');available=banks(root,p)
-   self.assertEqual(len(available),14);self.assertEqual(available[-1]['id'],'init')
+   self.assertEqual(len(available),15);self.assertEqual(available[-1]['id'],'init')
    self.assertNotIn('factory',[b['id'] for b in available])
    patches=[p for b in available if b['id']!='init' for p in b['patches']]
-   self.assertEqual(len(patches),264)
+   self.assertEqual(len(patches),288)
    for patch in patches:preset_waves(root,patch)
    self.assertFalse((root/'projects').exists());self.assertFalse(list(root.rglob('*.lv2')))
  def test_original_obxd_banks_ship_without_plugin_binary(self):

@@ -17,6 +17,7 @@ class ProjectListTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.app=Application(self.tmp.name)
+        self.app.settings['controllers']['mk3']['color_scheme']='current'
         self.surface=Mk3Surface(self.app,ControllerInputs(self.app))
         self.renderer=Mk3Renderer();self.addCleanup(self.renderer.close)
         self.app.page='PROJECT LOAD'

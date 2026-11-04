@@ -17,7 +17,7 @@ def init_controller_settings(app):
         if not isinstance(values,dict):raise ValueError('invalid '+device+' settings')
         defaults=dict(MK2_DEFAULTS)
         if device=='mikro_mk2':defaults.update(display_brightness=100,display_contrast=42,display_invert=False)
-        if device in ('mk3','plus'):defaults['color_scheme']='current'
+        if device in ('mk3','plus'):defaults['color_scheme']='furnace'
         if device=='mk1':defaults.update(brightness=72,contrast_left=29,contrast_right=29)
         for key,default in defaults.items():
             value=values.setdefault(key,default)

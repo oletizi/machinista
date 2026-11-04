@@ -2,7 +2,9 @@ import tempfile
 import unittest
 from app.model import Application,validate_project
 class BankTests(unittest.TestCase):
-    def setUp(self):self.temp=tempfile.TemporaryDirectory();self.a=Application(self.temp.name)
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.a=Application(self.temp.name)
+        self.a.settings['controllers']['mk3']['color_scheme']='current'
     def tearDown(self):self.temp.cleanup()
     def test_new_banks_and_empty_clip_are_independent(self):
         a=self.a;a.page='PATTERN';a.button('SHIFT',True);a.button('NAV RIGHT',True);a.button('SHIFT',False);a.pad_on(3)

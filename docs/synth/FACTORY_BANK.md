@@ -308,3 +308,7 @@ On the controller: select Machinista Synth, BANK Machinista Factory, then PATCH.
 When installing elsewhere, upload the nine WAV files through WebUI Oscillators using cycle size 1024, then import the desired bank JSON files for Machinista Synth. The waveform content IDs are deterministic. Missing waveform assets produce an explicit error instead of playing an unrelated previously loaded waveform.
 
 The former eight family banks and the original small factory bank are retired. Existing saved sound parameters remain in projects; their old preset-bank references may show MISSING BANK.
+
+## Spectral Machines
+
+Clean images also include 24 original Spectral Machines patches and their eight generated, band-limited wavetables. Patch effect recipes use the built-in studio effects. This makes 288 playable factory patches across 14 visible banks, plus Init.

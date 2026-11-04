@@ -15,6 +15,7 @@ class NavigateArtworkTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.app=Application(self.tmp.name);self.surface=Mk3Surface(self.app,ControllerInputs(self.app))
+        self.app.settings['controllers']['mk3']['color_scheme']='current'
         self.renderer=Mk3Renderer();self.addCleanup(self.renderer.close)
         self.surface.button('VARIATION',True)
 

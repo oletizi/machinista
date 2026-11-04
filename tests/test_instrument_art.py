@@ -14,6 +14,7 @@ class InstrumentArtworkTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.a=Application(self.tmp.name);self.a.page='CHANNEL';self.a.control_level=2
+        self.a.settings['controllers']['mk3']['color_scheme']='current'
         self.s=Mk3Surface(self.a,ControllerInputs(self.a))
         self.r=Mk3Renderer();self.addCleanup(self.r.close)
     def load(self,kind='INSTRUMENT',uri='urn:machinista:instrument:synth'):

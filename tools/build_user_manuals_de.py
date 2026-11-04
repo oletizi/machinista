@@ -14,7 +14,7 @@ WORDS={
 '22 October 2026':'22. Oktober 2026',
 '24 October 2026':'24. Oktober 2026',
 '27 October 2026':'27. Oktober 2026',
-'3 November 2026':'3. November 2026',
+'4 November 2026':'4. November 2026',
 ' / continued':' / Fortsetzung',
 'Workflows, controls and illustrated screen reference':'Arbeitsabläufe, Bedienung und bebilderte Displayübersicht',
 'Contents':'Inhalt',

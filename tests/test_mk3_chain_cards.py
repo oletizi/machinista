@@ -11,6 +11,7 @@ class ChainCardsTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.a=Application(self.tmp.name);self.a.control_level=2
+        self.a.settings['controllers']['mk3']['color_scheme']='current'
         self.s=Mk3Surface(self.a,ControllerInputs(self.a));self.r=Mk3Renderer();self.addCleanup(self.r.close)
     def press(self,key):self.s.button(key,True);self.s.button(key,False)
     def plugins(self):

@@ -12,6 +12,7 @@ class ColorEventsTests(unittest.TestCase):
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
   self.a=Application(self.tmp.name);self.s=Mk3Surface(self.a,ControllerInputs(self.a))
+  self.a.settings['controllers']['mk3']['color_scheme']='current'
   self.a.set_pattern_length(32);self.a.page='PATTERN GRID';self.a.grid_notes=True;self.a.grid_note=60;self.a.view_count=32;self.a.view_first=0
  def note(self,tick,note=60,length=96,velocity=96,index=1,pad=0):
   identity=f'{index:032x}';key=(pad,tick,identity)

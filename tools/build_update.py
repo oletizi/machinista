@@ -21,6 +21,9 @@ def main():
             # Optional OB-Xd banks ship in clean images and as a separate import.
             # Keep updates compatible with deployed brokers and preserve user banks.
             if item.name.startswith('presets/plugin-banks/obxd/'):continue
+            # Older deployed brokers permit only factory/category bank filenames.
+            # Offer this original supplemental bank as a separate import; clean images include it.
+            if item.name=='presets/plugin-banks/machinista-synth/spectral-machines.json':continue
             if item.isdir():continue
             if not item.isfile() or item.name.startswith('/') or '..' in parts:raise ValueError('Unsafe source payload.')
             stream=source.extractfile(item)
