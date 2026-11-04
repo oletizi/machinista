@@ -70,10 +70,14 @@ class Timing:
         return self.pattern_steps(group,pattern)*BASE
     def step_cell_count(self):return math.ceil(self.pattern_ticks()/self.grid_ticks())
     def clock_interval(self):return 60/self.project['tempo']/PPQ
-    def phase_cell(self):return max(0,self.clock_phase)%self.pattern_ticks()//self.grid_ticks()
+    def pattern_phase(self,group=None):
+        group=self.group if group is None else group
+        phase=self.arranger_phase(group,self.clock_phase) if self.clip_transport else None
+        return max(0,self.clock_phase) if phase is None else phase
+    def phase_cell(self):return self.pattern_phase()%self.pattern_ticks()//self.grid_ticks()
 
     def pattern_position(self):
-        tick=max(0,self.clock_phase)%self.pattern_ticks()
+        tick=self.pattern_phase()%self.pattern_ticks()
         return f'{tick//384+1}:{tick%384//96+1}:{tick%96//24+1}'
 
     def transport_title(self):
@@ -177,6 +181,10 @@ class Timing:
             # Before tick zero, clock_last can still belong to a previous take.
             if self.clock_phase>=0 and self.clock_last is not None:
                 position+=round((stamp-self.clock_last)/self.clock_interval())
+        if self.clip_transport:
+            c=self.arranger_clip(self.group,max(0,position))
+            if c is None:self.message='NO CLIP AT PLAYHEAD';return
+            self.pattern=c['pattern'];position=position-c['start']+c['offset']
         length=self.pattern_ticks();tick=max(0,position)%length
         if self.timing()['record_quantize'] and self.timing()['grid_on']:
             unit=self.grid_ticks();tick=(((tick+unit//2)//unit)*unit)%length
@@ -194,7 +202,7 @@ class Timing:
         self.remember_recording_note()
         # Recording into an empty scene must create an audible clip, too.
         self.active_patterns[self.group]=self.pattern;self.active_clips[self.group]=True
-        self.project['scenes'][self.scene][self.group]=self.pattern
+        if not self.clip_transport:self.project['scenes'][self.scene][self.group]=self.pattern
         created=self.project['groups'][self.group]['pattern_created']
         if self.pattern not in created:created.append(self.pattern)
         self.put_event(key,event)
@@ -256,6 +264,23 @@ class Timing:
                 if getattr(self,'native_clock_enabled',False):self.native_sequence=self.settings['midi_sync']!='IN'
             return
         if not self.playing:return
+        if getattr(self,'clip_transport',False):
+            from app.clip_arranger import length as arrangement_length
+            self.clock_phase+=1;end=arrangement_length(self.project)
+            if self.clock_phase>=end:
+                self.clock_phase=end;self.playing=self.recording=False;self.actions.append(('panic',None));return
+            self.step=self.clock_phase//BASE;self.arranger_update(self.clock_phase)
+            if emit:self.automation_tick()
+            self.follow_step_view();self.follow_pattern_grid()
+            if emit and not getattr(self,'native_sequence',False):
+                if self.timing()['metro'] and self.clock_phase%96==0:self.actions.append(('click',(self.clock_phase%384==0,self.timing()['metro_level'])))
+                for group,pattern in enumerate(self.active_patterns):
+                    phase=self.arranger_phase(group,self.clock_phase)
+                    if phase is None:continue
+                    span=self.pattern_ticks(group,pattern)
+                    for identity,event in self.event_notes(group,pattern).items():
+                        if self.groove_position(group,identity[0],identity[1],span)==phase%span:self.emit_note(group,identity[0],event)
+            return
         if self.pending_scene is not None and self.settings['perform_grid']!='SCENE':
             grid={'IMMEDIATE':1,'1 BAR':384,'1/2':192,'1/4':96,'1/8':48,'1/16':24}[self.settings['perform_grid']]
             if (self.clock_phase+1)%grid==0:

@@ -72,7 +72,7 @@ def tabs(p,labels,active=()):
 
 def navigate_active(app):
     active={0} if 'VIEW' in app.pinned_modes else set()
-    destination={'SCENE':1,'SONG':2,'MIXER':3,'BROWSE':4,'PATTERN GRID':5,'GRID EDIT':5,'LIVE FX':6}.get(app.view_origin)
+    destination={'SCENE':1,'SONG':2,'CLIP ARRANGER':2,'CLIP MENU':2,'MIXER':3,'BROWSE':4,'PATTERN GRID':5,'GRID EDIT':5,'LIVE FX':6}.get(app.view_origin)
     if destination is not None:active.add(destination)
     return active
 
@@ -189,6 +189,12 @@ def snapshot(surface):
         for key,default in (('brightness',100),('contrast_left',42),('contrast_right',42)):
             if state['hardware'][key] is None:state['hardware'][key]=default
     from app.settings_menu import SETTINGS_VIEWS,SETTINGS_LABELS
+    if p in ('CLIP ARRANGER','CLIP MENU'):
+        from app.arranger_display import state as clip_state
+        state['clip_arranger']=clip_state(a)
+        from app.clip_arranger import position
+        state['position']=position(max(0,a.clock_phase))
+        if p=='CLIP ARRANGER' and a.arranger_follow:state['active_right']=(1,)
     state['settings_page']=p in SETTINGS_VIEWS and p!='BLUETOOTH MIDI'
     if p=='SETTINGS':
         state['active_left']=(('AUDIO','MIDI','SYSTEM').index(a.settings_folder),)
@@ -361,6 +367,12 @@ class Mk2Renderer:
         return tuple(pixels(frame,state.get('display_invert',False)) for frame in frames)
 
     def draw(self,state):
+        if state['page'] in ('CLIP ARRANGER','CLIP MENU'):
+            from app.arranger_display import mono,menu_mono
+            a=state['clip_arranger']
+            if state['page']=='CLIP MENU':return menu_mono(a['menu'])
+            active=tuple(state.get('active_left',()))+tuple(i+4 for i in state.get('active_right',()))
+            return mono(a,state['keys'],active)
         if self.boot_requested:
             self.boot.start();self.boot_requested=False
         if self.boot.active():

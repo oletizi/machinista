@@ -37,7 +37,7 @@ class ModulationHistory:
 
     def write_modulation_change(self,project,change,forward):
         group,name,tick,descriptor=change['automation'];state=change['after' if forward else 'before']
-        lanes=project.setdefault('master_automation',{}) if group==-1 else project['groups'][group].setdefault('automation',{})
+        lanes=project.setdefault('arrangement_automation' if group==-2 else 'master_automation',{}) if group<0 else project['groups'][group].setdefault('automation',{})
         lane=lanes.setdefault(name,dict(copy.deepcopy(state['metadata']),points={}))
         lane.update(copy.deepcopy(state['metadata']))
         if state['present']:lane['points'][tick]=copy.deepcopy(state['point'])

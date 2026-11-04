@@ -47,17 +47,19 @@ def compile_midi(app,request,cancel=None):
                 if identity[0]!=pad:continue
                 tick=identity[1]
                 if request.get('groove'):tick=app.groove_position(group,pad,tick,length)
-                if request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON':tick=(tick-offset)%length
+                if hasattr(clips,'offsets'):tick=(tick-clips.offsets[group])%length
+                elif request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON':tick=(tick-offset)%length
                 for cycle in range(0,duration,length):
                     at=cycle+tick
                     if at>=duration:continue
-                    boundary=end-offset-at if request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON' else duration-at
-                    gate=max(1,min(boundary,event.get('length',app.grid_ticks())))
-                    for note in event.get('chord') or [event.get('note',track['note'])]:
-                        events[group,pad].extend(((offset+at,2,bytes((0x90|channel,note,event['velocity']))),(offset+at+gate,1,bytes((0x80|channel,note,0)))))
-                        count+=1
-                        if count>100000:raise ValueError('MIDI NOTE LIMIT')
-                        if count%512==0:check_cancel(cancel)
+                    boundary=clips.ends[group]-offset-at if hasattr(clips,'ends') else end-offset-at if request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON' else duration-at
+                    for voice in [event,*event.get('poly',{}).values()]:
+                        gate=max(1,min(boundary,voice.get('length',app.grid_ticks())))
+                        for note in voice.get('chord') or [voice.get('note',track['note'])]:
+                            events[group,pad].extend(((offset+at,2,bytes((0x90|channel,note,voice['velocity']))),(offset+at+gate,1,bytes((0x80|channel,note,0)))))
+                            count+=1
+                            if count>100000:raise ValueError('MIDI NOTE LIMIT')
+                            if count%512==0:check_cancel(cancel)
         offset+=duration
     tempo=round(60000000/app.project['tempo'])
     tracks=[midi_track([(0,0,meta(3,b'Machinista Tempo')),(0,0,meta(0x51,tempo.to_bytes(3,'big'))),(0,0,meta(0x58,b'\x04\x02\x18\x08'))],end)]

@@ -73,14 +73,17 @@ class MidiRemote:
         elif name=='F3':
             row=self.remote_selected()
             if row:
-                field='master_automation' if self.page=='SONG AUTO' else 'midi_mappings';key=row[0]
+                field=self.song_automation_field() if self.page=='SONG AUTO' else 'midi_mappings';key=row[0]
                 def remove():
                     self.automation_restore();self.remember();self.project.get(field,{}).pop(key,None);self.automation_cache=None;self.message='REMOVED'
-                self.confirm('REMOVE AUTOMATION?' if field=='master_automation' else 'REMOVE MIDI MAPPING?',remove)
+                self.confirm('REMOVE AUTOMATION?' if self.page=='SONG AUTO' else 'REMOVE MIDI MAPPING?',remove)
         return True
 
+    def song_automation_field(self):
+        return 'arrangement_automation' if self.project.get('arrangement',{}).get('mode')=='CLIPS' else 'master_automation'
+
     def remote_rows(self):
-        return sorted(self.project.get('master_automation' if self.page=='SONG AUTO' else 'midi_mappings',{}).items())
+        return sorted(self.project.get(self.song_automation_field() if self.page=='SONG AUTO' else 'midi_mappings',{}).items())
 
     def remote_selected(self):
         rows=self.remote_rows();self.midi_map_index=max(0,min(self.midi_map_index,len(rows)-1))
@@ -96,7 +99,7 @@ class MidiRemote:
         if self.midi_learning and self.page=='MIDI LEARN':body=[self.midi_learning[1]['name'],'MOVE MIDI CC','F1 CANCEL']
         elif not row:body=['NO AUTOMATION' if self.page=='SONG AUTO' else 'NO MIDI MAPPINGS','SHIFT + ENCODER IN SONG' if self.page=='SONG AUTO' else 'TOUCH PARAM THEN F2','']
         elif self.page=='SONG AUTO':
-            entry,bus,kind,slot,key=row[0].split(':',4);body=[f'POS {int(entry)+1} {key.upper()}',f'{len(row[1]["points"])} POINTS','ENABLED' if row[1].get('enabled',True) else 'DISABLED']
+            entry,bus,kind,slot,key=row[0].split(':',4);body=[('CLIPS ' if self.song_automation_field()=='arrangement_automation' else f'POS {int(entry)+1} ')+key.upper(),f'{len(row[1]["points"])} POINTS','ENABLED' if row[1].get('enabled',True) else 'DISABLED']
         else:
             channel,cc=map(int,row[0].split(':'));body=[f'CH {channel+1} CC {cc}',row[1]['name'],f'{self.midi_map_index+1}/{len(self.remote_rows())} MAPPINGS']
         return self.page,body,'ENC SELECT'
@@ -121,7 +124,7 @@ class MidiRemote:
             if spec.get('integer'):after=round(after)
         before=self.automation_value(descriptor)
         if before==after:return True
-        now=time.monotonic();record=self.playing and self.recording and not self.count_remaining and (descriptor[0]!=MASTER or self.song_playing)
+        now=time.monotonic();record=self.playing and self.recording and not self.count_remaining and (descriptor[0]!=MASTER or self.song_playing or self.clip_transport)
         if record:
             old_group,old_pattern,old_shift=self.group,self.pattern,self.shift
             bus=descriptor[0]

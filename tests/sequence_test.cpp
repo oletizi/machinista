@@ -25,5 +25,31 @@ int main(){
  unsigned fours=0,sixes=0;for(auto [h,off,t,f]:out){assert(h!=99);if(!off&&h==4)++fours;if(!off&&h==6)++sixes;}assert(fours==1&&sixes==3);
  // Capacity exhaustion never starts an unreleasable note.
  auto tiny=std::make_unique<maschine::SequenceClock<int,3>>();tiny->running=true;Plan dense;dense.lanes.push_back({96,{{0,24,0,100,{1,2,3}}}});tiny->replace(&dense);unsigned starts=0;tiny->render(1,48000,120,[&](int,bool,std::uint64_t,unsigned){++starts;});assert(!starts&&tiny->overflow);
+ // A finite clip repeats its Pattern only inside its independent window.
+ Plan clip;clip.lanes.push_back({96,{{0,400,0,100,{7}}},48,210,72});
+ clock->seek(0);clock->running=true;clock->replace(&clip);out.clear();offset=0;render(70000,120);
+ assert(out.size()==4);assert(std::get<3>(out[0])==18000);assert(std::get<3>(out[1])==42000);
+ assert(std::get<1>(out[2])&&std::get<1>(out[3]));assert(std::get<3>(out[2])==52500&&std::get<3>(out[3])==52500);
+ // Seeking into a clip starts only future notes, never a backlog or an earlier loop.
+ clock->seek(100);clock->running=true;clock->replace(&clip);out.clear();offset=0;render(30000,120);
+ assert(out.size()==2);assert(std::get<3>(out[0])==17000);assert(std::get<3>(out[1])==27500);
+ // A short window containing no onset is silent. A clip at zero includes tick zero.
+ Plan empty;empty.lanes.push_back({96,{{0,24,0,100,{8}}},48,60,24});
+ clock->seek(0);clock->running=true;clock->replace(&empty);out.clear();offset=0;render(72000,120);assert(out.empty());
+ Plan zero;zero.lanes.push_back({96,{{0,24,0,100,{9}}},0,24,0});
+ clock->seek(0);clock->running=true;clock->replace(&zero);out.clear();offset=0;render(12000,120);
+ assert(out.size()==2&&std::get<3>(out[0])==0&&std::get<3>(out[1])==6000);
+ // Deleting or moving a live clip releases its old voices at the next sample.
+ Plan moving;moving.lanes.push_back({96,{{0,80,0,100,{10}}},0,192,0,123});
+ clock->seek(0);clock->running=true;clock->replace(&moving);out.clear();offset=0;render(1000,120);
+ Plan removed;clock->replace(&removed);render(1000,120);
+ assert(out.size()==2&&!std::get<1>(out[0])&&std::get<1>(out[1])&&std::get<3>(out[1])==1000);
+ // A live release follows its clip identity when lane indices change repeatedly.
+ clock->seek(0);clock->running=true;clock->replace(&moving);out.clear();offset=0;render(1000,120);
+ Plan reordered;reordered.lanes.push_back({96,{},0,192,0,456});reordered.lanes.push_back(moving.lanes[0]);
+ clock->replace(&reordered);render(1000,120);
+ Plan shortened;shortened.lanes.push_back(reordered.lanes[1]);shortened.lanes[0].end=24;
+ clock->replace(&shortened);render(6000,120);
+ assert(out.size()==2&&std::get<1>(out[1])&&std::get<3>(out[1])==6000);
  clock->stop();out.clear();render(48000,120);assert(out.empty());
 }

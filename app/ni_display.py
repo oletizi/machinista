@@ -281,6 +281,10 @@ def system_body(p, app):
 
 def frame(app,envelope=None):
     from app.fokus import enabled,utility
+    if app.page in ('CLIP ARRANGER','CLIP MENU'):
+        from app.arranger_display import state,mono,menu_mono
+        from app.ui_context import visible_message
+        return menu_mono(app.arranger_menu,True) if app.page=='CLIP MENU' else mono(state(app),app.softkeys(),micro=True,message=visible_message(app))
     if enabled() and app.page=='PATTERN GRID':
         from app.pattern_display import pattern_frame,pattern_state
         return pattern_frame(pattern_state(app))

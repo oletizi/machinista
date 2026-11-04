@@ -14,6 +14,16 @@ class Mk3Surface(Mk2Surface):
         import time
         a=self.app
         if pressed and time.monotonic()<getattr(a,'update_lock_until',0):return
+        if a.page=='CLIP ARRANGER' and name in ('MASTER UP','MASTER DOWN','MASTER LEFT','MASTER RIGHT'):
+            if pressed:
+                if name in self.held:return
+                self.held.add(name)
+                if name in ('MASTER UP','MASTER DOWN'):a.arranger_rotate(0,-1 if name=='MASTER UP' else 1)
+                else:
+                    from app.clip_arranger import MAX_TICKS
+                    a.arranger_follow=False;a.arranger_cursor=max(0,min(MAX_TICKS-1,a.arranger_cursor+(-1 if name=='MASTER LEFT' else 1)*a.arranger_grid));a.arranger_id=None;a.arranger_sync_selection();a.arranger_ensure_view()
+            else:self.held.discard(name)
+            return
         if name=='EVENTS':
             if pressed:
                 if name in self.held:return
@@ -87,7 +97,10 @@ class Mk3Surface(Mk2Surface):
             if name=='LOCK':self.lock_parameters()
             elif name in ('CHANNEL','PLUG-IN'):self.property('CHNL' if name=='CHANNEL' else 'PLUG-IN')
             elif name=='MIXER':a.page=a.control_home() if a.page=='MIXER' else 'MIXER'
-            elif name=='ARRANGER':a.page=a.control_home() if a.page=='SONG' else 'SONG'
+            elif name=='ARRANGER':
+                if a.page in ('SONG','CLIP ARRANGER','CLIP MENU'):a.page=a.control_home()
+                elif a.project.get('arrangement',{}).get('mode')=='CLIPS':a.arranger_open()
+                else:a.page='SONG'
             elif name=='SETTINGS':
                 if a.page=='SETTINGS':a.page=a.control_home()
                 else:a.open_settings()

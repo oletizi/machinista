@@ -43,10 +43,10 @@ def prepare(language, original):
         base.CH = localize_chapters(base.CH)
     from tools.manual_web_chords import enrich
     from tools.manual_controller_scope import scope_chapters
-    from tools import manual_audio_loops, manual_native_synth, manual_current, manual_plain_language, manual_native_effects
+    from tools import manual_audio_loops, manual_native_synth, manual_current, manual_plain_language, manual_native_effects, manual_clip_arranger
     enrich(base.CH, language)
     scope_chapters(base.CH, language)
-    for module in (manual_audio_loops, manual_native_synth, manual_current, manual_plain_language, manual_native_effects):
+    for module in (manual_audio_loops, manual_native_synth, manual_current, manual_plain_language, manual_native_effects, manual_clip_arranger):
         module.enrich(base.CH, language)
     base.MANUAL_LANGUAGE = language
     return base.CH
@@ -123,7 +123,7 @@ def build(device, language, chapters, catalog):
     alternate = 'en' if de else 'de'
     filename = 'Mikro_MK1' if device == 'mikro' else device.upper()
     pdf = f'https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.13/Machinista_{filename}_User_Manual_{language.upper()}.pdf'
-    body = f'<a class="skip" href="#content">{"Zum Inhalt" if de else "Skip to content"}</a><header id="top"><a href="index.html">Machinista · {"Alle Handbücher" if de else "All manuals"}</a><h1>{escape(title)}</h1><p><a href="{device}-{alternate}.html" lang="{alternate}">{"English" if de else "Deutsch"}</a> · <a href="{pdf}">PDF</a> · <a href="https://github.com/photogeen/machinista">GitHub</a></p><p>{"Englische Menü- und Tastennamen bleiben unverändert." if de else "Illustrated workflows, WebUI instructions and complete display reference."}</p></header><main class="layout">{nav}<article id="content">{text}</article></main><footer>Machinista · 3 November 2026 · <a href="index.html">{contents}</a></footer>'
+    body = f'<a class="skip" href="#content">{"Zum Inhalt" if de else "Skip to content"}</a><header id="top"><a href="index.html">Machinista · {"Alle Handbücher" if de else "All manuals"}</a><h1>{escape(title)}</h1><p><a href="{device}-{alternate}.html" lang="{alternate}">{"English" if de else "Deutsch"}</a> · <a href="{pdf}">PDF</a> · <a href="https://github.com/photogeen/machinista">GitHub</a></p><p>{"Englische Menü- und Tastennamen bleiben unverändert." if de else "Illustrated workflows, WebUI instructions and complete display reference."}</p></header><main class="layout">{nav}<article id="content">{text}</article></main><footer>Machinista · 4 November 2026 · <a href="index.html">{contents}</a></footer>'
     (DEST / f'{device}-{language}.html').write_text(document(title,language,body))
     return {'controller':device,'language':language,'chapters':len(chapters),'screens':count}
 

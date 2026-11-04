@@ -16,7 +16,7 @@ class Recording:
         pads={self.pad} if self.keyboard_enabled else self.selected_pads if len(self.selected_pads)>1 else {self.pad}
         self.replace_context=(self.group,self.pattern)
         self.replace_old={key:copy.deepcopy(event) for key,event in self.event_notes().items() if key[0] in pads}
-        self.replace_phase=max(0,self.clock_phase)%self.pattern_ticks()
+        self.replace_phase=self.pattern_phase()%self.pattern_ticks()
 
     def recording_button(self,name,pressed):
         if name=='REC' and not pressed:

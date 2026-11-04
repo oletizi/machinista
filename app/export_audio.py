@@ -33,6 +33,9 @@ def export_spans(app,request):
     if mode=='PATTERN':
         clips=[None]*len(app.project['groups']);clips[group]=pattern
         return [(clips,app.pattern_ticks(group,pattern))]
+    if mode=='SONG' and app.project.get('arrangement',{}).get('mode')=='CLIPS':
+        from app.clip_arranger import spans
+        return spans(app)
     scenes=[request['scene']] if mode=='SCENE' else app.project.get('song',[])
     if not scenes:raise ValueError('SONG IS EMPTY')
     return [(list(app.project['scenes'][scene]),app.scene_steps(scene)*24) for scene in scenes]
@@ -49,7 +52,8 @@ def compile_export(app,request,cancel=None):
     controls=[];offset=0;hits=0;onset_count=0;control_bytes=0
     encoder=object.__new__(AudioBackend);encoder.tempo=app.project['tempo'];encoder.instrument_tokens=NoteTokens()
     encoder.routing_signature=None;encoder.input_device='-';encoder.desired=encoder.recorder=encoder.capture_pending=encoder.native_capture=None
-    app.song_playing=request['mode']=='SONG'
+    app.clip_transport=request['mode']=='SONG' and app.project.get('arrangement',{}).get('mode')=='CLIPS'
+    app.song_playing=request['mode']=='SONG' and not app.clip_transport
     for song_entry,(clips,duration) in enumerate(spans):
         app.song_bar=song_entry;app.song_phase_origin=offset if request.get('scene_retrigger','ON')!='ON' else 0
         check_cancel(cancel);app.automation_restore()
@@ -57,6 +61,7 @@ def compile_export(app,request,cancel=None):
         app.automation_cache=None
         onsets={};group_solo=any(g.get('solo',False) for g in app.project['groups'])
         for group,pattern in enumerate(clips):
+            if app.clip_transport:continue  # Native finite windows retain loop phase and gates.
             bank=app.project['groups'][group]
             if pattern is None or bank.get('mute',False) or group_solo and not bank.get('solo',False):continue
             solo=any(t['solo'] for t in bank['pads']);length=app.pattern_ticks(group,pattern)
@@ -64,7 +69,8 @@ def compile_export(app,request,cancel=None):
                 pad,tick=identity[:2]
                 if bank['pads'][pad]['mute'] or solo and not bank['pads'][pad]['solo']:continue
                 tick=app.groove_position(group,pad,tick,length)
-                if request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON':tick=(tick-offset)%length
+                if hasattr(clips,'offsets'):tick=(tick-clips.offsets[group])%length
+                elif request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON':tick=(tick-offset)%length
                 for cycle in range(0,duration,length):
                     at=cycle+tick
                     if at<duration:
@@ -72,11 +78,12 @@ def compile_export(app,request,cancel=None):
                         if onset_count>16384:raise ValueError('EXPORT NOTE LIMIT')
                         onsets.setdefault(at,[]).append((group,pad,event))
         has_modulation=any(p is not None and any(k.startswith(str(p)+':') for k in g.get('automation',{})) for g,p in zip(app.project['groups'],clips))
+        has_modulation=has_modulation or app.clip_transport and bool(app.project.get('arrangement_automation'))
         has_modulation=has_modulation or app.song_playing and any(k.startswith(str(song_entry)+':') for k in app.project.get('master_automation',{}))
         times=range(duration) if has_modulation else sorted(set(onsets)|{0})
         for tick in times:
             if tick%512==0:check_cancel(cancel);time.sleep(0)
-            app.clock_phase=tick+(offset if request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON' else 0);app.automation_tick()
+            app.clock_phase=tick+(offset if app.clip_transport or request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON' else 0);app.automation_tick()
             generated=[];encoder.command=generated.append
             # Route reset at each Scene boundary and all actual modulation changes.
             if tick==0 or any(action=='routing_refresh' for action,value in app.actions):encoder.routing(app.project)
@@ -103,7 +110,7 @@ def compile_export(app,request,cancel=None):
                 source=app.project['groups'][group]['pads'][pad]
                 voices=[{k:v for k,v in event.items() if k!='poly'},*event.get('poly',{}).values()]
                 for voice in voices:
-                    boundary=ticks-offset-tick if request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON' else duration-tick
+                    boundary=clips.ends[group]-offset-tick if hasattr(clips,'ends') else ticks-offset-tick if request['mode']=='SONG' and request.get('scene_retrigger','ON')!='ON' else duration-tick
                     gate=max(1,min(boundary,voice.get('length',app.grid_ticks())))
                     plan.append(f'sequence_event {offset+tick} {gate} {voice["probability"]} 0')
                     encoder.command=plan.append
@@ -116,7 +123,10 @@ def compile_export(app,request,cancel=None):
                                 hits+=1
                                 if hits>16384:raise ValueError('EXPORT NOTE LIMIT')
         offset+=duration
-    plan.append('sequence_commit')
+    if app.clip_transport:
+        from app.native_sequence import sequence_commands
+        app.automation_restore();plan=sequence_commands(app,metronome=False)
+    else:plan.append('sequence_commit')
     if sum(c.startswith(('hit ','plugin_note ','plugin_note_ch ')) for c in plan)>16384:raise ValueError('EXPORT HIT LIMIT')
     app.automation_restore();app.actions.clear()
     return controls,plan,frames

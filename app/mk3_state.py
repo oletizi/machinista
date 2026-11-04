@@ -37,7 +37,7 @@ def event_state(a):
     # selection/cursor remains visible rather than being dropped at the limit.
     visible=tuple(sorted(visible,key=lambda v:not (v[3] or v[4]))[:1024])
     velocities=tuple(sorted(velocities,key=lambda v:not (v[2] or v[3]))[:512])
-    phase=max(0,a.clock_phase)%a.pattern_ticks()
+    phase=a.pattern_phase()%a.pattern_ticks()
     active=a.pattern==a.active_patterns[a.group] and a.active_clips[a.group]
     playhead=phase if active and start<=phase<end else None
     detail=None

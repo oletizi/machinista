@@ -77,14 +77,14 @@ class PatternEditor:
 
     def step_playhead_x(self):
         if not self.playing or self.pattern!=self.active_patterns[self.group] or not self.active_clips[self.group]:return None
-        phase=max(0,self.clock_phase)%self.pattern_ticks()
+        phase=self.pattern_phase()%self.pattern_ticks()
         offset=phase-self.bank*16*self.grid_ticks()
         return 2+int(offset*8/self.grid_ticks()) if 0<=offset<16*self.grid_ticks() else None
 
     def pattern_playhead_x(self):
         # STOP holds clock_phase; keep the transport position visible in Events.
         if self.pattern!=self.active_patterns[self.group] or not self.active_clips[self.group]:return None
-        phase=max(0,self.clock_phase)%self.pattern_ticks()
+        phase=self.pattern_phase()%self.pattern_ticks()
         offset=phase-self.view_first*self.grid_ticks();span=self.view_count*self.grid_ticks()
         return 29+int(offset*96/span) if 0<=offset<span else None
 

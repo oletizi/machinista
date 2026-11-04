@@ -53,7 +53,8 @@ this setup lets you play without a laptop, monitor or mouse beside it.
 - **Chords and melodies:** play notes across the pads, choose a scale, put a chord
   on one pad, or use Note Repeat and an arpeggiator for rhythmic patterns.
 - **Whole songs:** combine Patterns (repeating phrases) into Scenes (song sections),
-  then put those sections in order. Record knob movements as automation.
+  then put those sections in order, or arrange independent Pattern clips on the
+  [Clip Arranger timeline](docs/CLIP_ARRANGER.md). Record knob movements as automation.
 - **Live performances:** mute parts, balance sounds in the Mixer and play effects
   with the pads. Ducktor can lower one sound when another plays - for example,
   making room in the bass whenever the kick hits.

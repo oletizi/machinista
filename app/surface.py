@@ -105,6 +105,8 @@ class OriginalSurface:
         group['pattern_created']=[i+1 if i>source else i for i in group['pattern_created']]+[source+1]
         for scene in self.project['scenes']:
             if scene[self.group] is not None and scene[self.group]>source:scene[self.group]+=1
+        for clip in self.project.get('arrangement',{}).get('clips',[]):
+            if clip['group']==self.group and clip['pattern']>source:clip['pattern']+=1
         while len(patterns)%16:patterns.append([[False]*16 for _ in range(16)])
         self.pattern+=1;self.pattern_bank=self.pattern//16;self.active_patterns[self.group]=self.pattern;self.project['scenes'][self.scene][self.group]=self.pattern;self.message='PATTERN DUPLICATED'
 
@@ -124,6 +126,9 @@ class OriginalSurface:
         # Manual Scene length controls scene changes, not the editable Pattern range.
         # A short Scene must not fold every bar-sized locate back to bar one.
         length=max(self.pattern_ticks(),self.scene_steps()*24)
+        if self.clip_transport:
+            from app.clip_arranger import length as clip_length
+            length=max(1,clip_length(self.project))
         phase=max(0,self.clock_phase) if self.clock_phase>=0 else max(0,self.step)*24
         self.clock_phase=(phase+direction*distance)%length;self.step=self.clock_phase//24
         self.follow_step_view(self.clock_phase)
@@ -153,6 +158,7 @@ class OriginalSurface:
         if self.live_fx_button(name, pressed):return True
         if self.midi_remote_button(name,pressed):return True
         if self.export_button(name,pressed):return True
+        if self.arranger_button(name,pressed):return True
         if self.mixer_button(name,pressed):return True
         if self.recording_button(name,pressed):return True
         if self.erasing_button(name,pressed):return True

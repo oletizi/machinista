@@ -50,6 +50,7 @@ class Workspaces:
         self.init_project_manager()
         self.init_banks()
         self.init_performance()
+        self.init_arranger()
 
     def event(self):
         self.lane()  # Clamp the cursor after switching to a shorter pattern.
@@ -108,6 +109,7 @@ class Workspaces:
         self.message = f'{self.slice_count} SLICES ASSIGNED'
 
     def select_scene(self, index):
+        self.arranger_stop_mode()
         if index not in self.project['scene_created']:self.remember();self.project['scene_created'].append(index)
         if self.playing:self.pending_scene=index
         else:self.activate_scene(index)

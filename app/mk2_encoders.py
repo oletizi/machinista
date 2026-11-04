@@ -17,6 +17,8 @@ def choice_binding(surface,field):
     if field is None:return False
     attrs=dict(field.attributes)
     if any(k in attrs for k in ('_record_quant','_dac_mute','_grid','_target_group','_target_sound','_bluetooth','_name_cursor','export_field')):return True
+    if '_arranger_menu' in attrs:return True
+    if '_arranger' in attrs:return attrs['_arranger'] in (0,1,4,6,7)
     if '_auto' in attrs:return attrs['_auto'] in (0,4,8,9,10,11,12,13)
     if '_sample_tool' in attrs:return a.page=='BOUNCE TO PAD' or attrs['_sample_tool'] in (0,1,2)
     if '_hardware_select' in attrs:return True

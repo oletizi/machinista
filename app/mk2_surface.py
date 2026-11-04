@@ -230,6 +230,12 @@ class Mk2Surface:
         self.sync()
         a=self.app;result=[None]*8
         def field(column,label,value,**attrs):result[column]=Field(label,('ON' if value else 'OFF') if type(value) is bool else str(value),tuple(attrs.items()))
+        if a.page=='CLIP ARRANGER':
+            for i,(label,value) in enumerate(a.arranger_rows()):field(i,label,value,_arranger=i)
+            return tuple(result)
+        if a.page=='CLIP MENU':
+            from app.clip_arranger import MENU
+            field(0,'SELECT',MENU[a.arranger_menu],_arranger_menu=True);return tuple(result)
         if a.page=='LIVE FX':
             field(0,'DEPTH',str(a.live_fx_depth)+'%',_utility=True)
             return tuple(result)
@@ -445,6 +451,10 @@ class Mk2Surface:
         if a.page in ('PATTERN GRID','GRID EDIT') and index in (0,1,5) and a.grid_range_anchor is not None and a.held_buttons.intersection(('SELECT','EVENT RANGE SELECT')):
             self.event_select_moved=True
             a.extend_grid_range(delta);return
+        if index==0 and a.page=='CLIP ARRANGER':a.arranger_rotate(1,delta);return
+        if index==0 and a.page=='CLIP MENU':
+            from app.clip_arranger import MENU
+            a.arranger_menu=max(0,min(len(MENU)-1,a.arranger_menu+delta));return
         if index==0:
             if a.page in DEVICE_PAGES:a.rotate(delta);return
             if self.master_mode:
@@ -495,6 +505,10 @@ class Mk2Surface:
             index=-1 if a.slice_target_sound is None else a.slice_target_sound
             index=max(-1,min(15,index+delta));a.slice_target_sound=None if index<0 else index;return
         if '_bluetooth' in attrs:a.settings_rotate(delta);return
+        if '_arranger' in attrs:a.arranger_rotate(attrs['_arranger'],delta);return
+        if '_arranger_menu' in attrs:
+            from app.clip_arranger import MENU
+            a.arranger_menu=max(0,min(len(MENU)-1,a.arranger_menu+delta));return
         if '_controller_key' in attrs:
             key=attrs['_controller_key'];values=a.settings['controllers'][self.source]
             if key in ('pad_sensitivity','pad_curve'):
@@ -553,6 +567,13 @@ class Mk2Surface:
 
     @on_controller('mk2')
     def button(self,name,pressed):
+        if self.app.page=='CLIP ARRANGER' and name in ('PAGE LEFT','PAGE RIGHT','MASTER LEFT','MASTER RIGHT'):
+            if pressed and name not in self.held:
+                self.held.add(name);a=self.app
+                from app.clip_arranger import MAX_TICKS
+                a.arranger_follow=False;a.arranger_cursor=max(0,min(MAX_TICKS-1,a.arranger_cursor+(-1 if name.endswith('LEFT') else 1)*a.arranger_grid));a.arranger_id=None;a.arranger_sync_selection();a.arranger_ensure_view()
+            elif not pressed:self.held.discard(name)
+            return
         import time
         a=self.app
         if pressed and time.monotonic()<getattr(a,'update_lock_until',0):return
@@ -647,6 +668,9 @@ class Mk2Surface:
     @on_controller('mk2')
     def softkeys(self):
         a=self.app;p=a.page
+        if p=='CLIP ARRANGER':return ('MENU' if a.shift else 'BACK','EDIT' if a.shift else 'ADD','UNIQUE' if a.shift else 'COPY','DELETE','PLAY','FOLLOW','SCENES','FROM SONG')
+        if p=='CLIP MENU':return ('BACK','SELECT','','','','','','')
+        if p=='SONG':return tuple(a.softkeys())+('','','','','CLIPS')
         if p in ('MIDI LEARN','SONG AUTO','SCENE OPTIONS'):return tuple(a.softkeys())+('','','','','')
         if p=='OPTIONS':return ('PIN' if self.held_mode() else 'BACK','SWING','GRID','QUANT','','','','APPLY' if a.grid_tab==0 else '')
         if p in ('SCENE','MUTE','SOLO','DUPLICATE'):
@@ -698,6 +722,18 @@ class Mk2Surface:
     @on_controller('mk2')
     def softkey(self,index):
         a=self.app;p=a.page
+        if p=='SONG' and index==7:a.arranger_open();return
+        if p=='CLIP ARRANGER':
+            action=(('MENU' if a.shift else 'BACK'),('EDIT NOTES' if a.shift else 'ADD'),('MAKE UNIQUE' if a.shift else 'DUPLICATE'),'DELETE','PLAY','FOLLOW','SCENES','FROM SONG')[index]
+            if action=='MENU':a.page='CLIP MENU'
+            else:a.arranger_action(action)
+            return
+        if p=='CLIP MENU':
+            if index==0:a.page='CLIP ARRANGER'
+            elif index==1:
+                from app.clip_arranger import MENU
+                action=MENU[a.arranger_menu];a.page='CLIP ARRANGER';a.arranger_action(action)
+            return
         if p in ('AUDIO LOOP','BOUNCE TO PAD'):
             if index==0:a.audio_tool_button('F1',True)
             elif p=='AUDIO LOOP' and index in (6,7):self.select_chain(-1 if index==6 else 1,allow_add=True)

@@ -4,6 +4,7 @@ import copy
 import math
 import time
 from app.layout import SOUNDS,GROUP_BASE,MASTER,bus_targets
+from app.clip_arranger import length as arrangement_length
 from app.sampler import DEFAULTS as SAMPLER_DEFAULTS,SAMPLER_PAGES
 from app.routing import route_defaults,build_graph
 
@@ -15,9 +16,10 @@ def validate_automation(project):
     for scene in project.get('song',[]):
         automatic=max((len(project['groups'][g]['patterns'][pat][0]) for g,pat in enumerate(project['scenes'][scene]) if pat is not None),default=16)
         song_lengths.append(project.get('scene_lengths',{}).get(str(scene),automatic))
-    scopes=[(g.get('automation',{}),[len(p[0]) for p in g['patterns']],False) for g in project['groups']]
-    scopes.append((project.get('master_automation',{}),song_lengths,True))
-    for lanes,lengths,master in scopes:
+    scopes=[(g.get('automation',{}),[len(p[0]) for p in g['patterns']],False,98304) for g in project['groups']]
+    scopes.append((project.get('master_automation',{}),song_lengths,True,98304))
+    scopes.append((project.get('arrangement_automation',{}),[16384],True,393216))
+    for lanes,lengths,master,max_ticks in scopes:
         if not isinstance(lanes,dict) or len(lanes)>2048:raise ValueError('invalid automation lanes')
         for name,lane in lanes.items():
             try:pattern,bus,kind,slot,key=name.split(':',4);pattern,bus,slot=int(pattern),int(bus),int(slot)
@@ -42,7 +44,7 @@ def validate_automation(project):
                     valid=value in bounds if isinstance(default,str) or type(default) is bool or key=='polyphony' else type(value) in (int,float) and bounds[0]<=value<=bounds[1]
                     if not valid:raise ValueError('invalid automated sampler value')
             for tick,value in lane['points'].items():
-                if not str(tick).isdigit() or not 0<=int(tick)<(98304 if master else lengths[pattern]*24) or not isinstance(value,(str,int,float,bool)) or isinstance(value,(int,float)) and not math.isfinite(value):raise ValueError('invalid automation point')
+                if not str(tick).isdigit() or not 0<=int(tick)<(max_ticks if master else lengths[pattern]*24) or not isinstance(value,(str,int,float,bool)) or isinstance(value,(int,float)) and not math.isfinite(value):raise ValueError('invalid automation point')
 
 class Automation:
     def init_automation(self):
@@ -94,12 +96,14 @@ class Automation:
     def capture_automation(self,descriptor,before,after):
         if before==after or not self.playing or not getattr(self,'automation_capture',self.shift) or self.count_remaining:return
         master=descriptor[0]==MASTER
-        if master and not self.song_playing:self.message='MASTER REC: PLAY SONG';return
-        owner=-1 if master else self.group
-        pattern=self.song_bar if master else self.pattern
-        length=self.scene_steps(self.project['song'][pattern])*24 if master else self.pattern_ticks()
-        tick=max(0,self.clock_phase-(getattr(self,'song_phase_origin',0) if master else 0))%length;key=lane_key(pattern,descriptor)
-        lanes=self.project.setdefault('master_automation',{}) if master else self.project['groups'][self.group].setdefault('automation',{})
+        if master and not (self.song_playing or self.clip_transport):self.message='MASTER REC: PLAY SONG';return
+        owner=(-2 if self.clip_transport else -1) if master else self.group
+        pattern=(0 if self.clip_transport else self.song_bar) if master else self.pattern
+        length=(max(1,arrangement_length(self.project)) if self.clip_transport else self.scene_steps(self.project['song'][pattern])*24) if master else self.pattern_ticks()
+        phase=self.arranger_phase(self.group,self.clock_phase) if self.clip_transport and not master else self.clock_phase-(getattr(self,'song_phase_origin',0) if master and not self.clip_transport else 0)
+        if phase is None:self.message='NO CLIP AT PLAYHEAD';return
+        tick=max(0,phase)%length;key=lane_key(pattern,descriptor)
+        lanes=self.project.setdefault('arrangement_automation' if self.clip_transport else 'master_automation',{}) if master else self.project['groups'][self.group].setdefault('automation',{})
         if key not in lanes and len(lanes)>=2048:self.message='AUTOMATION LIMIT';return
         previous=lanes.get(key);base=self.automation_bases.get(descriptor,before)
         metadata={k:copy.deepcopy(v) for k,v in (previous or {'base':before}).items() if k!='points'}
@@ -112,7 +116,7 @@ class Automation:
         self.modulation_change(owner,key,tick_key,descriptor,prior,after_state)
         self.automation_written.add(descriptor);self.automation_cache=None;self.dirty=True;self.message='MODULATION REC'
     def automation_tick(self):
-        signature=(id(self.project),self.revision,tuple(self.active_patterns),tuple(self.active_clips),self.song_playing,self.song_bar)
+        signature=(id(self.project),self.revision,tuple(self.active_patterns),tuple(self.active_clips),self.song_playing,self.song_bar,self.clip_transport)
         if self.automation_cache is None or self.automation_cache[0]!=signature:
             active=[]
             for group,pattern in enumerate(self.active_patterns):
@@ -122,6 +126,10 @@ class Automation:
                     if int(pat)!=pattern:continue
                     points=sorted((int(tick),value) for tick,value in lane['points'].items() if int(tick)<self.pattern_ticks(group,pattern))
                     active.append((group,pattern,(int(bus),kind,int(slot),key),lane,points,[p[0] for p in points]))
+            if self.clip_transport:
+                for name,lane in self.project.get('arrangement_automation',{}).items():
+                    pat,bus,kind,slot,key=name.split(':',4);points=sorted((int(t),v) for t,v in lane['points'].items())
+                    active.append((-2,0,(int(bus),kind,int(slot),key),lane,points,[p[0] for p in points]))
             if self.song_playing and self.song_bar<len(self.project.get('song',[])):
                 for name,lane in self.project.get('master_automation',{}).items():
                     pat,bus,kind,slot,key=name.split(':',4)
@@ -139,7 +147,9 @@ class Automation:
             if descriptor[1]=='plugin':
                 slots=bus_targets(self.project)[descriptor[0]].get('plugins',[])
                 if descriptor[2]>=len(slots) or slots[descriptor[2]]['uri']!=lane.get('uri'):continue
-            tick=(self.clock_phase-(getattr(self,'song_phase_origin',0) if group==-1 else 0))%(self.scene_steps(self.project['song'][pattern])*24 if group==-1 else self.pattern_ticks(group,pattern));index=bisect.bisect_right(positions,tick)-1
+            phase=self.arranger_phase(group,self.clock_phase) if self.clip_transport and group>=0 else self.clock_phase-(getattr(self,'song_phase_origin',0) if group==-1 else 0)
+            if phase is None:continue
+            tick=phase%(max(1,arrangement_length(self.project)) if group==-2 else self.scene_steps(self.project['song'][pattern])*24 if group==-1 else self.pattern_ticks(group,pattern));index=bisect.bisect_right(positions,tick)-1
             value=lane['base'] if index<0 else points[index][1]
             if descriptor[1]!='fx' and 0<=index<len(points)-1 and type(value) in (int,float) and type(points[index+1][1]) in (int,float):
                 a,b=points[index],points[index+1];value=a[1]+(b[1]-a[1])*(tick-a[0])/(b[0]-a[0]);value=round(value) if type(a[1]) is int else round(value,4)
@@ -176,7 +186,7 @@ class Automation:
 
     def clear_automation(self):
         bus=self.mixer_bus() if self.page=='MIXER' else self.plugin_bus();self.automation_restore();self.remember()
-        group=self.project if bus==MASTER else self.project['groups'][self.group];field='master_automation' if bus==MASTER else 'automation'
-        prefix=str(self.song_bar if self.song_playing else self.song_index)+':' if bus==MASTER else str(self.pattern)+':'
+        group=self.project if bus==MASTER else self.project['groups'][self.group];field=('arrangement_automation' if self.clip_transport else 'master_automation') if bus==MASTER else 'automation'
+        prefix=str(0 if self.clip_transport else self.song_bar if self.song_playing else self.song_index)+':' if bus==MASTER else str(self.pattern)+':'
         group[field]={k:v for k,v in group.get(field,{}).items() if not (k.startswith(prefix) and int(k.split(':')[1])==bus)}
         self.automation_cache=None;self.message='MODULATION CLEARED'

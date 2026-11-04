@@ -59,15 +59,16 @@ class Plugins:
                     name=':'.join((pat,b,kind,str(new),key))
                 lanes[name]=lane
             group['automation']=lanes
-        lanes={}
-        for name,lane in self.project.get('master_automation',{}).items():
-            pat,b,kind,slot,key=name.split(':',4)
-            if kind=='plugin' and int(b)==bus:
-                new=mapping.get(int(slot))
-                if new is None:continue
-                name=':'.join((pat,b,kind,str(new),key))
-            lanes[name]=lane
-        if 'master_automation' in self.project:self.project['master_automation']=lanes
+        for field in ('master_automation','arrangement_automation'):
+            lanes={}
+            for name,lane in self.project.get(field,{}).items():
+                pat,b,kind,slot,key=name.split(':',4)
+                if kind=='plugin' and int(b)==bus:
+                    new=mapping.get(int(slot))
+                    if new is None:continue
+                    name=':'.join((pat,b,kind,str(new),key))
+                lanes[name]=lane
+            if field in self.project:self.project[field]=lanes
         for name,item in list(self.project.get('midi_mappings',{}).items()):
             b,kind,slot,key=item['descriptor']
             if kind=='plugin' and b==bus:

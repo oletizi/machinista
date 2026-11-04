@@ -20,7 +20,8 @@ def strip_leds(app,surface):
         position=round((surface.strip_value-1)*24/1023)
     else:
         length=max(1,app.pattern_ticks())
-        position=min(24,int(max(0,app.clock_phase)%length*25/length))
+        phase=app.pattern_phase() if hasattr(app,'pattern_phase') else max(0,app.clock_phase)
+        position=min(24,int(phase%length*25/length))
     return tuple(127 if i==position else 0 for i in range(25))
 
 class Mk3Session(Mk2Session):
@@ -77,7 +78,7 @@ class Mk3Session(Mk2Session):
         values['PLUG-IN']=85 if a.page in ('PLUGIN','SAMPLER','PLUGIN BROWSE') else 8
         values['LOCK']=85 if getattr(self.surface,'lock_state',None) else 8
         values['MIXER']=85 if a.page=='MIXER' else 8
-        values['ARRANGER']=85 if a.page=='SONG' else 8
+        values['ARRANGER']=85 if a.page in ('SONG','CLIP ARRANGER','CLIP MENU') else 8
         values['KEYBOARD']=85 if a.keyboard_enabled else 8
         values['CHORDS']=85 if a.keyboard_enabled and a.keyboard_chord_mode()!='OFF' else 8
         values['FIXED VEL']=85 if a.fixed_velocity else 8

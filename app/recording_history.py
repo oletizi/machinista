@@ -84,6 +84,7 @@ class RecordingHistory:
             self.recording_history[id(current)]=transferred
         self.automation_restore();self.project=saved
         self.scene=min(self.scene,len(self.project['scenes'])-1);self.activate_scene(self.scene);self.pad=min(self.pad,15)
+        if self.clip_transport:self.arranger_update(max(0,self.clock_phase))
         self.dirty=True;self.revision+=1;self.live_notes.clear();self.reset_recording_take()
         self.poly_cache.clear()
         self.actions.append(('reload',None));self.message=('STEP ' if step else '')+('REDO' if redo else 'UNDO')

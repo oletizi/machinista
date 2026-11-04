@@ -4,11 +4,14 @@ from app.ni_display import rect,label,tiny_label,softkey_label,dotted_rect,finis
 from app.runtime_audio import meter_height
 from app.control_display import PARAMETER_PAGES
 
-ASYNC_PAGES=('STEP','PATTERN GRID','MIXER','PATTERN','SCENE','VIEW NAV')+PARAMETER_PAGES
+ASYNC_PAGES=('CLIP ARRANGER','STEP','PATTERN GRID','MIXER','PATTERN','SCENE','VIEW NAV')+PARAMETER_PAGES
 
 
 def live_state(app):
     from app.ui_context import pinned,visible_message
+    if app.page=='CLIP ARRANGER':
+        from app.arranger_display import state
+        return dict(kind='CLIP ARRANGER',clip_arranger=state(app),keys=app.softkeys(),active=tuple(app.active_softkeys()),message=visible_message(app),title='CLIPS')
     if app.page=='VIEW NAV' and app.view_selector and app.view_tool is None:
         from app.mikro_navigate import state
         return state(app)
@@ -57,6 +60,9 @@ def live_state(app):
 
 
 def live_frame(state):
+    if state.get('kind')=='CLIP ARRANGER':
+        from app.arranger_display import mono
+        return mono(state['clip_arranger'],state['keys'],state['active'],micro=True,message=state.get('message',''))
     if state.get('kind')=='MIKRO NAV':
         from app.mikro_navigate import render
         return render(state)

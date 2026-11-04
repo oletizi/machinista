@@ -1,5 +1,6 @@
 """Compile immutable pattern snapshots; audio owns note times and gate releases."""
 import math
+import hashlib
 import time
 from app.audio import AudioBackend
 from app.audio_ports import cue_sound
@@ -7,7 +8,7 @@ from app.note_tokens import NoteTokens
 from app.audio_loop import is_audio_sound
 
 
-def sequence_commands(app,notes=True):
+def sequence_commands(app,notes=True,metronome=True):
     commands=['sequence_begin']
     encoder=object.__new__(AudioBackend);encoder.command=commands.append
     encoder.tempo=app.project['tempo'];encoder.instrument_tokens=NoteTokens()
@@ -16,10 +17,16 @@ def sequence_commands(app,notes=True):
     def voices(event):
         yield {k:v for k,v in event.items() if k!='poly'}
         yield from event.get('poly',{}).values()
-    for group,pattern in enumerate(app.active_patterns):
+    if getattr(app,'clip_transport',False):
+        contexts=[(c['group'],c['pattern'],c) for c in app.project.get('arrangement',{}).get('clips',[])]
+    else:contexts=[(g,p,None) for g,p in enumerate(app.active_patterns)]
+    for group,pattern,clip in contexts:
         bank=app.project['groups'][group];length=app.pattern_ticks(group,pattern)
         commands.append(f'sequence_lane {length}')
-        if not app.active_clips[group]:continue
+        if clip:
+            identity=int(hashlib.sha256((clip['id']+':'+str(pattern)).encode()).hexdigest()[:16],16) or 1
+            commands.append(f'sequence_window {clip["start"]} {clip["start"]+clip["length"]} {clip["offset"]} {identity}')
+        elif not app.active_clips[group]:continue
         group_muted=bank.get('mute',False) or group_solo and not bank.get('solo',False)
         solo=any(t['solo'] for t in bank['pads'])
         for pad,source in enumerate(bank['pads']):
@@ -35,7 +42,7 @@ def sequence_commands(app,notes=True):
             if event_muted and not cue_sound(app.project,group,pad):continue
             tick=app.groove_position(group,pad,tick,length)
             skip=(group,pattern,pad,event.get('_id',identity[1]))
-            not_before=(max(0,app.clock_phase)//length*length+tick+1) if skip in app.record_live_skip else 0
+            not_before=((max(0,app.clock_phase)+1 if clip else max(0,app.clock_phase)//length*length+tick+1) if skip in app.record_live_skip else 0)
             for voice in voices(event):
                 commands.append(f'sequence_event {tick} {voice.get("length",app.grid_ticks())} {voice["probability"]} {not_before}')
                 pitches=voice.get('chord') or [voice.get('note',source.get('note',36+pad))]
@@ -51,8 +58,11 @@ def sequence_commands(app,notes=True):
                             encoder.hit(group,slot,voice['velocity'],dict(track,gain=100),semitones)
                         total+=1
                         if total>16384:raise ValueError('native sequence exceeds note capacity')
-    if notes and app.timing()['metro']:
+    if notes and metronome and app.timing()['metro']:
         commands.append('sequence_lane 384')
+        if getattr(app,'clip_transport',False):
+            from app.clip_arranger import length
+            commands.append(f'sequence_window 0 {length(app.project)} 0')
         for tick in (0,96,192,288):
             commands.extend((f'sequence_event {tick} 1 100 0',f'click {int(tick==0)} {app.timing()["metro_level"]/100:.6f}'))
     if sum(c.startswith(('hit ','plugin_note ','plugin_note_ch ','external_note ','click ')) for c in commands)>16384:raise ValueError('native sequence exceeds hit capacity')
@@ -67,10 +77,12 @@ class NativeSequence:
     def reset(self,position=None):self.reset_pending=True;self.clock=None;self.seek_position=position
     def invalidate(self):self.key=None
     def update(self,app,audio,midi,now,next_tick):
-        if self.last_scene is not None and app.scene!=self.last_scene and app.settings['scene_retrigger']=='ON':self.reset(max(0,app.clock_phase))
+        if not getattr(app,'clip_transport',False) and self.last_scene is not None and app.scene!=self.last_scene and app.settings['scene_retrigger']=='ON':self.reset(max(0,app.clock_phase))
         self.last_scene=app.scene
         revision=getattr(app,'native_transport_revision',0)
         if revision!=self.scene_transport_revision:self.reset(max(0,app.clock_phase));self.scene_transport_revision=revision
+        seek=getattr(app,'native_arranger_seek',None)
+        if seek is not None:self.reset(seek);app.native_arranger_seek=None
         enabled=app.settings['midi_sync']!='IN' and not app.count_remaining
         audio_only=not enabled and not app.count_remaining and any(is_audio_sound(p) for g in app.project['groups'] for p in g['pads'])
         app.native_clock_enabled=True
@@ -82,7 +94,8 @@ class NativeSequence:
         elif not running:self.stopped_position=None;self.seek_position=None
         audio.loop_transport_running=running
         # Revision covers pattern edits; explicit runtime switches cover clip/mute changes.
-        key=(enabled,audio_only,app.project_generation,app.revision,app.project['tempo'],getattr(app,'native_sequence_serial',0),tuple(app.active_patterns),tuple(app.active_clips),
+        clip_mode=getattr(app,'clip_transport',False)
+        key=(clip_mode,enabled,audio_only,app.project_generation,app.revision,app.project['tempo'],getattr(app,'native_sequence_serial',0),(() if clip_mode else tuple(app.active_patterns)),(() if clip_mode else tuple(app.active_clips)),
              tuple((g.get('mute',False),g.get('solo',False),tuple((p['mute'],p['solo']) for p in g['pads'])) for g in app.project['groups']),app.timing()['metro'],app.timing()['metro_level'])
         if (enabled or audio_only) and key!=self.key and key!=self.rejected_key:
             try:commands=sequence_commands(app,notes=enabled)

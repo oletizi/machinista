@@ -189,6 +189,45 @@ class Mk3Renderer:
                 if icon is not None:c.image.paste(icon,(x+19,102),icon)
                 c.text(x+57,182,s['keys'][index],12,True,INK,width=106,center=True)
 
+    def clip_arranger(self,p,q,a):
+        from app.clip_arranger import position,duration
+        x0=42;width=422;span=a['last']-a['first'];rowheight=13
+        for g,label in a['groups']:
+            row=g-a['groups'][0][0];y=99+row*rowheight;color=GROUPS[g%8]
+            p.rect(10,y,27,rowheight-1,color if g==a['group'] else PANEL,radius=2)
+            p.text(23,y-1,label,10,True,foreground(color) if g==a['group'] else MUTED,center=True,width=25)
+            p.rect(x0,y,width,rowheight-1,PANEL)
+        step=max(384,math.ceil(span/3072)*384)
+        for tick in range(a['first']//step*step,a['last']+1,step):
+            x=x0+(tick-a['first'])*width/span
+            if not x0<=x<=464:continue
+            p.line((x,97,x,202),LINE)
+            p.text(x,84,str(tick//384+1),10,color=MUTED,width=min(40,480-x))
+        for clip in a['clips']:
+            y=100+(clip['group']-a['groups'][0][0])*rowheight
+            x=x0+max(0,clip['start']-a['first'])*width/span
+            end=x0+min(span,clip['start']+clip['length']-a['first'])*width/span
+            color=GROUPS[clip['group']%8];selected=a['selected'] and clip['id']==a['selected']['id']
+            p.rect(x+1,y,max(1,end-x-2),10,color,radius=2)
+            if end-x>30:p.text(x+4,y-1,'P'+str(clip['pattern']+1),9,True,foreground(color),width=end-x-7)
+            if selected:p.rect(x,y-1,max(2,end-x),12,None,INK,2)
+        phase=a['phase'] if a['phase'] is not None else a['cursor']
+        if a['first']<=phase<=a['last']:
+            x=x0+(phase-a['first'])*width/span;p.line((x,97,x,204),YELLOW,2)
+        c=a['selected']
+        if c:
+            q.text(18,92,'GROUP '+str(a['rows'][0][1])+' / PATTERN '+str(c['pattern']+1),20,True,width=444)
+            q.text(18,122,'LINKED PATTERN · '+str(a['links'])+' CLIPS',12,color=MUTED,width=444)
+            q.rect(18,148,444,45,PANEL,radius=3)
+            for pad,tick,gate in a['preview']:
+                x=23+tick*432/a['pattern_ticks'];right=min(455,x+gate*432/a['pattern_ticks'])
+                q.rect(x,152+pad%8*5,max(2,right-x),3,GROUPS[c['group']%8])
+            q.text(18,199,'SHIFT + COPY: MAKE UNIQUE',11,color=MUTED,width=440)
+        else:
+            q.text(18,94,'NO CLIP SELECTED',22,True,width=440)
+            q.text(18,132,'ADD at '+position(a['cursor']),16,color=MUTED,width=440)
+            q.text(18,168,'FROM SONG copies your Scene sequence',13,color=MUTED,width=440)
+
     def mixer(self,p,q,s):
         """Eight physical encoder strips, continuous group-colored stereo meters."""
         m=s['mixer'];master=m.get('master_mixer');field=m.get('mixer_field',0)
@@ -266,6 +305,7 @@ class Mk3Renderer:
                 c.text(316,34,f'{s.get("tempo",0):.2f}',13,True,width=67)
                 c.text(438,34,s.get('position',''),13,True,width=73,center=True)
             title=(s.get('group_label',chr(65+s.get('group',0)%8))+' / '+s.get('title','Machinista')) if side==0 else s.get('choice',s.get('page',''))
+            if s['page'] in ('CLIP ARRANGER','CLIP MENU'):title='CLIP ARRANGER' if side==0 else 'CLIP ACTIONS' if s['page']=='CLIP MENU' else 'SELECTED CLIP'
             if 'mixer' in s:
                 m=s['mixer'];title=('MASTER MIXER' if m.get('master_mixer') else 'GROUP MIXER' if s.get('scope')==1 else 'SOUND MIXER')
             if side==0 and 'project_list' in s:title='PROJECTS'
@@ -290,7 +330,11 @@ class Mk3Renderer:
                     while size>12 and c.draw.textlength(str(value),font=font(size,True))>104:size-=1
                     c.text(i*120+10,242,value,size,True,color=foreground(color) if isinstance(color,GroupColor) and s.get('color_scheme')=='daylight' else BG,width=104)
                     if f'KNOB {side*4+i+1} TOUCH' in s.get('touches',()):c.rect(i*120+7,219,105,2,ACCENT)
-        if s['page']=='COLOR SCHEME':
+        if s['page']=='CLIP ARRANGER':self.clip_arranger(p,q,s['clip_arranger'])
+        elif s['page']=='CLIP MENU':
+            from app.clip_arranger import MENU
+            self.list(p,MENU,s['clip_arranger']['menu']);q.text(20,105,MENU[s['clip_arranger']['menu']],24,True,width=440)
+        elif s['page']=='COLOR SCHEME':
             from app.mk3_theme import SCHEMES,LABELS,PALETTES
             scheme=s.get('color_scheme','current');index=SCHEMES.index(scheme) if scheme in SCHEMES else 0
             self.list(p,[LABELS[v] for v in SCHEMES],index,y=86,first=0)

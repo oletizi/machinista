@@ -503,6 +503,8 @@ def render_assets():
     catalog.extend(synth_catalog(ASSETS))
     from tools.manual_native_effects import effect_catalog
     catalog.extend(effect_catalog(ASSETS))
+    from tools.manual_clip_arranger import catalog as clip_catalog
+    catalog.extend(clip_catalog(ASSETS))
     (ASSETS/'catalog.json').write_text(json.dumps(catalog,indent=2))
     return catalog
 
@@ -805,6 +807,8 @@ if __name__=='__main__':
     enrich_plain(CH)
     from tools.manual_native_effects import enrich as enrich_effects
     enrich_effects(CH)
+    from tools.manual_clip_arranger import enrich as enrich_clips
+    enrich_clips(CH)
     catalog=render_assets();results=[build(Manual,device,catalog) for device in ('mikro','mk1','mk2','mk3')]
     (ASSETS/'build-report.json').write_text(json.dumps(results,indent=2));print(json.dumps(results,indent=2))
     if any(x['overflow'] for x in results):sys.exit(2)

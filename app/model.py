@@ -10,6 +10,7 @@ from app.devices import choose_audio
 
 AUDIO_BUFFERS=(0,128,256,512,1024,2048,4096)
 from app.browser import Browser, Source
+from app.clip_arranger import ClipArranger,validate as validate_arrangement
 from app.workspaces import Workspaces
 from app.surface import OriginalSurface
 from app.pattern_editor import PatternEditor
@@ -138,11 +139,12 @@ def validate_project(project):
     validate_automation(project)
     validate_midi_mappings(project)
     validate_performance(project)
+    validate_arrangement(project)
     validate_timing(project)
     return project
 
 
-class Application(MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,ModulationHistory,Polyphony, GroupDelete, Erasing, RecordingHistory, Recording, MainControls, SettingsMenu, EventShortcuts, Groove, Automation, Preferences, Performance, Banks, Routing, Plugins, Sampler, Slicing, Navigation, Sampling, Timing, ProjectManager, PatternEditor, LiveEffects, OriginalSurface, Workspaces):
+class Application(ClipArranger,MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,ModulationHistory,Polyphony, GroupDelete, Erasing, RecordingHistory, Recording, MainControls, SettingsMenu, EventShortcuts, Groove, Automation, Preferences, Performance, Banks, Routing, Plugins, Sampler, Slicing, Navigation, Sampling, Timing, ProjectManager, PatternEditor, LiveEffects, OriginalSurface, Workspaces):
     def __init__(self, root):
         self.root = Path(root)
         self.samples = self.root/'samples'
@@ -384,6 +386,10 @@ class Application(MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,Mod
                 self.page = 'STEP'
         elif name == 'PLAY':
             self.playing = not self.playing
+            if self.playing and self.clip_transport:
+                from app.clip_arranger import length
+                if self.clock_phase>=length(self.project):
+                    self.clock_phase=-1;self.step=-1;self.native_arranger_seek=0
             if not self.playing:
                 self.recording = False
                 self.actions.append(('panic', None))
@@ -488,6 +494,10 @@ class Application(MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,Mod
         if self.recording_rotate(delta):return
         self.message = ''
         if self.midi_remote_rotate(delta) or self.settings_rotate(delta):return
+        if self.page=='CLIP ARRANGER':self.arranger_rotate(self.arranger_field,delta);return
+        if self.page=='CLIP MENU':
+            from app.clip_arranger import MENU
+            self.arranger_menu=max(0,min(len(MENU)-1,self.arranger_menu+delta));return
         if self.surface_rotate(delta) or self.workspace_rotate(delta):
             return
         if self.page == 'SETTINGS':
@@ -705,6 +715,7 @@ class Application(MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,Mod
                 self.group = self.group_bank*8+slots.index(slot);self.keyboard_root=0 if self.slice_keyboard() else self.performance()['root']
                 self.pattern = self.active_patterns[self.group]
         elif self.page == 'PATTERN':
+            self.arranger_stop_mode()
             slot+=self.pattern_bank*16
             self.pattern = slot
             created=self.project['groups'][self.group]['pattern_created']
@@ -853,6 +864,11 @@ class Application(MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,Mod
         elif self.page in ('MIDI CHANNEL', 'TEMPO'):
             body = [str(self.settings['midi_channel']) if self.page == 'MIDI CHANNEL' else f'{self.project["tempo"]:.2f} BPM']
             footer = 'ENC CHANGE ENTER BACK'
+        elif self.page=='CLIP ARRANGER':
+            rows=self.arranger_rows();label,value=rows[self.arranger_field];body=[label,value,'ARROWS: FIELD'];footer='ENC CHANGE / PUSH EDIT'
+        elif self.page=='CLIP MENU':
+            from app.clip_arranger import MENU
+            body=[MENU[self.arranger_menu],'SELECT ACTION'];footer='ENTER SELECT'
         elif self.page == 'BROWSE':
             entries = self.entries()
             self.browser_index = min(self.browser_index, max(0, len(entries)-1))
@@ -892,13 +908,15 @@ class Application(MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,Mod
         return header, body, footer
 
     def softkeys(self):
+        if self.page=='CLIP ARRANGER':return ('COPY','DELETE','SCENES') if self.shift else ('MENU','PLAY','BACK')
+        if self.page=='CLIP MENU':return ('BACK','SELECT','BACK')
+        if self.page=='SONG' and self.shift:return ('INSERT','CLIPS','AUTO')
         if self.page=='UPDATE':return ('BETA' if self.update_status.get('channel')=='beta' else 'REL','APPLY' if self.update_status.get('available') else 'CHECK','BACK')
         if self.page=='SCENE OPTIONS':return ('BACK','SELECT','')
         if self.page=='LIVE FX':return ('PUNCH','FLEX','KNOB')
         if self.page=='SAMPLE RAM':return ('BACK','REFRESH','PURGE')
         if self.page=='MIDI LEARN':return ('BACK','LEARN','REMOVE')
         if self.page=='SONG AUTO':return ('BACK','ON/OFF','REMOVE')
-        if self.page=='SONG' and self.shift:return ('INSERT','PLAY','AUTO')
         if self.main_controls_active():return ('VOLUME','SWING','TEMPO')
         if self.page=='BLUETOOTH MIDI':return ('ON/OFF','PAIR' if self.shift else 'SCAN','BACK')
         from app.codec_levels import dac_context

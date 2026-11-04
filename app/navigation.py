@@ -110,12 +110,13 @@ class Navigation:
 
     def select_view(self, destination):
         """Toggle a Navigate workspace without losing the view it replaced."""
-        current='PATTERN GRID' if self.view_origin=='GRID EDIT' else self.view_origin
+        from app.mikro_navigate import canonical
+        current=canonical(self.view_origin)
         if current==destination:
             previous=self.view_returns.get(destination,self.control_home())
             self.view_origin=self.control_home() if previous in (destination,'VIEW NAV') else previous
         else:
-            entry='PATTERN GRID' if self.view_entry=='GRID EDIT' else self.view_entry
+            entry=canonical(self.view_entry)
             if entry!=destination:self.view_returns[destination]=self.view_entry
             self.view_origin=destination
         self.view_target='SCENE' if self.view_origin in ('SCENE','SONG') else 'PAT'
@@ -129,7 +130,9 @@ class Navigation:
             if self.view_entry=='LIVE FX':self.live_fx_off()
             if self.view_origin=='PATTERN GRID' and self.keyboard_enabled and self.view_entry not in ('PATTERN GRID','GRID EDIT'):
                 self.open_pattern_grid()
-            else:self.page=self.view_origin
+            else:
+                self.page=self.view_origin
+                if self.page=='SONG' and self.project.get('arrangement',{}).get('mode')=='CLIPS':self.arranger_open()
 
     def navigation_button(self,name,pressed):
         from app.mikro_navigate import button

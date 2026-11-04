@@ -87,7 +87,7 @@ int main(int argc,char** argv) {
     std::atomic<Graph*> graph{initial.get()},graph_reader{nullptr},graph_applied{nullptr};std::vector<std::unique_ptr<Graph>> graphs;graphs.push_back(std::move(initial));
     maschine::MidiOutput external_midi;std::atomic<bool> sequence_clock_out{false};std::atomic<double> sequence_midi_offset{0};
     Queue hits;struct Plan : maschine::SequencePlan<Hit> {std::array<bool,kSounds> touched{};};
-    std::atomic<Plan*> sequence_plan{nullptr},sequence_reader{nullptr};std::vector<std::unique_ptr<Plan>> sequence_assets;std::unique_ptr<Plan> sequence_build;
+    std::atomic<Plan*> sequence_plan{nullptr},sequence_reader{nullptr},sequence_previous_reader{nullptr};std::vector<std::unique_ptr<Plan>> sequence_assets;std::unique_ptr<Plan> sequence_build;
     auto sequence_clock=std::make_unique<maschine::SequenceClock<Hit>>();
     std::atomic<std::uint64_t> sequence_control_version{0};
     std::atomic<bool> sequence_running{false};std::atomic<double> sequence_bpm{120},sequence_position{0},sequence_stamp{0};
@@ -140,6 +140,7 @@ int main(int argc,char** argv) {
         running.store(false);preview_running.store(false);
         if (worker.joinable()) worker.join();
         sequence_reader.store(nullptr);
+        sequence_previous_reader.store(nullptr);
         if(capture_pcm){snd_pcm_drop(capture_pcm);snd_pcm_close(capture_pcm);capture_pcm=nullptr;}
         if (pcm) { snd_pcm_drop(pcm); snd_pcm_close(pcm); pcm = nullptr; }
         Hit hit{}; while (hits.pop(hit)) {}
@@ -216,6 +217,10 @@ int main(int argc,char** argv) {
                     Controls c{sequence_seek.load(),sequence_epoch.load(),sequence_seek_tick.load(),sequence_bpm.load(),sequence_midi_offset.load(),sequence_running.load(),sequence_clock_out.load()};
                     if(v==sequence_control_version.load()){controls=c;break;}}
                 auto transport=transport_clock.block(output_rate,std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count());
+                // Keep the previous plan alive until its carried gates have
+                // been reconciled with the new one. A control commit may
+                // otherwise reclaim it during the reader handoff.
+                sequence_previous_reader.store(sequence_reader.load());
                 Plan* plan=nullptr;do{plan=sequence_plan.load();sequence_reader.store(plan);}while(plan!=sequence_plan.load());
                 const auto seek=controls.seek;const bool seq_running=controls.running;const double seq_bpm=controls.bpm;
                 const bool reset_early_eligibility=seek!=last_seek||!seq_running;
@@ -293,6 +298,7 @@ int main(int argc,char** argv) {
                     if(!seq_running)sequence_clock->stop();
                 }
                 if(seq_running){sequence_clock->running=true;sequence_clock->replace(plan);transport.beat=sequence_clock->tick/96;transport.bpm=seq_bpm;transport.speed=1;transport.frame=native_frame;}
+                sequence_previous_reader.store(nullptr);
                 sequence_report_version.fetch_add(1);sequence_position.store(sequence_clock->tick);sequence_stamp.store(midi_block_stamp);sequence_seen_epoch.store(applied_epoch);sequence_report_version.fetch_add(1);
                 Hit hit{};while(hits.pop(hit))apply_hit(hit,0);
                 std::array<float,256> preview_l{},preview_r{};
@@ -324,10 +330,21 @@ int main(int argc,char** argv) {
                     block_chains[bus]->run(buses_l[bus].data(),buses_r[bus].data(),midi[bus].data(),midi_count[bus],transport);
                 };
                 if(early_count)render_pool.start(early_count,[](void* context,unsigned index){(*static_cast<decltype(render_early)*>(context))(index);},&render_early);
+                // Prune finite clip windows once per block; never allocate or
+                // scan the whole arrangement per sample.
+                std::array<const Plan::AudioLoop*,8192> block_loops;unsigned loop_count=0;
+                if(seq_running&&plan){
+                    const double first=sequence_clock->tick,last=first+256*seq_bpm*96/(60.*output_rate);
+                    for(const auto& loop:plan->audio_loops)if(loop.lane<plan->lanes.size()){
+                        const auto& lane=plan->lanes[loop.lane];
+                        if(first<lane.end&&last>lane.start&&loop_count<block_loops.size())block_loops[loop_count++]=&loop;
+                    }
+                }
                 for (unsigned frame = 0; frame < 256; ++frame) {
-                    if(seq_running&&plan)for(const auto& loop:plan->audio_loops){
+                    for(unsigned li=0;li<loop_count;++li){const auto& loop=*block_loops[li];
                         const auto& h=loop.hit;if(!h.sample||h.slot>=kSounds||loop.lane>=plan->lanes.size())continue;
-                        const double phase=maschine::audio_loop_phase(sequence_clock->tick,plan->lanes[loop.lane].length);
+                        const auto& lane=plan->lanes[loop.lane];if(!lane.active(sequence_clock->tick))continue;
+                        const double phase=maschine::audio_loop_phase(lane.phase(sequence_clock->tick),lane.length);
                         const auto end=std::min(h.end,h.sample->data.size()/2);
                         const float l=maschine::audio_loop_frame(h.sample->data.data(),h.start,end,phase,loop.ticks,seq_bpm,h.sample->rate,0,loop.stretch,h.pitch)*h.gain;
                         const float r=maschine::audio_loop_frame(h.sample->data.data(),h.start,end,phase,loop.ticks,seq_bpm,h.sample->rate,1,loop.stretch,h.pitch)*h.gain;
@@ -400,7 +417,8 @@ int main(int argc,char** argv) {
                     for(const auto& v:voices)if(wanted&&v.sample==wanted&&(v.bus==watch_bus||v.preview)&&!v.dsp.done()&&display_frame(v)>=v.start&&display_frame(v)<v.end&&(!latest||v.display_order>latest->display_order))latest=&v;
                     double loop_frame=-1;
                     if(seq_running&&plan)for(const auto& loop:plan->audio_loops)if(wanted&&loop.hit.sample==wanted&&loop.hit.slot==watch_bus&&loop.lane<plan->lanes.size()){
-                        const double phase=maschine::audio_loop_phase(maschine::audio_loop_phase(sequence_clock->tick,plan->lanes[loop.lane].length),loop.ticks);
+                        const auto& lane=plan->lanes[loop.lane];if(!lane.active(sequence_clock->tick))continue;
+                        const double phase=maschine::audio_loop_phase(maschine::audio_loop_phase(lane.phase(sequence_clock->tick),lane.length),loop.ticks);
                         loop_frame=loop.hit.start+phase/loop.ticks*(loop.hit.end-loop.hit.start);break;
                     }
                     wave_version.fetch_add(1);
@@ -670,13 +688,18 @@ int main(int argc,char** argv) {
             if(input>>channel>>note>>velocity&&channel<16&&note>=0&&note<128&&velocity>=0&&velocity<128){input>>token;Hit h{};h.external=true;h.channel=channel;h.note=note;h.midi_velocity=velocity;h.voice_token=token;unsigned bus=0;if(input>>bus&&bus<kSounds)h.slot=bus;enqueue(h);}
         }else if(op=="sequence_begin"){sequence_build=std::make_unique<Plan>();
         }else if(op=="sequence_lane"){
-            double length;if(sequence_build&&input>>length&&std::isfinite(length)&&length>=1&&length<=(export_instance?1e9:98304)&&sequence_build->lanes.size()<65)sequence_build->lanes.push_back({length,{}});
+            double length;if(sequence_build&&input>>length&&std::isfinite(length)&&length>=1&&length<=(export_instance?1e9:98304)&&sequence_build->lanes.size()<577)sequence_build->lanes.push_back({length,{}});
+        }else if(op=="sequence_window"){
+            double start,end,offset;
+            if(sequence_build&&!sequence_build->lanes.empty()&&input>>start>>end>>offset&&std::isfinite(start)&&std::isfinite(end)&&std::isfinite(offset)&&start>=0&&end>start&&end<=393216&&offset>=0&&offset<98304){
+                auto& lane=sequence_build->lanes.back();lane.start=start;lane.end=end;lane.offset=offset;input>>lane.identity;
+            }
         }else if(op=="sequence_event"){
             double tick,length,not_before;unsigned probability;
             if(sequence_build&&!sequence_build->lanes.empty()&&input>>tick>>length>>probability>>not_before&&std::isfinite(tick)&&std::isfinite(length)&&std::isfinite(not_before)&&tick>=0&&tick<sequence_build->lanes.back().length&&length>=1&&length<=98304&&probability<=100)sequence_build->lanes.back().events.push_back({tick,length,not_before,probability,{}});
         }else if(op=="sequence_audio"){
             unsigned slot;double ticks,pitch;bool stretch;
-            if(sequence_build&&!sequence_build->lanes.empty()&&input>>slot>>ticks>>stretch>>pitch&&slot<kSounds&&std::isfinite(ticks)&&ticks>=1&&ticks<=98304&&std::isfinite(pitch)&&pitch>=.25&&pitch<=4&&sequence_build->audio_loops.size()<kSounds){
+            if(sequence_build&&!sequence_build->lanes.empty()&&input>>slot>>ticks>>stretch>>pitch&&slot<kSounds&&std::isfinite(ticks)&&ticks>=1&&ticks<=98304&&std::isfinite(pitch)&&pitch>=.25&&pitch<=4&&sequence_build->audio_loops.size()<8192){
                 const auto* sample=slots[slot].load();
                 if(sample){Hit h{};h.sample=sample;h.slot=slot;h.gain=1;h.pitch=pitch;h.start=ranges[slot].first;h.end=ranges[slot].second;sequence_build->audio_loops.push_back({h,ticks,static_cast<unsigned>(sequence_build->lanes.size()-1),stretch});}
             }
@@ -690,7 +713,7 @@ int main(int argc,char** argv) {
                     }
                     for(const auto& loop:sequence_build->audio_loops)if(loop.hit.slot<kSounds)sequence_build->touched[loop.hit.slot]=true;
                     auto ptr=sequence_build.get();sequence_assets.push_back(std::move(sequence_build));sequence_plan.store(ptr);
-                    std::erase_if(sequence_assets,[&](const auto& item){return item.get()!=sequence_plan.load()&&item.get()!=sequence_reader.load();});
+                    std::erase_if(sequence_assets,[&](const auto& item){return item.get()!=sequence_plan.load()&&item.get()!=sequence_reader.load()&&item.get()!=sequence_previous_reader.load();});
                     std::cout<<"{\"kind\":\"sequence\",\"status\":\"ready\",\"hits\":"<<total<<"}"<<std::endl;
                 }else{sequence_build.reset();std::cout<<"{\"kind\":\"sequence\",\"status\":\"memory_limit\"}"<<std::endl;}
             }

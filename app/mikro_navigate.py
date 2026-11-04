@@ -4,7 +4,7 @@ LABELS=('SONG','MIXER','EVENTS','LIVE FX')
 WAVES=('SAMPLE EDIT','CHOP')
 GRIDS=('PATTERN GRID','GRID EDIT')
 
-def canonical(page):return 'PATTERN GRID' if page=='GRID EDIT' else page
+def canonical(page):return 'SONG' if page in ('CLIP ARRANGER','CLIP MENU') else 'PATTERN GRID' if page=='GRID EDIT' else page
 
 def index(page):
     page=canonical(page)

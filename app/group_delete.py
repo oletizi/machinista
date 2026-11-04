@@ -42,6 +42,7 @@ def compact_group(project,index):
         value=item['descriptor'][0];referenced.add(value-GROUP_BASE if GROUP_BASE<=value<MASTER else value//16 if value<GROUP_BASE else -1)
     sampling=project.get('sampling',{})
     if sampling.get('source')=='INTERNAL' and sampling.get('input','').startswith('GROUP '):referenced.add(int(sampling['input'].split()[1]))
+    referenced.update(c['group'] for c in project.get('arrangement',{}).get('clips',[]))
     referred_new={old-(old>index) for old in referenced if old!=index}
     while len(result['groups'])>8 and not any(group_used(g) for g in result['groups'][-(len(result['groups'])%8 or 8):]):
         count=len(result['groups'])%8 or 8
@@ -57,6 +58,8 @@ def compact_group(project,index):
     def group_index(old):
         new=old-(old>index)
         return None if old==index or old>=old_count or new>=count else new
+    if 'arrangement' in result:
+        result['arrangement']['clips']=[dict(c,group=group_index(c['group'])) for c in result['arrangement']['clips'] if group_index(c['group']) is not None]
     def bus(old):
         if old==MASTER:return MASTER
         if old>=GROUP_BASE:
@@ -148,6 +151,7 @@ class GroupDelete:
         if self.group is None:self.group=next((i for i in used if i>=request['index']),used[-1] if used else 0)
         if not used:self.group=0
         self.group_bank=self.group//8;self.pad=min(self.pad,15);self.selected_pads={self.pad}
+        self.arranger_stop_mode();self.arranger_group=min(self.arranger_group,len(result['groups'])-1)
         self.activate_scene(self.scene);self.keyboard_root=self.performance()['root']
         self.note_snapshot_cache.clear();self.clock_schedule_key=None;self.erase_index.clear();self.erase_targets.clear()
         self.automation_cache=None;self.control_views.clear();self.grid_selected.clear();self.grid_context=(self.group,self.pattern)
