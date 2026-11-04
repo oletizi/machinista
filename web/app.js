@@ -209,3 +209,7 @@ $('tab-banks').onclick=()=>workspace('banks');
 $('sound-banks').onclick=()=>workspace('banks');
 
 $('lv2-banks').onclick=()=>workspace('banks');
+
+async function sampleSetsLoad(){try{const rows=await api('/api/sets');$('set-list').replaceChildren();for(const row of rows){const box=element('div',undefined,'toolbar'),link=element('a','Download ZIP');link.href='/api/sets/file?'+new URLSearchParams({id:row.id});box.append(element('span',row.name+' · '+row.pads+' pads'),link);$('set-list').append(box)}if(!rows.length)$('set-list').append(element('p','No saved Groups yet. Use SAVE GROUP on the controller.','muted'))}catch(e){$('set-message').textContent=e.message}}
+$('sample-sets').ontoggle=()=>{if($('sample-sets').open)sampleSetsLoad()};$('set-refresh').onclick=sampleSetsLoad;
+$('set-file').onchange=async()=>{const input=$('set-file'),file=input.files[0];if(!file)return;input.disabled=true;$('set-message').textContent='Importing sample sets …';try{const result=await api('/api/sets/upload?'+new URLSearchParams({name:file.name}),{method:'POST',headers:{'X-Machinista-Token':token},body:file});$('set-message').textContent=result.sets.length+' set(s) imported. On the controller choose BROWSE → SAMPLE SETS.';await sampleSetsLoad()}catch(e){$('set-message').textContent=e.message}finally{input.disabled=false;input.value=''}};

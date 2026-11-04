@@ -15,6 +15,7 @@ All interface assets are local; no external packages or CDNs are loaded.
   Each Sound has a confirmed Delete action, including generated bank patches.
   Deleted bank entries stay hidden after refresh/restart. The original bank and
   assets used by existing projects remain; recovery links are in `presets/Sounds/.trash`.
+- **Sample Sets / Expansions (under Sounds):** import WAV packs or saved Group ZIPs, list and download saved Groups. Load them on the controller through BROWSE > SAMPLE SETS. See [Sample Sets](SAMPLE_SETS.md) for limits and the SAVE GROUP workflow. Native Maschine/NCW conversion is not included.
 - **Projects:** upload and download project archives with their sample assets.
   Delete is available for every project and always asks for confirmation. Deleting
   the loaded project opens an empty project; stop playback and recording first.

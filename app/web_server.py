@@ -35,6 +35,8 @@ class Library:
         self.token=secrets.token_urlsafe(32);self.upload_lock=threading.Lock();self.stats_lock=threading.Lock()
         from app.web_projects import Projects
         self.projects=Projects(self)
+        from app.web_sets import SampleSets
+        self.sets=SampleSets(self)
         from app.web_files import Files
         self.files=Files(self)
         from app.chord_library import ChordLibrary
@@ -211,6 +213,9 @@ class Handler(BaseHTTPRequestHandler):
                 origin=self.headers.get('Origin')
                 if origin and origin!='http://'+self.headers.get('Host'):raise PermissionError('Invalid origin.')
                 if not secrets.compare_digest(self.headers.get('X-Machinista-Token',self.headers.get('X-Machinist-Token','')),library.token):raise PermissionError('Please reload the page.')
+                if path=='/api/sets/upload':
+                    if self.headers.get('Transfer-Encoding'):raise ValueError('Content-Length required.')
+                    self.json(library.sets.upload(q.get('name',''),self.rfile,int(self.headers.get('Content-Length','0'))));return
                 if path in ('/api/stems/start','/api/stems/install','/api/stems/cancel'):
                     length=int(self.headers.get('Content-Length','0'))
                     if self.headers.get('Transfer-Encoding') or not 0<length<=8192:raise ValueError('Invalid stem request size.')
@@ -356,6 +361,13 @@ class Handler(BaseHTTPRequestHandler):
                     value=json.loads(self.rfile.read(length))
                     self.json(request('connect',ssid=value.get('ssid'),password=value.get('password','')));return
             else:
+                if path=='/api/sets':self.json(library.sets.listing());return
+                if path=='/api/sets/file':
+                    with library.sets.download(q.get('id','')) as (stream,mime,name):
+                        stream.seek(0,2);size=stream.tell();stream.seek(0)
+                        self.response_headers(200,mime,size,[('Content-Disposition',"attachment; filename*=UTF-8''"+quote(name))])
+                        while block:=stream.read(CHUNK):self.wfile.write(block)
+                    return
                 if path=='/api/stems':self.json(library.stems.status());return
                 if path=='/api/soundfonts':self.json(library.soundfonts.status());return
                 if path=='/api/sounds':self.json(library.sounds.status());return

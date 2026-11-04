@@ -151,7 +151,8 @@ class Application(ClipArranger,MultiSelection,MidiRemote,AudioExport,Mixer,Relin
         self.samples.mkdir(parents=True, exist_ok=True)
         self.mp3_serial=0;self.mp3_requests={};self.browser_decoded={}
         (self.root/'presets/Sounds').mkdir(parents=True,exist_ok=True)
-        self.browser = Browser(self.samples, (Source('SOUNDS',self.root/'presets/Sounds'),Source('PROJECT ASSETS', self.root/'projects'),
+        (self.root/'presets/Groups').mkdir(parents=True,exist_ok=True)
+        self.browser = Browser(self.samples, (Source('SOUNDS',self.root/'presets/Sounds'),Source('SAMPLE SETS',self.root/'presets/Groups'),Source('PROJECT ASSETS', self.root/'projects'),
                                              Source('PRESET ASSETS', self.root/'presets')))
         self.project_path = self.root/'projects/current.json'
         self.settings_path = self.root/'config/settings.json'
@@ -580,7 +581,8 @@ class Application(ClipArranger,MultiSelection,MidiRemote,AudioExport,Mixer,Relin
             path = self.browser.open()
             if path is not None:
                 if path.name=='Preset.json' or path.suffix.lower()=='.sound':
-                    self.request_preset_load(path,'SOUND',self.group,self.pad);return
+                    kind='GROUP' if path.is_relative_to(self.root/'presets/Groups') else 'SOUND'
+                    self.request_preset_load(path,kind,self.group,self.pad);return
                 if path.suffix.lower()=='.mp3':
                     self.mp3_serial+=1;slot=(self.group,self.pad);self.mp3_requests[slot]=self.mp3_serial
                     context=dict(generation=self.project_generation,group=self.group,pad=self.pad,serial=self.mp3_serial,

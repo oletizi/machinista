@@ -25,7 +25,7 @@ def main():
   if p.is_file() and p.suffix in ('.py','.cpp','.cjs') and p.name not in ('install_machinista_branding.py','install_lv2_web.py'):add(p)
  for folder in ('audit','obxd'):
   for p in (ROOT/'tools'/folder).glob('*.py'):add(p)
- for name in ('WEB_UI.md','USER_MANUALS.md','SOUNDS_AND_AUTOSAMPLER.md','SOUNDFONT_IMPORT.md','PLUGIN_PROFILES.md','MK1_MIDI.md','MK3_SUPPORT.md','LIVE_FX_PITCH.md','BETA_WORKFLOW_SMOKE.md','UPDATER_PLAN.md'):add(ROOT/'docs'/name)
+ for name in ('SAMPLE_SETS.md','WEB_UI.md','USER_MANUALS.md','SOUNDS_AND_AUTOSAMPLER.md','SOUNDFONT_IMPORT.md','PLUGIN_PROFILES.md','MK1_MIDI.md','MK3_SUPPORT.md','LIVE_FX_PITCH.md','BETA_WORKFLOW_SMOKE.md','UPDATER_PLAN.md'):add(ROOT/'docs'/name)
  for p in (ROOT/'output/pdf').glob('Machinista_*_User_Manual_*.pdf'):add(p)
  for name in ('CMakeLists.txt','THIRD_PARTY_NOTICES.md','README.md','LICENSE.md','LICENSING.md'):add(ROOT/name)
  maps=work/'maps';maps.mkdir(exist_ok=True)
