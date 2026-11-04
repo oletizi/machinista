@@ -106,4 +106,5 @@ class SampleSets:
      for label in published:shutil.rmtree(self.folder/label)
      raise
     return dict(ok=True,sets=published)
+  except zipfile.BadZipFile as error:raise ValueError('Invalid or damaged sample-set ZIP.') from error
   finally:self.library.upload_lock.release()
