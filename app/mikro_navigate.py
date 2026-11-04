@@ -27,8 +27,12 @@ def button(a,name,pressed):
     if name=='VIEW' and (not a.shift or not pressed and a.view_selector):
         if pressed:
             a.view_entry=a.view_origin=a.page;a.view_selector=True;a.view_tool=None
-            a.view_index=index(a.page);a.page='VIEW NAV'
+            a.view_index=index(a.page);was_pinned=a.wave_view_active and a.wave_view_pinned
             a.wave_view_active=a.wave_view_pinned=False
+            if not was_pinned and a.page in WAVES and (a.page=='SAMPLE EDIT' or a.slice_edit):
+                # In active sampling editors, VIEW is the direct zoom modifier.
+                a.view_tool='WAVE';a.wave_view_active=a.wave_selected=True;a.view_field=0
+            else:a.page='VIEW NAV'
             if a.view_entry=='LIVE FX':a.view_returns.setdefault('LIVE FX',a.live_fx_origin)
         elif a.view_selector:
             if a.view_tool=='WAVE':

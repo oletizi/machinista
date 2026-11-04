@@ -117,6 +117,35 @@ class WaveZoomTests(unittest.TestCase):
         self.assertEqual(a.track(),original);self.assertEqual(a.actions,[])
         a.button('VIEW',False);self.assertFalse(a.wave_view())
         a.rotate(1);self.assertGreater(a.track()['start'],0)
+    def test_mikro_view_encoder_direct_zoom_and_release_returns_to_trim(self):
+        import copy
+        a=self.app;before=copy.deepcopy(a.track());a.wave_bounds(4800)
+        a.wave_selected=False;a.view_field=1
+        a.button('VIEW',True);a.rotate(2)
+        self.assertEqual(a.page,'SAMPLE EDIT');self.assertEqual(a.wave_zoom,2)
+        self.assertEqual(a.wave_bounds(4800),(0,1200));self.assertEqual(a.track(),before)
+        a.rotate(-1);self.assertEqual(a.wave_zoom,1)
+        a.button('VIEW',False);self.assertFalse(a.wave_view())
+        self.assertEqual(a.actions,[])
+        a.rotate(1);self.assertGreater(a.track()['start'],before['start'])
+
+    def test_slice_edit_view_zooms_without_changing_slice_or_end_focus(self):
+        import copy
+        a=self.app;a.page='CHOP';a.slice_edit=True;a.slice_mode='MANUAL'
+        a.track()['slices']=[[0,2400],[2400,4800]];a.slice_index=1
+        a.wave_bounds(4800);a.slice_focus_end=True
+        original=copy.deepcopy(a.track());a.button('VIEW',True);a.rotate(2)
+        self.assertEqual(a.wave_zoom,2);self.assertTrue(a.slice_focus_end)
+        self.assertEqual(a.track(),original);self.assertEqual(a.slice_index,1)
+        a.button('VIEW',False);self.assertFalse(a.wave_view());self.assertTrue(a.slice_edit)
+        self.assertEqual(a.page,'CHOP');self.assertEqual(a.actions,[])
+
+    def test_slice_setup_keeps_legacy_wave_choice_and_other_view_navigation(self):
+        a=self.app;a.page='CHOP';a.slice_edit=False;a.wave_selected=False
+        a.button('VIEW',True);a.rotate(1);self.assertEqual(a.wave_zoom,0)
+        a.button('F2',True);a.rotate(1);self.assertEqual(a.wave_zoom,1)
+        a.button('VIEW',False);a.page='PAD';a.button('VIEW',True)
+        self.assertEqual(a.page,'VIEW NAV')
     def test_pin_limits_new_sample_reset_and_mixer_outside_edit(self):
         a=self.app;a.button('VIEW',True);a.button('F2',True)
         a.button('MAIN',True);a.button('MAIN',False);a.button('VIEW',False)

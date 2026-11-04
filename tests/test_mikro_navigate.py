@@ -61,8 +61,8 @@ class MikroNavigateTests(unittest.TestCase):
   a=self.a;path=Path(self.tmp.name)/'samples/test.wav'
   with wave.open(str(path),'wb') as w:w.setparams((1,2,48000,0,'NONE','not compressed'));w.writeframes(b'\0\0'*4800)
   a.track().update(sample=str(path),start=0,end=4800);a.page='SAMPLE EDIT'
-  self.press('VIEW');self.assertEqual(a.page,'VIEW NAV');self.assertEqual(a.softkeys()[1],'WAVE')
-  self.tap('F2');self.assertTrue(a.wave_view());a.rotate(1);self.assertEqual(a.wave_zoom,1)
+  self.press('VIEW');self.assertEqual(a.page,'SAMPLE EDIT');self.assertTrue(a.wave_view());self.assertEqual(a.view_field,0)
+  a.rotate(1);self.assertEqual(a.wave_zoom,1)
   self.release('VIEW');self.assertEqual(a.page,'SAMPLE EDIT');self.assertFalse(a.wave_view())
   a.page='PATTERN GRID';before=a.view_count;self.press('VIEW');self.assertEqual(a.softkeys()[1],'GRID')
   self.tap('F2');a.rotate(1);self.assertLess(a.view_count,before)

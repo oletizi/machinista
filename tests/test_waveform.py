@@ -4,10 +4,32 @@ import tempfile
 import time
 import unittest
 import wave
+from unittest.mock import patch
 from app.waveform import read_envelope, Waveforms
 
 
 class WaveformTests(unittest.TestCase):
+    def test_mikro_zoom_reuses_pcm_index_and_cached_views_without_loading_blanks(self):
+        with tempfile.TemporaryDirectory() as root:
+            path=Path(root)/'zoom.wav'
+            with wave.open(str(path),'wb') as wav:
+                wav.setparams((2,2,48000,0,'NONE','not compressed'))
+                wav.writeframes(array.array('h',[-32768,32767]*240000).tobytes())
+            reader=Waveforms()
+            try:
+                with patch('app.waveform_index.wave.open',wraps=wave.open) as opened:
+                    result=None;deadline=time.monotonic()+3
+                    while result is None and time.monotonic()<deadline:
+                        result=reader.envelope(path);time.sleep(.001)
+                    self.assertIsNotNone(result);self.assertEqual(opened.call_count,1)
+                    # No worker round-trip or disk read for any new zoom/scroll window.
+                    with patch('app.waveform_index.WaveformIndex',side_effect=AssertionError('PCM reread')):
+                        for start,end in ((0,120000),(123,60123),(4000,16000),(5990,6110),(0,240000)):
+                            result=reader.envelope(path,start,end)
+                            self.assertIsNotNone(result);self.assertEqual((result.start,result.end),(start,end))
+                        self.assertIs(reader.envelope(path,0,240000),result)
+                    self.assertEqual(opened.call_count,1)
+            finally:reader.close()
     def test_pcm_peaks_preserve_transients_and_silence(self):
         with tempfile.TemporaryDirectory() as root:
             path = Path(root)/'fixture.wav'

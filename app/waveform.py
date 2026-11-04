@@ -1,9 +1,6 @@
 """Bounded, asynchronous PCM waveform envelopes for the controller display."""
 import array
-from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from pathlib import Path
 import sys
 import wave
 
@@ -50,35 +47,17 @@ def read_envelope(path, columns=120, start=0, end=None):
 
 
 class Waveforms:
+    """Mikro uses the reusable PCM index, so zooming needs no new WAV read.
+
+    Construction stays asynchronous in the low-priority index worker. The
+    small view cache also avoids recomputing peaks during playhead refreshes.
+    Import lazily because the index uses Envelope from this module.
+    """
     def __init__(self):
-        self.worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix='waveform')
-        self.cache = OrderedDict()
-        self.future = None
-        self.loading_key = None
+        from app.mk3_waveforms import Mk3Waveforms
+        self.indexed=Mk3Waveforms()
 
-    def envelope(self, path, start=0, end=None):
-        if self.future and self.future.done():
-            try:
-                self.cache[self.loading_key] = self.future.result()
-            except (OSError, ValueError, wave.Error, EOFError):
-                self.cache[self.loading_key] = Envelope(0, ())
-            while len(self.cache) > 8:
-                self.cache.popitem(last=False)
-            self.future = None
-        if not path:
-            return None
-        try:
-            metadata = Path(path).stat()
-        except OSError:
-            return Envelope(0, ())
-        key = (str(path), metadata.st_mtime_ns, metadata.st_size,start,end)
-        if key in self.cache:
-            self.cache.move_to_end(key)
-            return self.cache[key]
-        if self.future is None:
-            self.loading_key = key
-            self.future = self.worker.submit(read_envelope, path,120,start,end)
-        return None
+    def envelope(self,path,start=0,end=None):
+        return self.indexed.envelope(path,start,end,columns=120)
 
-    def close(self):
-        self.worker.shutdown(wait=True, cancel_futures=True)
+    def close(self):self.indexed.close()
