@@ -380,6 +380,13 @@ def render(state,renderer):
             q.fitted(4,38,db,246)
             q.rect(4,49,248,9,q.ink,False);q.rect(6,51,round(amount*244),5)
         else:q.fitted(4,28,error or ('READING MIXER...' if device!='NO AUDIO DEVICE' else device),246,font='bold7')
+    elif 'stem_separation' in state:
+        s=state['stem_separation'];p.title('STEM SEPARATION');p.fitted(4,25,s.get('name',''),248,font='bold7')
+        p.text(4,40,'VOCALS / DRUMS / BASS / OTHER',248)
+        p.text(4,52,'WHOLE SAMPLE / MAX 60 SEC',248)
+        q.title(s.get('state','IDLE'),str(s.get('progress',0))+'%')
+        q.fitted(4,27,s.get('message',''),248)
+        q.rect(4,42,248,9,q.ink,False);q.rect(6,44,round(244*max(0,min(100,s.get('progress',0)))/100),5)
     elif 'utility' in state and 'system' not in state and page!='AUTOSAMPLER':
         header,body,footer=state['utility'];p.title(header);q.title(page,counter)
         if state.get('settings_page') and not any(state['fields'][4:]):settings_rows(q,body)

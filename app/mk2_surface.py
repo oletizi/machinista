@@ -713,7 +713,12 @@ class Mk2Surface:
             edit='DONE' if p=='GRID EDIT' else 'EDIT' if a.grid_targets() else 'ADD NOTE'
             return ('SELECTED' if selected else 'SELECT',edit,'FOLLOW','','UP','DOWN','ALL','NONE')
         if p=='MIXER':return ('MASTER','GROUP','SOUND','','LEVEL','PAN','ROUTE','RESET')
-        if p=='BROWSE':return ('BACK','FIND' if a.shift else '','','PREHEAR','','','','LOAD')
+        if p=='STEM SEPARATION':
+            from app.controller_stems import keys
+            k=keys(a);return ('BACK','','','',k[1] if not a.stem_status.get('busy') else '', 'CANCEL' if a.stem_status.get('busy') else '',k[2],'')
+        if p=='BROWSE':
+            from app.controller_stems import browser_sample
+            return ('BACK','FIND' if a.shift else '','','PREHEAR','','','STEMS' if browser_sample(a) else '','LOAD')
         if p=='SELECT':return ('PIN','EVENTS','BANK-','BANK+','ALL','NONE','','MULTI')
         if p in ('NOTE REPEAT','ARP'):return ('PIN','LOCK','HOLD',a.project['arp']['division'], '1/8','1/16','1/32','1/64')
         keys=a.softkeys() or ('','','')
@@ -913,8 +918,18 @@ class Mk2Surface:
             elif index==6:a.grid_selected=set(a.event_notes())
             elif index==7:a.grid_selected.clear()
             return
+        if p=='STEM SEPARATION':
+            from app.controller_stems import start,cancel,open_folder
+            if index==0:a.page=a.stem_origin
+            elif index==4:start(a)
+            elif index==5:cancel(a)
+            elif index==6:open_folder(a)
+            return
         if p=='BROWSE':
-            if index==0:self.tap('F1')
+            if index==6:
+                from app.controller_stems import open_page
+                open_page(a,True)
+            elif index==0:self.tap('F1')
             elif index==1 and a.shift:self.tap('F2')
             elif index==3:self.tap('F3')
             elif index==7:self.tap('ENTER')

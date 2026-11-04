@@ -43,10 +43,10 @@ def prepare(language, original):
         base.CH = localize_chapters(base.CH)
     from tools.manual_web_chords import enrich
     from tools.manual_controller_scope import scope_chapters
-    from tools import manual_audio_loops, manual_native_synth, manual_current, manual_plain_language, manual_native_effects, manual_clip_arranger
+    from tools import manual_audio_loops, manual_native_synth, manual_current, manual_plain_language, manual_native_effects, manual_clip_arranger, manual_controller_stems
     enrich(base.CH, language)
     scope_chapters(base.CH, language)
-    for module in (manual_audio_loops, manual_native_synth, manual_current, manual_plain_language, manual_native_effects, manual_clip_arranger):
+    for module in (manual_audio_loops, manual_native_synth, manual_current, manual_plain_language, manual_native_effects, manual_clip_arranger, manual_controller_stems):
         module.enrich(base.CH, language)
     base.MANUAL_LANGUAGE = language
     return base.CH

@@ -112,6 +112,8 @@ if __name__=='__main__':
     enrich_effects(base.CH,'de')
     from tools.manual_clip_arranger import enrich as enrich_clips
     enrich_clips(base.CH,'de')
+    from tools.manual_controller_stems import enrich as enrich_stems
+    enrich_stems(base.CH,'de')
     base.MANUAL_LANGUAGE='de'
     # The same source labels choose the same chapter-specific screenshots.
     catalog=json.loads((base.ASSETS/'catalog.json').read_text()) if (base.ASSETS/'catalog.json').exists() else base.render_assets()

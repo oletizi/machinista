@@ -41,11 +41,11 @@ class Browser:
 
     def entries(self):
         if self.directory is None:
-            return [source.path for source in self.sources]
+            return [source.path for source in self.sources if source.name not in ('PROJECT ASSETS','PRESET ASSETS')]
         root = self.current_root()
         if root is None:
             self.directory, self.index = None, 0
-            return [source.path for source in self.sources]
+            return [source.path for source in self.sources if source.name not in ('PROJECT ASSETS','PRESET ASSETS')]
         result = []
         try:
             for path in self.directory.iterdir():
@@ -63,7 +63,7 @@ class Browser:
             return next(source.name for source in self.sources if source.path == path)
         if path.name=='Preset.json':return path.parent.name
         if path.suffix.lower()=='.sound':return path.stem
-        return ('/' if path.is_dir() else '')+path.name
+        return path.name
 
     def title(self):
         if self.directory is None:

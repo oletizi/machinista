@@ -21,6 +21,9 @@ def listing(title,items,index,footer=''):
 
 def utility_data(a):
     p=a.page
+    if p=='STEM SEPARATION':
+        from app.controller_stems import display
+        return display(a)
     if p in ('AUDIO LOOP','BOUNCE TO PAD'):
         return listing(p,[f'{k}: {v}' for k,v in a.audio_tool_fields()],a.audio_tool_field,'SELECT FIELD / ENCODER EDIT')
     if p=='LIVE FX':

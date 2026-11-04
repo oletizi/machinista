@@ -7,7 +7,7 @@ from app.storage import save_json
 TEMPORARY = {'SCENE': 'SCENE', 'PATTERN': 'PATTERN', 'PAD MODE': 'PAD CONFIG',
              'VIEW': 'MIXER', 'SELECT': 'SELECT', 'MUTE': 'MUTE', 'SOLO': 'SOLO',
              'GRID': 'OPTIONS', 'NOTE REPEAT': 'NOTE REPEAT', 'DUPLICATE': 'DUPLICATE', 'EVENTS': 'PATTERN GRID'}
-PROCESSING = ('TRUNCATE', 'NORMALIZE', 'REVERSE', 'FADE IN', 'FADE OUT', 'FIX DC', 'SILENCE', 'CUT','COPY','PASTE','DUPLICATE','STRETCH')
+PROCESSING = ('TRUNCATE', 'NORMALIZE', 'REVERSE', 'FADE IN', 'FADE OUT', 'FIX DC', 'SILENCE', 'CUT','COPY','PASTE','DUPLICATE','STRETCH','STEM SEPARATION')
 
 
 class OriginalSurface:
@@ -157,6 +157,8 @@ class OriginalSurface:
             return True
         if self.live_fx_button(name, pressed):return True
         if self.midi_remote_button(name,pressed):return True
+        from app.controller_stems import button as stem_button
+        if stem_button(self,name,pressed):return True
         if self.export_button(name,pressed):return True
         if self.arranger_button(name,pressed):return True
         if self.mixer_button(name,pressed):return True
@@ -383,7 +385,10 @@ class OriginalSurface:
         if self.page in ('SAMPLE EDIT','PROCESS') and name in ('F1','F2','F3'):
             if name == 'F2':
                 operation = PROCESSING[self.process_index]
-                if operation=='STRETCH':self.page='STRETCH';self.sample_field=0
+                if operation=='STEM SEPARATION':
+                    from app.controller_stems import open_page
+                    open_page(self)
+                elif operation=='STRETCH':self.page='STRETCH';self.sample_field=0
                 else:self.confirm('NORM WHOLE SAMPLE?' if operation=='NORMALIZE' else operation+' SAMPLE?',lambda:self.actions.append(('process',operation)))
             else:
                 self.process_index = (self.process_index+(-1 if name == 'F1' else 1)) % len(PROCESSING)
@@ -545,6 +550,9 @@ class OriginalSurface:
         return False
 
     def surface_softkeys(self):
+        from app.controller_stems import PAGE,keys,browser_sample
+        if self.page==PAGE:return keys(self)
+        if self.page=='BROWSE' and self.shift:return ('BACK','FIND','STEMS' if browser_sample(self) else '')
         if self.page=='RECORD PREPARE':return ('2','4','8') if self.prepare_field==0 else ('-','-','-')
         from app.preferences import PREFERENCES
         from app.navigation import CONTROL_PAGES
@@ -602,7 +610,7 @@ class OriginalSurface:
             start,action,previous,next_take=self.capture_actions()
             return (start,'CANCEL' if action=='CANCEL' else previous or '-',next_take or '-')
         if self.page in ('SAMPLE EDIT','PROCESS'):
-            return ('<', {'TRUNCATE':'TRUNC','NORMALIZE':'NORM','REVERSE':'REV'}.get(PROCESSING[self.process_index],PROCESSING[self.process_index]),'>')
+            return ('<', {'TRUNCATE':'TRUNC','NORMALIZE':'NORM','REVERSE':'REV','STEM SEPARATION':'STEMS'}.get(PROCESSING[self.process_index],PROCESSING[self.process_index]),'>')
         if self.page in ('NOTE REPEAT','ARP'):return tuple(f'1/{rate}' for rate in self.project['repeat_presets'][self.repeat_bank*2:self.repeat_bank*2+2])+('LOCK',)
         if self.page == 'BROWSE':
             entry=self.browser.selected()

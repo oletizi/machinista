@@ -43,6 +43,37 @@ class StemJobsTests(unittest.TestCase):
                 self.context[field]=False
         self.context['available']=False
         with self.assertRaisesRegex(ValueError,'unavailable'):self.start()
+    def test_controller_browser_and_current_sources_use_same_pinned_job(self):
+        collected=self.root/'projects/Collected/Samples/Current.wav'
+        collected.parent.mkdir(parents=True);collected.write_bytes(self.source.read_bytes())
+        self.context['zones']=[{'sample':str(collected)}]
+        for asset in ({'browser':str(self.source)},{'current':str(collected)}):
+            with patch('app.web_stems.ready',return_value=True),patch.object(self.stems,'process',side_effect=self.fake_process):
+                self.stems.start({'asset':asset});status=self.complete()
+            self.assertEqual(status['state'],'DONE');self.assertTrue(collected.exists())
+            self.assertEqual(len(list((self.root/'samples'/status['folder']).glob('*.wav'))),4)
+    def test_controller_sources_reject_unselected_paths_symlinks_and_bad_types(self):
+        link=self.source.with_name('Linked.wav');link.symlink_to(self.source)
+        values=[{'current':str(self.source)},{'browser':str(self.root/'config/settings.wav')},
+                {'browser':str(link)},{'browser':None},{'browser':{}},{'other':str(self.source)}]
+        with patch('app.web_stems.ready',return_value=True):
+            for asset in values:
+                with self.subTest(asset=asset),self.assertRaises((ValueError,OSError)):
+                    self.stems.start({'asset':asset})
+        self.assertFalse(self.library.upload_lock.locked())
+    def test_controller_http_adapter_uses_token_and_observes_shared_result(self):
+        import threading
+        from app.web_server import Server
+        from app.controller_stems import Control
+        server=Server(('127.0.0.1',0),self.library)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        self.addCleanup(server.server_close);self.addCleanup(server.shutdown)
+        control=Control(base='http://127.0.0.1:'+str(server.server_port));self.addCleanup(control.close)
+        with patch('app.web_stems.ready',return_value=True),patch.object(self.stems,'process',side_effect=self.fake_process):
+            control.exchange(('start',{'asset':{'browser':str(self.source)}}));self.complete()
+            state=control.exchange(('status',{}))
+        self.assertTrue(state['known']);self.assertEqual(state['state'],'DONE')
+        self.assertTrue((self.root/'samples'/state['folder']/'vocals.wav').is_file())
     def test_symlinks_and_traversal_cannot_be_selected(self):
         link=self.source.with_name('Link.wav');link.symlink_to(self.source)
         for value in [dict(self.value,name='Link.wav'),dict(self.value,path='../'),dict(self.value,name='../Example.wav')]:

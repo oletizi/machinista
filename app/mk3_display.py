@@ -378,7 +378,7 @@ class Mk3Renderer:
             directory,sources,index,prehear=s['browser'];b=Browser(sources[0][1]) if sources else None
             if b:
                 b.sources=[Source(n,Path(path)) for n,path in sources];b.directory=Path(directory) if directory else None;entries=b.entries()
-                self.list(p,[('▸ ' if v.is_dir() else '♪ ')+b.label(v) for v in entries],index)
+                self.list(p,[('' if v.is_dir() else '♪ ')+b.label(v) for v in entries],index)
                 selected=entries[index] if 0<=index<len(entries) else None
                 if selected and selected.is_file():
                     ref=s.get('browser_decoded',{}).get(str(selected),str(selected));self.browser_wave=(ref,0,None);self.wave(q,self.browser_wave,s)
@@ -508,6 +508,15 @@ class Mk3Renderer:
                 elif s.get('scope')!=2:p.text(20,108,source,22,True,width=440)
             else:p.text(20,108,source,22,True,width=440)
         elif 'sound_wave' in s and s['sound_wave'][0]:self.wave(p,s['sound_wave'],s)
+        elif 'stem_separation' in s:
+            u=s['stem_separation'];p.text(18,88,'STEM SEPARATION',23,True,width=440)
+            p.text(18,126,u.get('name',''),19,True,width=440)
+            for i,label in enumerate(('VOCALS','DRUMS','BASS','OTHER')):
+                x=18+i*112;p.rect(x,174,106,43,PANEL,LINE,4);p.text(x+53,187,label,13,True,center=True,width=100)
+            q.text(18,91,u.get('state','IDLE'),22,True,width=442)
+            q.text(18,126,u.get('message',''),13,color=MUTED,width=442)
+            q.rect(18,161,444,12,PANEL,LINE,3);q.rect(20,163,max(1,round(440*max(0,min(100,u.get('progress',0)))/100)),8,ACCENT,radius=2)
+            q.text(18,185,str(u.get('progress',0))+'% / WHOLE SAMPLE / MAX 60 SEC',14,True,width=442)
         elif 'updater' in s:
             u=s['updater'];p.text(18,91,'INSTALLED',13,color=MUTED);p.text(18,110,u.get('current','--'),27,True,width=442)
             p.text(18,151,'LATEST / '+u.get('channel','release').upper(),13,color=MUTED);p.text(18,170,u.get('latest') or '--',25,True,width=442)

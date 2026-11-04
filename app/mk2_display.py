@@ -87,6 +87,7 @@ def snapshot(surface):
         position=a.pattern_position(),transport=a.transport_title(),tempo=a.project['tempo'],
         playing=a.playing,recording=a.recording,message=visible_message(a),page_index=index,page_total=total,
         master_mode=surface.master_mode,master_feedback=surface.master_feedback(),auto_write=surface.auto_locked or 'AUTO' in surface.held,active_left=(),active_right=(),headings=(p,p))
+    if p=='STEM SEPARATION':state['stem_separation']=dict(a.stem_status,name=(a.stem_status.get('name') if a.stem_status.get('busy') else '') or a.stem_name)
     if p=='OPTIONS':
         state['grid_options']=dict(a.timing(),tab=a.grid_tab)
         state['active_left']=({0:3,1:1,2:2}[a.grid_tab],)

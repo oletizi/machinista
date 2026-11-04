@@ -315,7 +315,8 @@ def utility(app,legacy,envelope=None):
     elif app.page=='BROWSE':
         c.rect(1,24,126,39,c.bg);entries=app.entries();index=app.browser_index;first=max(0,min(index-1,len(entries)-3))
         c.rows([('>' if first+i==index else '')+app.browser.label(p) for i,p in enumerate(entries[first:first+3])] or ['EMPTY FOLDER'])
-        c.field('PADS:TARGET', 'PREH ON' if app.browser.prehear else 'PREH OFF')
+        from app.controller_stems import browser_sample
+        c.field('SHIFT:STEMS' if browser_sample(app) else 'PADS:TARGET', 'PREH ON' if app.browser.prehear else 'PREH OFF')
     elif app.page in ('PLUGIN BROWSE','PLUGIN MOVE'):
         from app.fokus_data import utility_data
         header,body,_=utility_data(app);c.rect(1,15,126,48,c.bg)
@@ -333,6 +334,13 @@ def utility(app,legacy,envelope=None):
             c.text(3,54,value_text(control),50,font='bold5')
             c.text(57,54,db_text(control),68)
         else:c.rows([app.interface_mixer_error or ('NO MIXER CONTROLS' if app.audio else 'NO AUDIO DEVICE')])
+    elif app.page=='STEM SEPARATION':
+        from app.controller_stems import display
+        _,body,_=display(app);s=app.stem_status;c.rect(1,24,126,39,c.bg)
+        c.text(3,25,body[0],122,font='bold5')
+        c.text(3,35,body[1],122);c.rect(3,44,122,5,c.ink,False)
+        c.rect(4,45,round(120*max(0,min(100,s.get('progress',0)))/100),3)
+        c.text(3,54,s.get('message',''),122)
     elif app.page=='UPDATE':
         from app.updater import display
         _,body,footer=display(app)

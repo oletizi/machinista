@@ -178,6 +178,8 @@ def main():
             power_control = PowerControl()
             from app.updater import Control as UpdateControl
             update_control=UpdateControl(ROOT)
+            from app.controller_stems import Control as StemControl
+            stem_control=StemControl()
             autosaver = Autosave(ROOT)
             device_monitor = DeviceMonitor()
             started = time.monotonic()
@@ -223,8 +225,10 @@ def main():
                 sound_runtime.poll(now,bool(audio.recorder or audio.capture_pending or app.capture_armed or app.capture_started is not None or sample_jobs.pending or plugin_transfer_pending or preset_pending or collect_pending or export_pending or audio_imports.busy))
                 plugin_refresh.poll(app,audio,now)
                 live_banks.poll(app,now)
+                stem_control.poll(app,now)
                 system_monitor.update(app, now)
                 processing=bool(sound_runtime.busy or app.recording or app.capture_armed or app.capture_started is not None or app.export_busy or sample_jobs.pending or audio_imports.busy or audio.recorder or audio.native_capture or audio.capture_pending)
+                processing=processing or bool(app.stem_status.get('busy') or app.stem_command_pending)
                 power_control.poll(app,now,processing)
                 update_control.poll(app,now,processing)
                 autosaver.poll(app,audio,now,processing or app.playing)
@@ -518,7 +522,9 @@ def main():
                     try:
                         if app.page!='STRETCH' and stretch_jobs.latest is not None:
                             stretch_jobs.cancel();audio.command('preview_stop')
-                        if action == 'update':
+                        if action == 'stems':
+                            stem_control.submit(value)
+                        elif action == 'update':
                             update_control.submit(value)
                         elif action == 'power':
                             power_control.submit(value)
@@ -809,6 +815,7 @@ def main():
                 if mk1:mk1.close()
                 if mk2:mk2.close()
                 if step_display:step_display.close()
+                if 'stem_control' in locals():stem_control.close()
                 if 'system_monitor' in locals():system_monitor.close()
                 if 'power_control' in locals():power_control.close()
                 if 'update_control' in locals():update_control.close()

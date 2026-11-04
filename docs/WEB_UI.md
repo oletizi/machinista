@@ -29,3 +29,9 @@ Preview plays through the browser device. On the controllers, samples are played
 by the Pi's selected audio interface. Read-only USB media can be browsed; uploads
 need writable storage. Moving library files does not rewrite saved project
 references. Back up projects before changing cards or reorganizing sample paths.
+
+### Stem separation from the controller
+
+The controller uses the same background job as the WebUI. In BROWSE, select a WAV/MP3 and choose STEMS (display button 7 on full-size controllers; SHIFT + F3 on Mikro). Sampling > Edit also offers STEM SEPARATION beside Truncate/Normalize. INSTALL sets up the optional local engine after confirmation; START separates the whole source file, with progress and CANCEL. OPEN opens completed files in SD CARD / Library / Stems. Originals and pad assignments are retained. Sources collected with a project are supported; arbitrary filesystem paths and symlinks are rejected. Existing 60-second/64-MiB, RAM and storage limits apply.
+
+The controller browser hides the internal PROJECT ASSETS / PRESET ASSETS entries. FIND still locates a loaded project sample. Folder names have no leading slash or arrow; selection is shown with a highlight.

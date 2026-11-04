@@ -218,6 +218,8 @@ class Application(ClipArranger,MultiSelection,MidiRemote,AudioExport,Mixer,Relin
         self.init_live_fx()
         self.init_mixer()
         self.init_export()
+        from app.controller_stems import initial
+        self.stem_status=initial();self.stem_command_pending=False;self.stem_origin='BROWSE';self.stem_asset={};self.stem_name=''
         self.init_navigation()
         self.init_sampler()
         self.init_audio_loops()

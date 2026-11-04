@@ -48,11 +48,11 @@ class Stems:
         context=self.library.sounds.runtime()
         if not context.get('available'):raise ValueError('Controller engine unavailable.')
         if any(context.get(k) for k in ('playing','recording','capturing','busy')):raise ValueError('Stop playback, recording and other jobs first.')
-    def submit(self,state,work):
+    def submit(self,state,work,name='',source_path=None):
         with self.guard:
             if self.future is not None:raise BlockingIOError('A stem operation is already running.')
             if not self.library.upload_lock.acquire(blocking=False):raise BlockingIOError('Finish the current upload or import first.')
-            self.cancel.clear();self.last=dict(state=state,progress=0,message='Preparing…')
+            self.cancel.clear();self.last=dict(state=state,progress=0,message='Preparing…',name=name,source_path=source_path)
             def run():
                 try:return work()
                 finally:self.library.upload_lock.release()
@@ -126,15 +126,32 @@ class Stems:
             if available<1536*1024**2:raise ValueError('Stem separation needs at least 1.5 GiB free RAM. Unload instruments or use a Pi with more RAM.')
         if shutil.disk_usage(self.library.root).free<512*1024**2:raise ValueError('Stem separation needs 512 MiB free storage.')
         from app.web_server import filename
-        name=filename(value.get('name',''))
-        if Path(name).suffix.lower() not in ('.wav','.mp3'):raise ValueError('Choose a WAV or MP3 sample.')
-        source=self.library.source(value.get('source','sd'))
-        # Pin and open the source before leaving the request; never reopen a client path.
-        with self.library.directory(source,value.get('path','')) as parent:fd=os.open(name,os.O_RDONLY|os.O_NOFOLLOW,dir_fd=parent)
+        asset=value.get('asset')
+        if asset is not None:
+            if not isinstance(asset,dict) or len(asset)!=1:raise ValueError('Invalid stem source.')
+            if not all(isinstance(v,str) and v for v in asset.values()):raise ValueError('Invalid stem source.')
+            source_path=next(iter(asset.values()))
+            if 'current' in asset:
+                # Only a path from the fresh selected-Sound snapshot is accepted.
+                name=filename(Path(asset['current']).name)
+                with self.library.sounds.asset(asset) as stream:fd=os.dup(stream.fileno())
+            elif 'browser' in asset:
+                name=filename(Path(asset['browser']).name)
+                with self.library.projects.opened(asset['browser'],[s.path for s in self.library.sources().values()]) as stream:fd=os.dup(stream.fileno())
+            else:raise ValueError('Invalid stem source.')
+            if Path(name).suffix.lower() not in ('.wav','.mp3'):
+                os.close(fd);raise ValueError('Choose a WAV or MP3 sample.')
+        else:
+            name=filename(value.get('name',''))
+            if Path(name).suffix.lower() not in ('.wav','.mp3'):raise ValueError('Choose a WAV or MP3 sample.')
+            source=self.library.source(value.get('source','sd'))
+            source_path=str(source.path/value.get('path','')/name)
+            # Pin and open before leaving the request; never reopen a client path.
+            with self.library.directory(source,value.get('path','')) as parent:fd=os.open(name,os.O_RDONLY|os.O_NOFOLLOW,dir_fd=parent)
         stream=os.fdopen(fd,'rb');info=os.fstat(fd)
         if not stat.S_ISREG(info.st_mode) or info.st_size>MAX_SOURCE:
             stream.close();raise ValueError('Choose a regular sample up to 64 MiB.')
-        try:return self.submit('SEPARATING',lambda:self._separate(stream,name))
+        try:return self.submit('SEPARATING',lambda:self._separate(stream,name),name=name,source_path=source_path)
         except BaseException:stream.close();raise
     def _separate(self,stream,name):
         cache=self.library.root/'presets/.stem-work';cache.mkdir(parents=True,exist_ok=True)

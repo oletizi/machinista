@@ -16,7 +16,7 @@ class QuickBrowseTests(unittest.TestCase):
         self.open_drums();a=self.a;a.rotate(2);a.button('ENTER',True)
         before=copy.deepcopy(a.project);a.playing=a.recording=True;a.actions=[]
         a.button('F1',True);a.button('SHIFT',True);a.actions=[]
-        self.assertEqual(a.softkeys(),('BACK','FIND','PREH'))
+        self.assertEqual(a.softkeys(),('BACK','FIND',''))
         a.button('F2',True);a.button('F2',False)
         self.assertEqual(a.browser.selected(),(self.folder/'Snare.wav').resolve())
         self.assertEqual(a.project,before);self.assertTrue(a.playing and a.recording)
