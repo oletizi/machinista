@@ -30,3 +30,11 @@ class ControllerSurveyTests(unittest.TestCase):
  def test_each_profile_ids_unique(self):
   for p in PROFILES:
    steps=checklist(p);self.assertEqual(len(steps),len({s['id'] for s in steps}))
+ def test_display_observations_preserved_in_review(self):
+  r=self.sample();r['display_checks']=[dict(display_id='display_1',pattern='border',status='confirmed',note='Edges readable',transport='webusb',transfer_count=1,bytes_sent=261152,sha256='a'*64)]
+  result=review(r);self.assertEqual(result['display_checks'],r['display_checks']);self.assertEqual(len(result['display_inventory']),2)
+ def test_unknown_display_and_odr_fake_pass_rejected(self):
+  r=self.sample();r['display_checks']=[dict(display_id='display_99',pattern='border',status='blocked',note='')]
+  with self.assertRaises(ValueError):validate(r)
+  r=self.sample();r['profile_id']='kk_s49_mk3';r['device']['product_id']=0x2100;r['controls']=[];r['display_checks']=[dict(display_id='display_1',pattern='border',status='confirmed',note='',transport='webusb',transfer_count=1,bytes_sent=200,sha256='a'*64)]
+  with self.assertRaises(ValueError):validate(r)

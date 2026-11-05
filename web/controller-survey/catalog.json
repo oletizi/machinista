@@ -105,7 +105,31 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Left display",
+        "index": 0,
+        "width": 480,
+        "height": 272,
+        "color": true,
+        "protocol": "ni-color",
+        "usbInterface": 1,
+        "endpoint": 2
+      },
+      {
+        "id": "display_2",
+        "name": "Right display",
+        "index": 1,
+        "width": 480,
+        "height": 272,
+        "color": true,
+        "protocol": "ni-color",
+        "usbInterface": 1,
+        "endpoint": 2
+      }
+    ]
   },
   "maschine_jam": {
     "id": "maschine_jam",
@@ -275,7 +299,8 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": []
   },
   "maschine_mikro_mk3": {
     "id": "maschine_mikro_mk3",
@@ -344,7 +369,18 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Display",
+        "index": 0,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-pages"
+      }
+    ]
   },
   "maschine_mk2": {
     "id": "maschine_mk2",
@@ -425,7 +461,8 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": false
+    "survey_required": false,
+    "displays": []
   },
   "maschine_mk1": {
     "id": "maschine_mk1",
@@ -501,7 +538,8 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": false
+    "survey_required": false,
+    "displays": []
   },
   "maschine_mikro_mk1": {
     "id": "maschine_mikro_mk1",
@@ -553,7 +591,8 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": false
+    "survey_required": false,
+    "displays": []
   },
   "maschine_mikro_mk2": {
     "id": "maschine_mikro_mk2",
@@ -605,7 +644,8 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": false
+    "survey_required": false,
+    "displays": []
   },
   "maschine_mk3": {
     "id": "maschine_mk3",
@@ -716,7 +756,8 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": false
+    "survey_required": false,
+    "displays": []
   },
   "maschine_plus": {
     "id": "maschine_plus",
@@ -827,7 +868,8 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": false
+    "survey_required": false,
+    "displays": []
   },
   "kk_s25_mk1": {
     "id": "kk_s25_mk1",
@@ -899,7 +941,81 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Display 1 (left to right)",
+        "index": 0,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_2",
+        "name": "Display 2 (left to right)",
+        "index": 1,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_3",
+        "name": "Display 3 (left to right)",
+        "index": 2,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_4",
+        "name": "Display 4 (left to right)",
+        "index": 3,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_5",
+        "name": "Display 5 (left to right)",
+        "index": 4,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_6",
+        "name": "Display 6 (left to right)",
+        "index": 5,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_7",
+        "name": "Display 7 (left to right)",
+        "index": 6,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_8",
+        "name": "Display 8 (left to right)",
+        "index": 7,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      }
+    ]
   },
   "kk_s49_mk1": {
     "id": "kk_s49_mk1",
@@ -971,7 +1087,81 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Display 1 (left to right)",
+        "index": 0,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_2",
+        "name": "Display 2 (left to right)",
+        "index": 1,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_3",
+        "name": "Display 3 (left to right)",
+        "index": 2,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_4",
+        "name": "Display 4 (left to right)",
+        "index": 3,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_5",
+        "name": "Display 5 (left to right)",
+        "index": 4,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_6",
+        "name": "Display 6 (left to right)",
+        "index": 5,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_7",
+        "name": "Display 7 (left to right)",
+        "index": 6,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_8",
+        "name": "Display 8 (left to right)",
+        "index": 7,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      }
+    ]
   },
   "kk_s61_mk1": {
     "id": "kk_s61_mk1",
@@ -1043,7 +1233,81 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Display 1 (left to right)",
+        "index": 0,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_2",
+        "name": "Display 2 (left to right)",
+        "index": 1,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_3",
+        "name": "Display 3 (left to right)",
+        "index": 2,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_4",
+        "name": "Display 4 (left to right)",
+        "index": 3,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_5",
+        "name": "Display 5 (left to right)",
+        "index": 4,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_6",
+        "name": "Display 6 (left to right)",
+        "index": 5,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_7",
+        "name": "Display 7 (left to right)",
+        "index": 6,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_8",
+        "name": "Display 8 (left to right)",
+        "index": 7,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      }
+    ]
   },
   "kk_s88_mk1": {
     "id": "kk_s88_mk1",
@@ -1115,7 +1379,81 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Display 1 (left to right)",
+        "index": 0,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_2",
+        "name": "Display 2 (left to right)",
+        "index": 1,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_3",
+        "name": "Display 3 (left to right)",
+        "index": 2,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_4",
+        "name": "Display 4 (left to right)",
+        "index": 3,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_5",
+        "name": "Display 5 (left to right)",
+        "index": 4,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_6",
+        "name": "Display 6 (left to right)",
+        "index": 5,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_7",
+        "name": "Display 7 (left to right)",
+        "index": 6,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      },
+      {
+        "id": "display_8",
+        "name": "Display 8 (left to right)",
+        "index": 7,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-oled"
+      }
+    ]
   },
   "kk_s49_mk2": {
     "id": "kk_s49_mk2",
@@ -1208,7 +1546,31 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Left display",
+        "index": 0,
+        "width": 480,
+        "height": 272,
+        "color": true,
+        "protocol": "ni-color",
+        "usbInterface": 3,
+        "endpoint": 3
+      },
+      {
+        "id": "display_2",
+        "name": "Right display",
+        "index": 1,
+        "width": 480,
+        "height": 272,
+        "color": true,
+        "protocol": "ni-color",
+        "usbInterface": 3,
+        "endpoint": 3
+      }
+    ]
   },
   "kk_s61_mk2": {
     "id": "kk_s61_mk2",
@@ -1301,7 +1663,31 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Left display",
+        "index": 0,
+        "width": 480,
+        "height": 272,
+        "color": true,
+        "protocol": "ni-color",
+        "usbInterface": 3,
+        "endpoint": 3
+      },
+      {
+        "id": "display_2",
+        "name": "Right display",
+        "index": 1,
+        "width": 480,
+        "height": 272,
+        "color": true,
+        "protocol": "ni-color",
+        "usbInterface": 3,
+        "endpoint": 3
+      }
+    ]
   },
   "kk_s88_mk2": {
     "id": "kk_s88_mk2",
@@ -1394,7 +1780,31 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Left display",
+        "index": 0,
+        "width": 480,
+        "height": 272,
+        "color": true,
+        "protocol": "ni-color",
+        "usbInterface": 3,
+        "endpoint": 3
+      },
+      {
+        "id": "display_2",
+        "name": "Right display",
+        "index": 1,
+        "width": 480,
+        "height": 272,
+        "color": true,
+        "protocol": "ni-color",
+        "usbInterface": 3,
+        "endpoint": 3
+      }
+    ]
   },
   "kk_s49_mk3": {
     "id": "kk_s49_mk3",
@@ -1478,7 +1888,19 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Wide color display",
+        "index": 0,
+        "width": 1280,
+        "height": 480,
+        "color": true,
+        "protocol": "pending-odr",
+        "reason": "Kontrol S-MK3 uses ODR rather than the Studio/S-MK2 bulk format. Browser rendering is not implemented; record this as blocked, not passed."
+      }
+    ]
   },
   "kk_s61_mk3": {
     "id": "kk_s61_mk3",
@@ -1562,7 +1984,19 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Wide color display",
+        "index": 0,
+        "width": 1280,
+        "height": 480,
+        "color": true,
+        "protocol": "pending-odr",
+        "reason": "Kontrol S-MK3 uses ODR rather than the Studio/S-MK2 bulk format. Browser rendering is not implemented; record this as blocked, not passed."
+      }
+    ]
   },
   "kk_s88_mk3": {
     "id": "kk_s88_mk3",
@@ -1646,7 +2080,19 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Wide color display",
+        "index": 0,
+        "width": 1280,
+        "height": 480,
+        "color": true,
+        "protocol": "pending-odr",
+        "reason": "Kontrol S-MK3 uses ODR rather than the Studio/S-MK2 bulk format. Browser rendering is not implemented; record this as blocked, not passed."
+      }
+    ]
   },
   "kk_a25": {
     "id": "kk_a25",
@@ -1719,7 +2165,18 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed.",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Display",
+        "index": 0,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-pages"
+      }
+    ]
   },
   "kk_a49": {
     "id": "kk_a49",
@@ -1792,7 +2249,18 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed.",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Display",
+        "index": 0,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-pages"
+      }
+    ]
   },
   "kk_a61": {
     "id": "kk_a61",
@@ -1865,7 +2333,18 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed.",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Display",
+        "index": 0,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-pages"
+      }
+    ]
   },
   "kk_m32": {
     "id": "kk_m32",
@@ -1938,6 +2417,17 @@
     ],
     "inventory_revision": "2026-11-05",
     "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed.",
-    "survey_required": true
+    "survey_required": true,
+    "displays": [
+      {
+        "id": "display_1",
+        "name": "Display",
+        "index": 0,
+        "width": 128,
+        "height": 32,
+        "color": false,
+        "protocol": "mono-pages"
+      }
+    ]
   }
 }

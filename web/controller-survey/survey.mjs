@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles} from './core.mjs';
-const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json')).json();
-const config=await (await fetch('config.json')).json();
-let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve();
+import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles} from './core.mjs?v=2';
+import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage} from './displays.mjs?v=2';
+const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json',{cache:'no-cache'})).json();
+const config=await (await fetch('config.json',{cache:'no-cache'})).json();
+let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false;
 const hex=b=>Array.from(b,n=>n.toString(16).padStart(2,'0')).join('');
 const notify=s=>{$('message').textContent=s;};
 const profile=()=>profiles[$('model').value];
@@ -11,7 +12,7 @@ const current=()=>steps()[stepIndex];
 const row=()=>report?.controls.find(r=>r.id===current()?.id);
 const safe=fn=>async(...args)=>{try{await fn(...args);}catch(e){notify(e.message || String(e));}};
 for(const p of availableProfiles(profiles)){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('model').append(o);}
-function blank(demo,device){return {format:FORMAT,version:2,profile_id:profile().id,demo,layout_audited:false,extra_controls:[],device,controls:[],leds:[],displays:{},tool:{name:'Machinista Browser Survey',version:1}};}
+function blank(demo,device){return {format:FORMAT,version:2,profile_id:profile().id,demo,layout_audited:false,extra_controls:[],device,controls:[],leds:[],displays:{},display_checks:[],tool:{name:'Machinista Browser Survey',version:1}};}
 async function persist(){if(!db||!report)return;const copy=structuredClone(report);saveQueue=saveQueue.catch(()=>{}).then(()=>new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(copy,'survey');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);}));try{await saveQueue;}catch{notify('Browser storage is unavailable. Download a JSON copy to keep your progress.');}}
 function setInterface(id,fingerprint){if(!report.device.interfaces.some(i=>i.id===id)){if(report.device.interfaces.length>=8)throw new Error('At most eight inputs can be recorded.');report.device.interfaces.push({id,...(fingerprint?{fingerprint}:{})});}}
 function receive(id,bytes){
@@ -37,17 +38,53 @@ function draw(){
  $('note').value=row()?.note||'';$('audit').checked=report?.layout_audited||false;
  $('connection').textContent=report?(report.demo?'DEMO · no hardware measurements':`${report.device.name} · ${devices.length} HID interface(s) open · ${selectedPorts.size} MIDI input(s) selected`):'Not connected';
  $('model').disabled=!!report;$('connect').disabled=!!report;$('demo').disabled=!!report;
- $('more').disabled=!report||report.demo||!!capture;$('record').disabled=!report||!!capture||(!report.demo&&!devices.length);$('confirm').disabled=!row()||row().status==='skipped'||!!capture||!row().frames.some(f=>f.ms>=1000&&f.ms<5000);
- for(const id of ['skip','step','add','audit','resume','download','submit','discord','midi'])$(id).disabled=!!capture || (!report && !['resume','midi'].includes(id));
+ $('more').disabled=!report||report.demo||displayBusy||!!capture;$('record').disabled=!report||displayBusy||!!capture||(!report.demo&&!devices.length);$('confirm').disabled=!row()||row().status==='skipped'||!!capture||!row().frames.some(f=>f.ms>=1000&&f.ms<5000);
+ for(const id of ['skip','step','add','audit','resume','download','submit','discord','midi'])$(id).disabled=displayBusy || !!capture || (!report && !['resume','midi'].includes(id));
  $('evidence').textContent=row()?`${row().status==='skipped'?'Untested':row().tester_confirmed?'Action confirmed by tester':'Recording awaiting your confirmation'} · ${row().frames.length} raw frames${row().note?' · '+row().note:''}`:'No recording for this control yet.';
  $('visual').replaceChildren();
  if(s.kind==='pad'&&p.pads===16){const grid=document.createElement('div');grid.className='padgrid';for(let r=3;r>=0;r--)for(let c=1;c<=4;c++){const n=r*4+c,t=document.createElement('span');t.className='tile'+(s.name==='PAD '+n?' active':'');t.textContent=n;grid.append(t);}$('visual').append(grid);}
  else if(s.kind==='key'){for(let n=1;n<=p.keys;n++){const t=document.createElement('span');t.className='tile keytile'+(s.name==='KEY '+n+' FROM LEFT'?' active':'');$('visual').append(t);}}
  else {const t=document.createElement('span');t.className='symbol';t.textContent=s.kind==='encoder'?(s.name.includes('counterclockwise')?'↶':'↷'):s.kind==='slider'?'↔':s.kind==='touch'?'◎':s.kind==='pressure'?'⇓':'▣';$('visual').append(t);}
  if(midi)for(const checkbox of $('ports').querySelectorAll('input'))checkbox.disabled=!!capture||!report||report.demo;
- $('missing').replaceChildren();if(report){const c=coverage(report,profiles);$('coverage').textContent=`${report.demo?'DEMO · ':''}${c.recorded} / ${c.total} required actions recorded and confirmed. ${c.physical_check_complete?'Physical input check finished.':'Input check incomplete.'} Driver mappings still need review. LEDs and displays: not tested.`;for(const n of c.missing){const li=document.createElement('li');li.textContent=n;$('missing').append(li);}}
+ $('missing').replaceChildren();if(report){const c=coverage(report,profiles);$('coverage').textContent=`${report.demo?'DEMO · ':''}${c.recorded} / ${c.total} required actions recorded and confirmed. ${c.physical_check_complete?'Physical input check finished.':'Input check incomplete.'} Driver mappings still need review. Displays: ${c.displays.confirmed}/${c.displays.total} test images confirmed. LEDs: not tested.`;for(const n of [...c.missing,...c.displays.missing]){const li=document.createElement('li');li.textContent=n;$('missing').append(li);}}
+ $('disconnect').disabled=displayBusy;drawDisplays();
 }
-async function detach(){if(capture){clearInterval(capture.timer);capture=null;notify('Recording cancelled by disconnect. Repeat this control.');}for(const d of devices){d.device.removeEventListener('inputreport',d.listener);try{await d.device.close();}catch{}}devices=[];if(midi)for(const p of midi.inputs.values())p.onmidimessage=null;selectedPorts.clear();latest.clear();draw();}
+
+function displayRow(){return report?.display_checks?.find(r=>r.display_id===$('display-select').value&&r.pattern===$('display-pattern').value);}
+function drawDisplays(){
+ const inventory=displayInventory(profile()),selected=$('display-select').value;
+ $('display-select').replaceChildren();for(const d of inventory){const o=document.createElement('option');o.value=d.id;o.textContent=d.name;$('display-select').append(o);}if(inventory.some(d=>d.id===selected))$('display-select').value=selected;
+ const display=inventory.find(d=>d.id===$('display-select').value),r=displayRow();
+ $('display-info').textContent=display?`${inventory.length} physical display(s). Test each with three images. ${display.reason||'Compare the preview with the hardware, then confirm only if it matches.'}`:'This controller has no bitmap display. Its LEDs/meters need a separate LED check.';
+ $('display-preview').hidden=!display;
+ if(display){$('display-expected').textContent=$('display-pattern').value==='border'?'Check all four one-pixel edges, upright text and the correct display number.':$('display-pattern').value==='grid'?'Check a regular, aligned black-and-white grid across the whole screen. No missing rows or shifted columns.':display.color?'Check the display number and bars in this order: red, green, blue, white, orange, gray.':'Check the display number and four areas: black, sparse dots, dense dots, white. This is a 1-bit display; gray uses dots.';const canvas=$('display-preview');canvas.width=display.width;canvas.height=display.height;const rgb=testImage(display,$('display-pattern').value),rgba=new Uint8ClampedArray(display.width*display.height*4);for(let i=0;i<rgb.length/3;i++){rgba[i*4]=rgb[i*3];rgba[i*4+1]=rgb[i*3+1];rgba[i*4+2]=rgb[i*3+2];rgba[i*4+3]=255;}canvas.getContext('2d').putImageData(new ImageData(rgba,display.width,display.height),0,0);}
+ const locked=!report||!!capture||displayBusy||!display;
+ for(const id of ['display-select','display-pattern','display-enable','display-skip','display-note'])$(id).disabled=locked;
+ $('display-send').disabled=locked||!$('display-enable').checked||report?.demo;
+ $('display-good').disabled=locked||r?.status!=='sent';$('display-bad').disabled=locked||r?.status!=='sent';
+ $('display-result').textContent=displayBusy?'Sending the test image…':report?.demo?'Demo: preview only; no display output or confirmation.':r?`${r.status.toUpperCase()}${r.note?' · '+r.note:''}`:'Not tested';
+ if(report){const c=displayCoverage(report,profile());$('display-summary').textContent=`${c.confirmed}/${c.total} display tests confirmed. ${c.complete?'Display check complete.':'Display check incomplete.'}`;}else $('display-summary').textContent='Connect a controller before sending a test image.';
+}
+function storeDisplay(result){report.display_checks ||= [];report.display_checks=report.display_checks.filter(r=>r.display_id!==result.display_id||r.pattern!==result.pattern);report.display_checks.push(result);persist();}
+$('display-select').onchange=()=>{$('display-note').value=displayRow()?.note||'';drawDisplays();};$('display-pattern').onchange=()=>{$('display-note').value=displayRow()?.note||'';drawDisplays();};$('display-enable').onchange=drawDisplays;
+$('display-note').onchange=()=>{const r=displayRow();if(r){r.note=$('display-note').value;persist();}};
+$('display-send').onclick=safe(async()=>{
+ if(!report||report.demo||capture||displayBusy||!$('display-enable').checked)return;
+ const target=report,display=displayInventory(profile()).find(d=>d.id===$('display-select').value),pattern=$('display-pattern').value,observation=$('display-note').value;
+ if(!display)return;displayBusy=true;draw();
+ try{
+  if(display.protocol==='pending-odr')throw new Error(display.reason);
+  const result=display.protocol==='ni-color'?await sendColor(profile(),display,pattern,navigator.usb):await sendMono(profile(),display,pattern,devices);
+  const evidence=await transmissionEvidence(result);if(report!==target)throw new Error('Controller session changed. Repeat the test.');
+  storeDisplay({display_id:display.id,pattern,status:'sent',note:observation,...evidence});notify('Test image sent. Compare the physical display with the preview before confirming.');
+ }catch(e){if(report===target)storeDisplay({display_id:display.id,pattern,status:'blocked',note:String(e.message).slice(0,300)});notify('Display test not confirmed: '+e.message);}
+ finally{displayBusy=false;draw();}
+});
+function finishDisplay(okay){const r=displayRow();if(!r||r.status!=='sent'||displayBusy)return;r.status=okay?'confirmed':'failed';r.note=$('display-note').value;persist();if(okay){const inventory=displayInventory(profile()),pattern=PATTERNS.indexOf(r.pattern);if(pattern<2)$('display-pattern').value=PATTERNS[pattern+1];else{const index=inventory.findIndex(d=>d.id===r.display_id);if(index<inventory.length-1){$('display-select').value=inventory[index+1].id;$('display-pattern').value=PATTERNS[0];}}$('display-note').value=displayRow()?.note||'';}draw();}
+$('display-good').onclick=()=>finishDisplay(true);$('display-bad').onclick=()=>finishDisplay(false);
+$('display-skip').onclick=()=>{if(!report||displayBusy)return;storeDisplay({display_id:$('display-select').value,pattern:$('display-pattern').value,status:'not_tested',note:$('display-note').value});draw();};
+
+async function detach(){$('display-enable').checked=false;if(capture){clearInterval(capture.timer);capture=null;notify('Recording cancelled by disconnect. Repeat this control.');}for(const d of devices){d.device.removeEventListener('inputreport',d.listener);try{await d.device.close();}catch{}}devices=[];if(midi)for(const p of midi.inputs.values())p.onmidimessage=null;selectedPorts.clear();latest.clear();draw();}
 async function openHid(additional=false){
  if(!navigator.hid)throw new Error('WebHID is unavailable. Open this page in desktop Chrome or Edge.');
  const filters=[{vendorId:0x17cc,...(additional?{productId:report.device.product_id}:{})}];
@@ -71,7 +108,7 @@ async function openHid(additional=false){
  notify('USB connected. If some buttons send no data, try Add HID interface. MIDI keybeds may also need Find MIDI inputs.');await persist();draw();
 }
 $('connect').onclick=safe(()=>openHid());$('more').onclick=safe(()=>openHid(true));
-$('disconnect').onclick=safe(async()=>{await persist();await detach();if(report?.controls.length && !confirm('End this session? Download a copy first if you need it. A browser recovery copy remains until the next session is saved.'))return;report=null;stepIndex=0;draw();});
+$('disconnect').onclick=safe(async()=>{await persist();await detach();if((report?.controls.length||report?.display_checks?.length) && !confirm('End this session? Download a copy first if you need it. A browser recovery copy remains until the next session is saved.'))return;report=null;stepIndex=0;draw();});
 if(navigator.hid)navigator.hid.addEventListener('disconnect',safe(async e=>{if(devices.some(d=>d.device===e.device)){await detach();notify('USB disconnected. Download your progress, then resume and reconnect the same controller.');}}));
 $('model').onchange=()=>{stepIndex=0;draw();};$('step').onchange=()=>{stepIndex=Number($('step').value);draw();};
 $('demo').onclick=()=>{report=blank(true,{vendor_id:0x17cc,product_id:profile().product_ids[0]||0,name:profile().name,identity_verified:false,interfaces:[{id:'hid0'}]});draw();notify('Demo mode. These measurements cannot be submitted as real hardware data.');};

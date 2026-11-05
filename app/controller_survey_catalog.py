@@ -54,6 +54,19 @@ add('kk_m32','Komplete Kontrol M32',[],AM_BUTTONS,(*KNOBS,'4D'),KNOBS,strips=('P
 SUPPORTED_PROFILES={'maschine_mk1','maschine_mk2','maschine_mk3','maschine_plus','maschine_mikro_mk1','maschine_mikro_mk2'}
 for identity,profile in PROFILES.items():profile['survey_required']=identity not in SUPPORTED_PROFILES
 
+
+def display_inventory(identity):
+ def mono(count,protocol):
+  return [dict(id='display_'+str(i+1),name='Display' if count==1 else 'Display '+str(i+1)+' (left to right)',index=i,width=128,height=32,color=False,protocol=protocol) for i in range(count)]
+ if identity=='maschine_mikro_mk3':return mono(1,'mono-pages')
+ if re.fullmatch(r'kk_s\d+_mk1',identity):return mono(8,'mono-oled')
+ if re.match(r'kk_[am]',identity):return mono(1,'mono-pages')
+ if identity=='maschine_studio' or re.fullmatch(r'kk_s\d+_mk2',identity):
+  return [dict(id='display_'+str(i+1),name='Right display' if i else 'Left display',index=i,width=480,height=272,color=True,protocol='ni-color',usbInterface=1 if identity=='maschine_studio' else 3,endpoint=2 if identity=='maschine_studio' else 3) for i in range(2)]
+ if re.fullmatch(r'kk_s\d+_mk3',identity):return [dict(id='display_1',name='Wide color display',index=0,width=1280,height=480,color=True,protocol='pending-odr',reason='Kontrol S-MK3 uses ODR rather than the Studio/S-MK2 bulk format. Browser rendering is not implemented; record this as blocked, not passed.')]
+ return []
+for identity,profile in PROFILES.items():profile['displays']=display_inventory(identity)
+
 def checklist(profile_id,extras=()):
  if profile_id not in PROFILES:raise ValueError('Choose a controller model first.')
  p=PROFILES[profile_id];result=[]

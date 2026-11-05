@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Shared, data-only validation for browser exports and the submission receiver.
+// Shared data-only validation for browser exports.
+import {sanitizeDisplayChecks,displayCoverage} from './displays.mjs?v=2';
 export const MAX_BYTES = 8 * 1024 * 1024;
 export const FORMAT = 'Machinista-controller-survey';
 const assert = (yes, message) => { if (!yes) throw new Error(message); };
@@ -50,7 +51,7 @@ export function validateReport(input, profiles) {
     // Claimed mappings are intentionally discarded. Maintainers derive them from raw evidence.
     return {id:s.id,name:s.name,kind:s.kind,status:r.status==='skipped'?'skipped':'captured',frames,tester_confirmed:r.tester_confirmed===true,note:r.note || ''};
   });
-  const out={format:FORMAT,version:2,profile_id:profile.id,demo:input.demo,layout_audited:input.layout_audited,extra_controls:extras.map(e=>({name:e.name,kind:e.kind})),device:{vendor_id:0x17cc,product_id:d.product_id,name:profile.name,identity_verified:input.device.identity_verified===true,interfaces},controls,leds:[],displays:{},tool:{name:'Machinista Browser Survey',version:1}};
+  const out={format:FORMAT,version:2,profile_id:profile.id,demo:input.demo,layout_audited:input.layout_audited,extra_controls:extras.map(e=>({name:e.name,kind:e.kind})),device:{vendor_id:0x17cc,product_id:d.product_id,name:profile.name,identity_verified:input.device.identity_verified===true,interfaces},controls,leds:[],displays:{},display_checks:sanitizeDisplayChecks(input.display_checks,profile),tool:{name:'Machinista Browser Survey',version:1}};
   assert(new TextEncoder().encode(JSON.stringify(out)).length<=MAX_BYTES, 'Survey is too large.');
   return out;
 }
@@ -59,7 +60,7 @@ export function coverage(report, profiles) {
   const done=s=>{const r=rows.get(s.id);return r && r.status!=='skipped' && r.tester_confirmed && r.frames.some(f=>f.ms>=1000 && f.ms<5000);};
   const required=steps.filter(s=>!s.optional), missing=required.filter(s=>!done(s)).map(s=>s.name);
   return {total:required.length,recorded:required.length-missing.length,missing,optional_untested:steps.filter(s=>s.optional&&!done(s)).map(s=>s.name),
-    physical_check_complete:!report.demo && !missing.length && report.layout_audited,driver_ready:false};
+    displays:displayCoverage(report,profiles[report.profile_id]),physical_check_complete:!report.demo && !missing.length && report.layout_audited,driver_ready:false};
 }
 export function compactFrames(frames) {
   // Preserve low-rate button/key events; decimate continuous pad traffic separately.

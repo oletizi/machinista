@@ -4,7 +4,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 Studio identity/output framing references are documented in CONTROLLER_SURVEY.md.
 """
 from collections import defaultdict
-import copy,json,math,statistics
+import copy,json,math,re,statistics
 
 FORMAT='Machinista-controller-survey'
 VERSION=2
@@ -114,6 +114,16 @@ def validate(value):
   if not isinstance(led.get('observed'),str) or len(led['observed'])>120:raise ValueError('Invalid LED observation.')
  displays=value.get('displays',{})
  if not isinstance(displays,dict) or any(k not in ('left','right') or not isinstance(v,dict) or v.get('status') not in ('not_tested','sent','confirmed','incorrect','unavailable') or not isinstance(v.get('note',''),str) or len(v.get('note',''))>300 for k,v in displays.items()):raise ValueError('Invalid display observations.')
+ checks=value.get('display_checks',[]);inventory={d['id']:d for d in PROFILES[profile].get('displays',[])}
+ if not isinstance(checks,list) or len(checks)>len(inventory)*3:raise ValueError('Invalid display checks.')
+ seen_checks=set()
+ for check in checks:
+  if not isinstance(check,dict):raise ValueError('Invalid display check.')
+  key=(check.get('display_id'),check.get('pattern'));display=inventory.get(key[0])
+  if display is None or key[1] not in ('border','grid','levels') or key in seen_checks or check.get('status') not in ('sent','confirmed','failed','blocked','not_tested') or not isinstance(check.get('note'),str) or len(check['note'])>300:raise ValueError('Invalid display check.')
+  seen_checks.add(key)
+  if check['status'] in ('sent','confirmed','failed'):
+   if display['protocol']=='pending-odr' or check.get('transport') not in ('hid','webusb') or type(check.get('transfer_count')) is not int or not 1<=check['transfer_count']<=4 or type(check.get('bytes_sent')) is not int or not 1<=check['bytes_sent']<=261152 or not isinstance(check.get('sha256'),str) or re.fullmatch('[a-f0-9]{64}',check['sha256']) is None:raise ValueError('Invalid display transmission evidence.')
  return value
 
 def read_report(path):
@@ -136,7 +146,7 @@ def review(value):
    if identity in bindings:conflicts.append([bindings[identity],row['id']])
    bindings[identity]=row['id'];mapped.append(dict(id=row['id'],name=row['name'],binding=candidate))
   else:unresolved.append(row['id'])
- return dict(format='Machinista-controller-review',version=1,device=copy.deepcopy(value['device']),profile_id=value['profile_id'],demo=value['demo'],coverage=coverage(value),activation_allowed=False,candidates={r['id']:summarize(r['kind'],r['frames']) for r in value['controls']},mappings=mapped,unresolved=unresolved,conflicts=conflicts,missing=[s['id'] for s in checklist(value['profile_id'],value.get('extra_controls',[])) if s['id'] not in {r['id'] for r in value['controls']}],leds=copy.deepcopy(value.get('leds',[])),displays=copy.deepcopy(value.get('displays',{})),note='Evidence for driver development. No live controller driver is installed or enabled. Encoder decoding, timings and output mappings require hardware review.')
+ return dict(format='Machinista-controller-review',version=1,device=copy.deepcopy(value['device']),profile_id=value['profile_id'],demo=value['demo'],coverage=coverage(value),activation_allowed=False,candidates={r['id']:summarize(r['kind'],r['frames']) for r in value['controls']},mappings=mapped,unresolved=unresolved,conflicts=conflicts,missing=[s['id'] for s in checklist(value['profile_id'],value.get('extra_controls',[])) if s['id'] not in {r['id'] for r in value['controls']}],leds=copy.deepcopy(value.get('leds',[])),displays=copy.deepcopy(value.get('displays',{})),display_checks=copy.deepcopy(value.get('display_checks',[])),display_inventory=copy.deepcopy(PROFILES[value['profile_id']].get('displays',[])),note='Evidence for driver development. No live controller driver is installed or enabled. Encoder decoding, timings and output mappings require hardware review.')
 
 
 def coverage(value):
