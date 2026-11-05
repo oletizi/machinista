@@ -8,7 +8,7 @@ class ControllerSurveyTests(unittest.TestCase):
   s=checklist('maschine_studio')[0]
   return dict(format='Machinista-controller-survey',version=2,demo=False,profile_id='maschine_studio',layout_audited=False,device=dict(vendor_id=0x17cc,product_id=0x1300,interfaces=[dict(id='hid0')]),controls=[dict(**s,status='captured',tester_confirmed=True,frames=[dict(ms=0,interface='hid0',hex='0100'),dict(ms=1500,interface='hid0',hex='0104'),dict(ms=3000,interface='hid0',hex='0100')])])
  def test_catalog_matches_browser(self):
-  self.assertEqual(PROFILES,json.loads(Path('web/controller-survey/catalog.json').read_text()))
+  self.assertEqual({k:v for k,v in PROFILES.items() if v['survey_required']},json.loads(Path('web/controller-survey/catalog.json').read_text()))
  def test_valid_export_is_evidence_only(self):
   r=review(self.sample());self.assertFalse(r['activation_allowed']);self.assertFalse(r['coverage']['driver_ready']);self.assertFalse(r['coverage']['input_check_complete'])
  def test_wrong_device_rejected(self):
