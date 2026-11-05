@@ -165,6 +165,12 @@ Without a router connection, the fallback hotspot is `Machinista-XXXX`, password
 The WebUI has no login and is intended for a trusted local network. Keep it off
 public internet interfaces. See [security guidance](SECURITY.md).
 
+## Help test another controller
+
+Open **[Controller Lab](https://photogeen.github.io/machinista/controller-survey/)** in desktop Chrome or Edge, choose your model and follow the guided input checks. No test app installation is needed. Send the downloaded JSON in **#controllers** on [Discord](https://discord.gg/3B8mQMyQR) or email to machinista@photogeen.com. The assistant opens the destination; attach and send the file yourself.
+
+Includes model checklists for Maschine Studio, Jam, Mikro MK3 and Komplete Kontrol, alongside the existing controller family. This gathers evidence for future support; it does not make an untested controller compatible yet. Browser/OS USB restrictions may apply. LEDs and displays are not tested by this first browser version. [Instructions and limitations](docs/CONTROLLER_SURVEY.md).
+
 ## Contributing and licensing
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md), [LICENSING.md](LICENSING.md) and

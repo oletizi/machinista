@@ -12,7 +12,7 @@ RUNTIME={'build','.build','.git','.venv','__pycache__','.pytest_cache'}
 PRIVATE={'output','outputs','tmp','backups','releases','diagnostics','config','projects','samples','cache','exports'}
 FIXTURE='tests/data/dexed-warm-circuits/Machinista-Warm-Circuits.syx'
 FORBIDDEN={'.wav','.mp3','.flac','.rom','.bin','.img','.raw','.so','.o','.a','.pem','.key','.pyc'}
-TEXT={'.py','.cpp','.hpp','.h','.md','.json','.service','.rules','.txt','.yml','.yaml','.cjs','.js','.html','.css','.conf'}
+TEXT={'.py','.cpp','.hpp','.h','.md','.json','.service','.rules','.txt','.yml','.yaml','.cjs','.js','.mjs','.html','.css','.conf'}
 
 def audit(root):
     root=Path(root).resolve();errors=[];files={}

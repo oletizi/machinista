@@ -1,9 +1,10 @@
-name: Publish illustrated manuals
+name: Publish manuals and Controller Lab
 on:
   push:
     branches: [beta]
     paths:
       - 'docs/manuals/**'
+      - 'web/controller-survey/**'
       - '.github/workflows/manuals-pages.yml'
   workflow_dispatch: {}
 permissions:
@@ -23,10 +24,15 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Assemble project pages
+        run: |
+          mkdir -p .pages/controller-survey
+          cp -R docs/manuals/. .pages/
+          cp -R web/controller-survey/. .pages/controller-survey/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/manuals
+          path: .pages
       - name: Publish manuals
         id: deployment
         uses: actions/deploy-pages@v4

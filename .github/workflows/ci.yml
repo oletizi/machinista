@@ -26,6 +26,17 @@ jobs:
         run: python tools/check_public_source.py
       - name: Portable regression suite (native binary deliberately absent)
         run: python -m unittest discover -v -s tests
+  controller-lab:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test tests/controller-survey/core.test.mjs
   native:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
