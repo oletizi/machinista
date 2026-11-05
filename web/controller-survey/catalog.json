@@ -104,7 +104,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/maschine_276/MASCHINE_2.0_STUDIO_2.7.6_0518_Manual_English.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "maschine_jam": {
     "id": "maschine_jam",
@@ -273,7 +274,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/maschine_278/MASCHINE_JAM_Manual_English_2_7_8.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "maschine_mikro_mk3": {
     "id": "maschine_mikro_mk3",
@@ -341,7 +343,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/maschine_2_8/MASCHINE_2.0_MIKRO_MK3_Manual_English_2_8.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "maschine_mk2": {
     "id": "maschine_mk2",
@@ -421,7 +424,8 @@
       "https://www.native-instruments.com/pages/maschine-downloads"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": false
   },
   "maschine_mk1": {
     "id": "maschine_mk1",
@@ -496,7 +500,8 @@
       "https://www.native-instruments.com/pages/maschine-downloads"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": false
   },
   "maschine_mikro_mk1": {
     "id": "maschine_mikro_mk1",
@@ -547,7 +552,8 @@
       "https://www.native-instruments.com/pages/maschine-downloads"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": false
   },
   "maschine_mikro_mk2": {
     "id": "maschine_mikro_mk2",
@@ -598,7 +604,8 @@
       "https://www.native-instruments.com/pages/maschine-downloads"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": false
   },
   "maschine_mk3": {
     "id": "maschine_mk3",
@@ -708,7 +715,8 @@
       "https://www.native-instruments.com/pages/maschine-downloads"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": false
   },
   "maschine_plus": {
     "id": "maschine_plus",
@@ -818,7 +826,8 @@
       "https://www.native-instruments.com/pages/maschine-downloads"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": false
   },
   "kk_s25_mk1": {
     "id": "kk_s25_mk1",
@@ -889,7 +898,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_S-Series_MK1_1.9.2_1217_Manual_English.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_s49_mk1": {
     "id": "kk_s49_mk1",
@@ -960,7 +970,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_S-Series_MK1_1.9.2_1217_Manual_English.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_s61_mk1": {
     "id": "kk_s61_mk1",
@@ -1031,7 +1042,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_S-Series_MK1_1.9.2_1217_Manual_English.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_s88_mk1": {
     "id": "kk_s88_mk1",
@@ -1102,7 +1114,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_S-Series_MK1_1.9.2_1217_Manual_English.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_s49_mk2": {
     "id": "kk_s49_mk2",
@@ -1194,7 +1207,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_S-Series_MK2_202_Manual_English.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_s61_mk2": {
     "id": "kk_s61_mk2",
@@ -1286,7 +1300,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_S-Series_MK2_202_Manual_English.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_s88_mk2": {
     "id": "kk_s88_mk2",
@@ -1378,7 +1393,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_S-Series_MK2_202_Manual_English.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_s49_mk3": {
     "id": "kk_s49_mk3",
@@ -1461,7 +1477,8 @@
       "https://docs.native-instruments.com/online-guides/kontrol-s-mk3-manual/en/keyboard-overview.html"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_s61_mk3": {
     "id": "kk_s61_mk3",
@@ -1544,7 +1561,8 @@
       "https://docs.native-instruments.com/online-guides/kontrol-s-mk3-manual/en/keyboard-overview.html"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_s88_mk3": {
     "id": "kk_s88_mk3",
@@ -1627,7 +1645,8 @@
       "https://docs.native-instruments.com/online-guides/kontrol-s-mk3-manual/en/keyboard-overview.html"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": ""
+    "identity_note": "",
+    "survey_required": true
   },
   "kk_a25": {
     "id": "kk_a25",
@@ -1699,7 +1718,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_A-Series_Manual_English_04_2022.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed."
+    "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed.",
+    "survey_required": true
   },
   "kk_a49": {
     "id": "kk_a49",
@@ -1771,7 +1791,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_A-Series_Manual_English_04_2022.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed."
+    "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed.",
+    "survey_required": true
   },
   "kk_a61": {
     "id": "kk_a61",
@@ -1843,7 +1864,8 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_A-Series_Manual_English_04_2022.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed."
+    "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed.",
+    "survey_required": true
   },
   "kk_m32": {
     "id": "kk_m32",
@@ -1915,6 +1937,7 @@
       "https://www.native-instruments.com/fileadmin/ni_media/downloads/manuals/komplete_kontrol/KOMPLETE_KONTROL_M32_Manual_English_28_10_2021.pdf"
     ],
     "inventory_revision": "2026-11-05",
-    "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed."
+    "identity_note": "USB product ID must be recorded and reviewed; no unverified ID is guessed.",
+    "survey_required": true
   }
 }

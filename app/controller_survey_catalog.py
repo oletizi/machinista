@@ -49,6 +49,11 @@ AM_BUTTONS=('MUTE','SOLO','SHIFT','SCALE','ARP','IDEAS / AUTO','QUANTIZE','UNDO'
 for size in (25,49,61):add('kk_a'+str(size),'Komplete Kontrol A'+str(size),[],AM_BUTTONS,(*KNOBS,'4D'),KNOBS,strips=('PITCH WHEEL','MOD WHEEL'),keys=size,pedals=('SUSTAIN PEDAL',),source='a',family='Komplete Kontrol')
 add('kk_m32','Komplete Kontrol M32',[],AM_BUTTONS,(*KNOBS,'4D'),KNOBS,strips=('PITCH STRIP','MOD STRIP'),keys=32,pedals=('SUSTAIN PEDAL',),source='m',family='Komplete Kontrol')
 
+# Keep historical inventories importable, but do not ask testers to re-map
+# controllers already supported by Machinista.
+SUPPORTED_PROFILES={'maschine_mk1','maschine_mk2','maschine_mk3','maschine_plus','maschine_mikro_mk1','maschine_mikro_mk2'}
+for identity,profile in PROFILES.items():profile['survey_required']=identity not in SUPPORTED_PROFILES
+
 def checklist(profile_id,extras=()):
  if profile_id not in PROFILES:raise ValueError('Choose a controller model first.')
  p=PROFILES[profile_id];result=[]

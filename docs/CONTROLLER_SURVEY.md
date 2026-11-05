@@ -20,7 +20,7 @@ No serial numbers, USB paths, MIDI port names or host names are included in brow
 
 ## Models and limits
 
-The model selector includes Maschine Studio, Jam, Mikro MK3, MK1/MK2/MK3, Maschine+, Mikro MK1/MK2; Komplete Kontrol S-Series MK1/MK2/MK3, A25/A49/A61 and M32. Model selection describes the planned checklist, **not existing Machinista support**. Sources are linked per model in the assistant. Physical layouts and report decoding still require tester/maintainer review. Missing controls can be added before submission.
+The model selector includes only controllers still needing integration: Maschine Studio, Jam, Mikro MK3; Komplete Kontrol S-Series MK1/MK2/MK3, A25/A49/A61 and M32. Model selection describes the planned checklist, **not existing Machinista support**. Already supported MK1/MK2/MK3, Maschine+, Mikro MK1/MK2 are excluded from new surveys. Historical measurement files remain reviewable. Sources are linked per model in the assistant. Physical layouts and report decoding still require tester/maintainer review. Missing controls can be added before submission.
 
 This first browser version records inputs. **LEDs, displays, USB audio, DIN MIDI sockets and live driver behaviour are not verified.** Native buttons often use HID rather than MIDI. Browser/OS permissions or an NI background service may prevent access, and some hardware may need an initialization sequence not yet known. Do not replace system drivers or firmware for this test. Report the failure instead.
 

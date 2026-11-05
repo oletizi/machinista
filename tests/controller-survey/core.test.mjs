@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {stepsFor,validateReport,coverage,compactFrames,matchedMidiPorts,emailDraft} from '../../web/controller-survey/core.mjs';
+import {stepsFor,validateReport,coverage,compactFrames,matchedMidiPorts,emailDraft,availableProfiles} from '../../web/controller-survey/core.mjs';
 const profiles=JSON.parse(await readFile(new URL('../../web/controller-survey/catalog.json',import.meta.url)));
 const profile=profiles.maschine_studio;
 function report(){const s=stepsFor(profile)[0];return {format:'Machinista-controller-survey',version:2,profile_id:profile.id,demo:false,layout_audited:false,extra_controls:[],device:{vendor_id:0x17cc,product_id:0x1300,name:profile.name,serial:'NEVER EXPORT',interfaces:[{id:'hid0',path:'PRIVATE PATH'}]},controls:[{...s,status:'captured',tester_confirmed:true,frames:[{ms:0,interface:'hid0',hex:'010000'},{ms:1500,interface:'hid0',hex:'010004'},{ms:3000,interface:'hid0',hex:'010000'}]}]};}
@@ -14,3 +14,5 @@ test('frame decimation keeps button edges during pad traffic',()=>{const frames=
 test('additional controls invalidate prior completeness and duplicate names fail',()=>{const r=report();r.extra_controls=[{name:'rear button',kind:'button'}];assert(coverage(r,profiles).missing.includes('EXTRA rear button'));assert.throws(()=>stepsFor(profile,[{name:'same',kind:'button'},{name:'same',kind:'button'}]));});
 test('MIDI auto-suggestions identify model, not another keyboard',()=>{const ports=[{name:'KOMPLETE KONTROL A49 MIDI'},{name:'Other Keyboard'}];assert.deepEqual(matchedMidiPorts(ports,profiles.kk_a49),[ports[0]]);});
 test('email draft encodes headers and asks the tester to attach JSON',()=>{const draft=emailDraft('tester@example.org','Studio & More',{recorded:1,total:100});assert(draft.startsWith('mailto:tester%40example.org?subject='));assert(decodeURIComponent(draft).includes('Please attach the downloaded .json'));assert.throws(()=>emailDraft('tester@example.org\r\nBcc:evil@example.org','Studio',{}));assert.throws(()=>emailDraft('','Studio',{}));});
+
+test('model selection contains only controllers still needing integration',()=>{const available=availableProfiles(profiles).map(p=>p.id);assert.equal(available.length,17);for(const id of ['maschine_mk1','maschine_mk2','maschine_mk3','maschine_plus','maschine_mikro_mk1','maschine_mikro_mk2'])assert(!available.includes(id));for(const id of ['maschine_studio','maschine_jam','maschine_mikro_mk3','kk_m32'])assert(available.includes(id));});

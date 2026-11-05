@@ -80,3 +80,5 @@ export function emailDraft(address, model, summary) {
   const body=`Controller: ${model}\n\n${summary.recorded}/${summary.total} required actions recorded.\n\nI agree to publish the attached controller measurements under GPL-3.0-or-later.\n\nPlease attach the downloaded .json file before sending.\n\nOptional observations:\n`;
   return 'mailto:'+encodeURIComponent(address)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
+
+export function availableProfiles(profiles) { return Object.values(profiles).filter(p=>p.survey_required!==false); }
