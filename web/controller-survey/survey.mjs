@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=7';
-import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=7';
-import {ActionDetector} from './guided.mjs?v=7';
-const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=7',{cache:'no-cache'})).json();
+import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=8';
+import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=8';
+import {enableBacklight,restoreBacklight,ledInventory,showLed,clearLeds,ledCoverage} from './outputs.mjs?v=8';
+import {ActionDetector} from './guided.mjs?v=8';
+const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=8',{cache:'no-cache'})).json();
 const config=await (await fetch('config.json',{cache:'no-cache'})).json();
-let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false, autoStage='idle', resumeStage='controls', autoDetector=null, autoTimer=null, autoGeneration=0, colorLink=null, promptEnabled=true, skippedDisplays=new Set();
+let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false, autoStage='idle', resumeStage='controls', autoDetector=null, autoTimer=null, autoGeneration=0, colorLink=null, promptEnabled=true, skippedDisplays=new Set(),ledIndex=0,ledSent=false,ledBusy=false,ledDetector=null,ledError='';
 const hex=b=>Array.from(b,n=>n.toString(16).padStart(2,'0')).join('');
 const notify=s=>{$('message').textContent=s;};
 const profile=()=>profiles[$('model').value];
@@ -20,6 +21,7 @@ function receive(id,bytes){
  if(!report || bytes.length===0 || bytes.length>512)return;
  const h=hex(bytes), key=id+':'+(id.startsWith('midi')?bytes[0]&0xf0:bytes[0])+':'+bytes.length;
  latest.set(key,{interface:id,hex:h});
+ if(autoStage==='leds'&&ledDetector)ledDetector.feed(id,bytes,performance.now());
  if(autoStage==='controls'&&autoDetector)autoDetector.feed(id,bytes,performance.now());
  if(!capture)return;
  const ms=Math.round(performance.now()-capture.started); if(ms>6000)return;
@@ -32,6 +34,7 @@ function receive(id,bytes){
  capture.frames.push({ms,interface:id,hex:h});
 }
 function draw(){
+ $('completion').hidden=autoStage!=='complete';
  if(report)$('keyboard-test').value=report.checklist_version<3?'full':report.keyboard_test||'quick';
  $('keyboard-test').disabled=!!report;$('keyboard-choice').hidden=!profile().keys;
  const p=profile(), list=steps(), s=list[stepIndex];
@@ -42,29 +45,29 @@ function draw(){
  $('note').value=row()?.note||'';$('audit').checked=report?.layout_audited||false;
  $('connection').textContent=report?(report.demo?'DEMO · no hardware measurements':`${report.device.name} · ${devices.length} HID interface(s) open · ${selectedPorts.size} MIDI input(s) selected`):'Not connected';
  $('model').disabled=!!report;$('connect').disabled=!!report;$('demo').disabled=!!report;
- $('more').disabled=!report||report.demo||displayBusy||!!capture;$('record').disabled=!report||['displays','controls'].includes(autoStage)||displayBusy||!!capture||(!report.demo&&!devices.length);$('confirm').disabled=!row()||row().status==='skipped'||!!capture||!row().frames.some(f=>f.ms>=1000&&f.ms<5000);
+ $('more').disabled=!report||report.demo||displayBusy||!!capture;$('record').disabled=!report||['displays','controls','leds'].includes(autoStage)||displayBusy||!!capture||(!report.demo&&!devices.length);$('confirm').disabled=!row()||row().status==='skipped'||!!capture||!row().frames.some(f=>f.ms>=1000&&f.ms<5000);
  for(const id of ['skip','step','add','audit','resume','download','submit','discord','midi'])$(id).disabled=displayBusy || !!capture || (!report && !['resume','midi'].includes(id));
  $('evidence').textContent=row()?`${row().status==='skipped'?'Untested':row().tester_confirmed?(row().detection?'Automatically recorded':'Action confirmed by tester'):'Recording awaiting your confirmation'} · ${row().frames.length} raw frames${row().note?' · '+row().note:''}`:'No recording for this control yet.';
  $('visual').replaceChildren();
  if(s.kind==='pad'&&p.pads===16){const grid=document.createElement('div');grid.className='padgrid';for(let r=3;r>=0;r--)for(let c=1;c<=4;c++){const n=r*4+c,t=document.createElement('span');t.className='tile'+(s.name==='PAD '+n?' active':'');t.textContent=n;grid.append(t);}$('visual').append(grid);}
  else if(s.kind==='key'){for(let n=1;n<=p.keys;n++){const t=document.createElement('span');t.className='tile keytile'+(s.name==='KEY '+n+' FROM LEFT'?' active':'');$('visual').append(t);}}
  else {const t=document.createElement('span');t.className='symbol';t.textContent=s.kind==='encoder'?(s.name.includes('counterclockwise')?'↶':'↷'):s.kind==='slider'?'↔':s.kind==='touch'?'◎':s.kind==='pressure'?'⇓':'▣';$('visual').append(t);}
- if(['displays','controls'].includes(autoStage))for(const id of ['step','add','skip','confirm','more','resume','midi'])$(id).disabled=true;
+ if(['displays','controls','leds'].includes(autoStage))for(const id of ['step','add','skip','confirm','more','resume','midi'])$(id).disabled=true;
  if(midi)for(const checkbox of $('ports').querySelectorAll('input'))checkbox.disabled=!!capture||['controls','displays'].includes(autoStage)||!report||report.demo;
- $('missing').replaceChildren();if(report){const c=coverage(report,profiles);$('coverage').textContent=`${report.demo?'DEMO · ':''}${c.recorded} / ${c.total} required actions recorded and confirmed. ${c.physical_check_complete?(p.keys&&report.checklist_version>=3&&report.keyboard_test==='quick'?'Quick input mapping finished; other keys were not individually tested.':'Physical input check finished.'):'Input check incomplete.'} Driver mappings still need review. Displays: ${c.displays.confirmed}/${c.displays.total} test images confirmed. LEDs: not tested.`;for(const n of [...c.missing,...c.displays.missing]){const li=document.createElement('li');li.textContent=n;$('missing').append(li);}}
- $('disconnect').disabled=displayBusy;drawDisplays();drawFlow();
+ $('missing').replaceChildren();if(report){const c=coverage(report,profiles);$('coverage').textContent=`${report.demo?'DEMO · ':''}${c.recorded} / ${c.total} required actions recorded and confirmed. ${c.physical_check_complete?(p.keys&&report.checklist_version>=3&&report.keyboard_test==='quick'?'Quick input mapping finished; other keys were not individually tested.':'Physical input check finished.'):'Input check incomplete.'} Driver mappings still need review. Displays: ${c.displays.confirmed}/${c.displays.total} test images confirmed. LEDs: ${c.leds.confirmed}/${c.leds.total} confirmed${c.leds.available?'':' (output protocol not yet verified)' }.`;for(const n of [...c.missing,...c.displays.missing]){const li=document.createElement('li');li.textContent=n;$('missing').append(li);}}
+ $('disconnect').disabled=displayBusy;drawDisplays();drawLeds();drawFlow();
 }
 
 function autoInstruction(s){return s.kind==='encoder'?'Turn clockwise through a few steps, then stop.':s.kind==='button'||s.kind==='touch'?'Press or touch once, then release.':s.kind==='pad'||s.kind==='key'?'Play once, then release.':'Move only this control, then release or stop.';}
 function drawFlow(){
- const running=['displays','controls'].includes(autoStage);document.body.classList.toggle('mapping-running',running);
- $('mapping-start').disabled=!report||report.demo||!devices.length||displayBusy||!!capture||running;
+ const running=['displays','controls','leds'].includes(autoStage);document.body.classList.toggle('mapping-running',running);
+ $('mapping-start').disabled=ledBusy||!report||report.demo||!devices.length||displayBusy||!!capture||running;
  $('mapping-start').textContent=autoStage==='paused'?'Resume mapping':'Start mapping';
- $('mapping-pause').disabled=!running;$('mapping-retry').disabled=!report||!devices.length||displayBusy||!!capture;
- $('mapping-skip').disabled=!running||displayBusy;
- $('mapping-status').textContent=autoStage==='displays'?'DISPLAY CHECK · Compare each picture, then confirm.':autoStage==='controls'?'AUTOMATIC · '+(stepIndex+1)+' / '+steps().length+' · '+current().name+' · '+autoInstruction(current()):autoStage==='paused'?'PAUSED · '+($('phase').textContent||'Resume when ready.'):autoStage==='complete'?'Mapping finished. Review missing or skipped items before sending the JSON.':report?'Ready. Start mapping checks the displays first.':'Connect a controller to start.';
+ $('mapping-pause').disabled=!running;$('mapping-retry').disabled=ledBusy||!report||!devices.length||displayBusy||!!capture;
+ $('mapping-skip').disabled=!running||displayBusy||ledBusy;
+ $('mapping-status').textContent=autoStage==='displays'?'DISPLAY CHECK · Compare each picture, then confirm.':autoStage==='controls'?'AUTOMATIC · '+(stepIndex+1)+' / '+steps().length+' · '+current().name+' · '+autoInstruction(current()):autoStage==='paused'?'PAUSED · '+($('phase').textContent||'Resume when ready.'):autoStage==='leds'?'LED CHECK · '+(ledIndex+1)+' / '+ledInventory(profile()).length+' · Identify the illuminated control.':autoStage==='complete'?'CHECK COMPLETE. Mapping finished. Review missing or skipped items before sending the JSON.':report?'Ready. Start mapping checks the displays first.':'Connect a controller to start.';
 }
-function pauseMapping(message){if(!['displays','controls'].includes(autoStage))return;resumeStage=autoStage;autoStage='paused';autoDetector=null;autoGeneration++;if(autoTimer){clearInterval(autoTimer);autoTimer=null;}$('phase').textContent=message||'Mapping paused.';notify(message||'Mapping paused.');draw();$('mapping-flow').scrollIntoView({block:'start'});}
+function pauseMapping(message){if(!['displays','controls','leds'].includes(autoStage))return;resumeStage=autoStage;autoStage='paused';autoDetector=null;ledDetector=null;autoGeneration++;if(autoTimer){clearInterval(autoTimer);autoTimer=null;}$('phase').textContent=message||'Mapping paused.';notify(message||'Mapping paused.');draw();$('mapping-flow').scrollIntoView({block:'start'});}
 async function advanceDisplays(){
  if(autoStage!=='displays'||displayBusy)return;
  const pending=displayInventory(profile()).flatMap(d=>PATTERNS.map(pattern=>({d,pattern}))).find(({d,pattern})=>!skippedDisplays.has(d.id)&&!report.display_checks?.some(r=>r.display_id===d.id&&r.pattern===pattern&&['confirmed','not_tested'].includes(r.status)));
@@ -77,15 +80,59 @@ async function beginControls(){
  if(steps().every(s=>report.controls.some(r=>r.id===s.id&&r.tester_confirmed))){finishMapping();return;}
  if(autoTimer)clearInterval(autoTimer);autoTimer=setInterval(autoTick,50);await armStep();
 }
-function finishMapping(){autoStage='complete';autoDetector=null;autoGeneration++;if(autoTimer)clearInterval(autoTimer);autoTimer=null;persist();draw();$('review').scrollIntoView({block:'start'});notify('Mapping finished. Skipped controls and displays remain untested. Review the checklist, download the JSON, and post it in #controllers.');}
+async function finishAll(){
+ autoStage='complete';autoDetector=null;ledDetector=null;autoGeneration++;if(autoTimer)clearInterval(autoTimer);autoTimer=null;
+ try{await clearLeds(profile(),devices);}catch{}await persist();draw();
+ $('completion').hidden=false;const c=coverage(report,profiles);$('completion-summary').textContent=`${c.recorded}/${c.total} controls · ${c.displays.confirmed}/${c.displays.total} display checks · ${c.leds.confirmed}/${c.leds.total} LEDs confirmed. Skipped or unavailable items remain untested.`;
+ $('completion').scrollIntoView({block:'start'});notify('CHECK COMPLETE. Download your JSON below.');
+ await devicePrompt(['CHECK COMPLETE','DOWNLOAD JSON','IN THE BROWSER']);
+}
+function finishMapping(){beginLeds().catch(e=>{pauseMapping(e.message);});}
+async function devicePrompt(lines){
+ if(!promptEnabled)return;
+ const panels=displayInventory(profile()).filter(d=>PATTERNS.every(pattern=>report.display_checks?.some(r=>r.display_id===d.id&&r.pattern===pattern&&r.status==='confirmed')));
+ for(const panel of panels)try{await sendPrompt(profile(),panel,lines,devices,colorLink);}catch(e){promptEnabled=false;notify('On-device instructions unavailable: '+e.message+' Continue using the browser.');break;}
+}
+
+function drawLeds(){
+ const test=ledInventory(profile())[ledIndex],active=autoStage==='leds';$('led-current').textContent=test?`${ledIndex+1} / ${ledInventory(profile()).length} · ${test.name} · ${test.color.toUpperCase()}`:'No verified LED output protocol for this model.';
+ $('led-status').textContent=ledBusy?'Lighting the next LED…':ledError||(!active?'LED check follows the inputs.':ledSent?'Press the illuminated button or pad, then release. You can also identify it below and click Confirm & next.':'No LED output confirmed. Retry or mark untested.');
+ for(const id of ['led-observed','led-color','led-note','led-next','led-dark','led-skip-all'])$(id).disabled=!active||ledBusy;
+ $('led-next').disabled=!active||ledBusy||!ledSent;
+}
+async function beginLeds(){
+ if(autoTimer)clearInterval(autoTimer);autoDetector=null;ledDetector=null;
+ if(!ledInventory(profile()).length){await finishAll();return;}
+ autoStage='leds';resumeStage='leds';ledIndex=ledInventory(profile()).findIndex(t=>!report.leds.some(r=>r.id===t.id));if(ledIndex<0){await finishAll();return;}
+ $('led-panel').scrollIntoView({block:'start'});autoTimer=setInterval(autoTick,50);await armLed();
+}
+async function armLed(){
+ const t=ledInventory(profile())[ledIndex];if(!t){await finishAll();return;}const generation=++autoGeneration;ledBusy=true;ledSent=false;ledDetector=null;ledError='';$('led-observed').value='';$('led-note').value='';$('led-color').value=t.color==='observe'?'unknown':t.color;draw();
+ try{await showLed(profile(),devices,t);if(autoStage!=='leds'||generation!==autoGeneration)return;ledSent=true;await devicePrompt(['LED '+(ledIndex+1)+' / '+ledInventory(profile()).length,t.color==='observe'?'WHICH LED IS ON':t.name+' '+t.color,'PRESS LIT CONTROL']);
+ if(t.kind!=='unknown')ledDetector=new ActionDetector({kind:t.kind},[...latest.values()],performance.now());
+ }catch(e){ledError=e.message;}finally{ledBusy=false;draw();}
+}
+async function saveLed(status,observed){
+ if(autoStage!=='leds'||ledBusy)return;const t=ledInventory(profile())[ledIndex];if(status==='confirmed'&&(!ledSent||!observed.trim()))throw new Error('Name the illuminated control before confirming.');
+ report.leds=report.leds.filter(r=>r.id!==t.id);report.leds.push({id:t.id,bank:t.bank,offset:t.offset,value:t.value,status,observed,color:$('led-color').value,note:$('led-note').value,sent:ledSent});ledDetector=null;await persist();ledIndex++;if(ledIndex>=ledInventory(profile()).length)await finishAll();else await armLed();
+}
+$('led-next').onclick=safe(()=>saveLed('confirmed',$('led-observed').value.trim()));
+$('led-dark').onclick=safe(()=>saveLed(ledSent?'failed':'blocked',$('led-observed').value.trim()));
+$('led-skip-all').onclick=safe(async()=>{if(!confirm('Skip the remaining LED tests? They will remain untested in the JSON.'))return;for(const t of ledInventory(profile()).slice(ledIndex))if(!report.leds.some(r=>r.id===t.id))report.leds.push({id:t.id,status:'not_tested',observed:'',color:'',note:'Skipped by tester.',sent:false});await finishAll();});
+$('completion-download').onclick=()=>download();
+
 async function armStep(){
  if(autoStage!=='controls')return;autoDetector=null;const generation=++autoGeneration,s=current();if(['key','pressure'].includes(s.kind)&&profile().keys&&!selectedPorts.size){pauseMapping('Select this keyboard in MIDI inputs, then resume mapping.');return;}draw();$('phase').textContent='Preparing next control…';
- const panel=displayInventory(profile()).find(d=>PATTERNS.every(pattern=>report.display_checks?.some(r=>r.display_id===d.id&&r.pattern===pattern&&r.status==='confirmed')));
- if(panel&&promptEnabled){try{await sendPrompt(profile(),panel,[String(stepIndex+1)+' / '+steps().length,s.name,s.kind==='encoder'?'TURN RIGHT':s.kind==='pad'||s.kind==='key'?'PLAY - RELEASE':s.kind==='slider'||s.kind==='pedal'||s.kind==='pressure'?'MOVE - RELEASE':'PRESS - RELEASE'],devices,colorLink);}catch(e){promptEnabled=false;notify('On-device instructions unavailable: '+e.message+' Continue using the browser.');}}
+ autoDetector=new ActionDetector(s,[...latest.values()],performance.now());$('phase').textContent='Ready · '+autoInstruction(s);drawFlow();
+ await devicePrompt([String(stepIndex+1)+' / '+steps().length,s.name,s.kind==='encoder'?'TURN RIGHT':s.kind==='pad'||s.kind==='key'?'PLAY - RELEASE':'PRESS - RELEASE']);
  if(autoStage!=='controls'||generation!==autoGeneration)return;
- autoDetector=new ActionDetector(s,[...latest.values()],performance.now());$('phase').textContent='Keep all controls released for a moment…';drawFlow();
+
 }
 function autoTick(){
+ if(autoStage==='leds'){
+  if(!ledDetector||ledBusy)return;const result=ledDetector.tick(performance.now());if(result.state==='ambiguous'){ledError=result.message;ledDetector=null;drawLeds();return;}
+  if(result.state==='complete'){ledDetector=null;const mapped=report.controls.find(r=>r.detection?.signature===result.signature);if(!mapped){ledError='Input received. Identify the lit control below, then confirm.';drawLeds();return;}$('led-observed').value=mapped.name;saveLed('confirmed',mapped.name).catch(e=>notify(e.message));}return;
+ }
  if(autoStage!=='controls'||!autoDetector)return;
  const result=autoDetector.tick(performance.now());
  if(result.state==='ambiguous'){pauseMapping(result.message);return;}
@@ -102,14 +149,16 @@ function autoTick(){
 $('mapping-start').onclick=safe(async()=>{
  if(!report||report.demo||!devices.length||displayBusy||capture)return;
  const testedColor=displayInventory(profile()).find(d=>d.protocol==='ni-color'&&PATTERNS.every(pattern=>report.display_checks?.some(r=>r.display_id===d.id&&r.pattern===pattern&&r.status==='confirmed')));if(testedColor&&!colorLink){try{colorLink=await openColor(profile(),testedColor,navigator.usb);}catch(e){notify('Display instructions unavailable; continue in the browser. '+e.message);}}
+ if(autoStage==='paused'&&resumeStage==='leds'){autoStage='leds';if(autoTimer)clearInterval(autoTimer);autoTimer=setInterval(autoTick,50);await armLed();return;}
  if(autoStage==='paused'&&resumeStage==='controls'){autoStage='controls';if(autoTimer)clearInterval(autoTimer);autoTimer=setInterval(autoTick,50);await armStep();return;}
  if(profile().keys&&!selectedPorts.size){if(!midi)await $('midi').onclick();if(!selectedPorts.size){autoStage='displays';pauseMapping('Choose this keyboard in MIDI inputs, then resume mapping.');return;}}
  $('display-enable').checked=true;autoStage='displays';resumeStage='displays';draw();$('display-panel').scrollIntoView({block:'start'});await advanceDisplays();
 });
 $('mapping-pause').onclick=()=>pauseMapping('Paused by tester.');
-$('mapping-retry').onclick=safe(async()=>{if(!report||displayBusy)return;if(autoStage==='displays'||autoStage==='paused'&&resumeStage==='displays'){autoStage='displays';await $('display-send').onclick();return;}autoStage='controls';if(autoTimer)clearInterval(autoTimer);autoTimer=setInterval(autoTick,50);await armStep();});
+$('mapping-retry').onclick=safe(async()=>{if(!report||displayBusy||ledBusy)return;if(autoStage==='leds'||autoStage==='paused'&&resumeStage==='leds'){autoStage='leds';await armLed();return;}if(autoStage==='displays'||autoStage==='paused'&&resumeStage==='displays'){autoStage='displays';await $('display-send').onclick();return;}autoStage='controls';if(autoTimer)clearInterval(autoTimer);autoTimer=setInterval(autoTick,50);await armStep();});
 $('mapping-skip').onclick=safe(async()=>{
- if(!report||displayBusy)return;
+ if(!report||displayBusy||ledBusy)return;
+ if(autoStage==='leds'){await saveLed('not_tested','');return;}
  if(autoStage==='displays'){
   const id=$('display-select').value;skippedDisplays.add(id);for(const pattern of PATTERNS)if(!report.display_checks?.some(r=>r.display_id===id&&r.pattern===pattern))storeDisplay({display_id:id,pattern,status:'not_tested',note:'Skipped by tester during guided mapping.'});await advanceDisplays();return;
  }
@@ -141,6 +190,7 @@ $('display-send').onclick=safe(async()=>{
  if(!display)return;displayBusy=true;draw();
  try{
   if(display.protocol==='pending-odr')throw new Error(display.reason);
+  try{await enableBacklight(profile(),devices);}catch(e){notify('Backlight unavailable: '+e.message);}
   const result=display.protocol==='ni-color'?(autoStage==='displays'?(colorLink ||= await openColor(profile(),display,navigator.usb),await colorLink.send(display,pattern)):await sendColor(profile(),display,pattern,navigator.usb)):await sendMono(profile(),display,pattern,devices);
   const evidence=await transmissionEvidence(result);if(report!==target)throw new Error('Controller session changed. Repeat the test.');
   storeDisplay({display_id:display.id,pattern,status:'sent',note:observation,...evidence});notify('Test image sent. Compare the physical display with the preview before confirming.');
@@ -151,7 +201,7 @@ function finishDisplay(okay){const r=displayRow();if(!r||r.status!=='sent'||disp
 $('display-good').onclick=()=>finishDisplay(true);$('display-bad').onclick=()=>finishDisplay(false);
 $('display-skip').onclick=()=>{if(autoStage==='displays'){ $('mapping-skip').onclick();return;}if(!report||displayBusy)return;storeDisplay({display_id:$('display-select').value,pattern:$('display-pattern').value,status:'not_tested',note:$('display-note').value});draw();};
 
-async function detach(){pauseMapping('Controller disconnected. Resume after reconnecting the same controller.');if(colorLink){await colorLink.close();colorLink=null;}$('display-enable').checked=false;if(capture){clearInterval(capture.timer);capture=null;notify('Recording cancelled by disconnect. Repeat this control.');}for(const d of devices){d.device.removeEventListener('inputreport',d.listener);try{await d.device.close();}catch{}}devices=[];if(midi)for(const p of midi.inputs.values())p.onmidimessage=null;selectedPorts.clear();latest.clear();draw();}
+async function detach(){pauseMapping('Controller disconnected. Resume after reconnecting the same controller.');await restoreBacklight();try{if(report)await clearLeds(profile(),devices);}catch{}if(colorLink){await colorLink.close();colorLink=null;}$('display-enable').checked=false;if(capture){clearInterval(capture.timer);capture=null;notify('Recording cancelled by disconnect. Repeat this control.');}for(const d of devices){d.device.removeEventListener('inputreport',d.listener);try{await d.device.close();}catch{}}devices=[];if(midi)for(const p of midi.inputs.values())p.onmidimessage=null;selectedPorts.clear();latest.clear();draw();}
 async function openHid(additional=false){
  if(!navigator.hid)throw new Error('WebHID is unavailable. Open this page in desktop Chrome or Edge.');
  const filters=[{vendorId:0x17cc,...(additional?{productId:report.device.product_id}:{})}];
@@ -177,10 +227,10 @@ async function openHid(additional=false){
 $('connect').onclick=safe(()=>openHid());$('more').onclick=safe(()=>openHid(true));
 $('disconnect').onclick=safe(async()=>{await persist();await detach();if((report?.controls.length||report?.display_checks?.length) && !confirm('End this session? Download a copy first if you need it. A browser recovery copy remains until the next session is saved.'))return;report=null;stepIndex=0;autoStage='idle';skippedDisplays.clear();draw();});
 if(navigator.hid)navigator.hid.addEventListener('disconnect',safe(async e=>{if(devices.some(d=>d.device===e.device)){await detach();notify('USB disconnected. Download your progress, then resume and reconnect the same controller.');}}));
-$('model').onchange=()=>{stepIndex=0;draw();};$('keyboard-test').onchange=()=>{stepIndex=0;draw();};$('step').onchange=()=>{pauseMapping('Manual control selection.');stepIndex=Number($('step').value);draw();};
+$('model').onchange=()=>{stepIndex=0;ledIndex=0;$('completion').hidden=true;draw();};$('keyboard-test').onchange=()=>{stepIndex=0;draw();};$('step').onchange=()=>{pauseMapping('Manual control selection.');stepIndex=Number($('step').value);draw();};
 $('demo').onclick=()=>{report=blank(true,{vendor_id:0x17cc,product_id:profile().product_ids[0]||0,name:profile().name,identity_verified:false,interfaces:[{id:'hid0'}]});draw();notify('Demo mode. These measurements cannot be submitted as real hardware data.');};
 $('record').onclick=()=>{
- const s=current();if(!report||capture||['displays','controls'].includes(autoStage))return;
+ const s=current();if(!report||capture||['displays','controls','leds'].includes(autoStage))return;
  capture={step:s,started:performance.now(),frames:[...latest.values()].map(f=>({...f,ms:0})),last:new Map(),overflow:false};$('progress').value=0;draw();
  capture.timer=setInterval(()=>{
   if(!capture)return;const elapsed=(performance.now()-capture.started)/1000;$('progress').value=elapsed;
@@ -189,8 +239,8 @@ $('record').onclick=()=>{
   if(elapsed>=6){const c=capture;clearInterval(c.timer);capture=null;const r={id:s.id,name:s.name,kind:s.kind,status:'captured',tester_confirmed:false,frames:compactFrames(c.frames),note:c.overflow?'Capture exceeded rate limit; repeat more slowly.':''};report.controls=report.controls.filter(r=>r.id!==s.id);report.controls.push(r);report.layout_audited=false;$('phase').textContent=c.overflow?'Too much data · repeat this control':r.frames.length?'Recorded · confirm only if you performed the requested action':'No input data · check interfaces, MIDI ports or app ownership';persist();draw();}
  },80);
 };
-$('confirm').onclick=safe(async()=>{if(!row()||!row().frames.some(f=>f.ms>=1000&&f.ms<5000))return;row().tester_confirmed=true;row().note=$('note').value;stepIndex=Math.min(stepIndex+1,steps().length-1);$('phase').textContent='Ready when you are';draw();await persist();});
-$('skip').onclick=safe(async()=>{const s=current();report.controls=report.controls.filter(r=>r.id!==s.id);report.controls.push({id:s.id,name:s.name,kind:s.kind,status:'skipped',tester_confirmed:false,frames:[],note:$('note').value});report.layout_audited=false;stepIndex=Math.min(stepIndex+1,steps().length-1);draw();await persist();});
+$('confirm').onclick=safe(async()=>{if(!row()||!row().frames.some(f=>f.ms>=1000&&f.ms<5000))return;row().tester_confirmed=true;row().note=$('note').value;if(stepIndex===steps().length-1){await persist();finishMapping();return;}stepIndex++;$('phase').textContent='Ready when you are';draw();await persist();});
+$('skip').onclick=safe(async()=>{const s=current();report.controls=report.controls.filter(r=>r.id!==s.id);report.controls.push({id:s.id,name:s.name,kind:s.kind,status:'skipped',tester_confirmed:false,frames:[],note:$('note').value});report.layout_audited=false;if(stepIndex===steps().length-1){await persist();finishMapping();return;}stepIndex++;draw();await persist();});
 $('note').onchange=()=>{if(row()){row().note=$('note').value;persist();}};
 $('audit').onchange=()=>{if(report){report.layout_audited=$('audit').checked;persist();draw();}};
 $('add').onclick=safe(async()=>{const extra={name:$('extra-name').value.trim(),kind:$('extra-kind').value};const next=[...report.extra_controls,extra];stepsFor(profile(),next,report.checklist_version,report.keyboard_test);report.extra_controls=next;report.layout_audited=false;stepIndex=steps().length-1;$('extra-name').value='';await persist();draw();});
@@ -222,6 +272,6 @@ $('discord').hidden=!config.discordUrl;
 if(config.discordUrl)$('submit-info').append(document.createTextNode(' Discord submissions belong in #controllers. The invite may open another channel first; choose #controllers before attaching your file.'));
 $('resume').onchange=safe(async()=>{const f=$('resume').files[0];if(!f)return;if(f.size>MAX_BYTES)throw new Error('The file exceeds 8 MiB.');const saved=upgradeChecklist(JSON.parse(await f.text()),profiles);if(!availableProfiles(profiles).some(p=>p.id===saved.profile_id))throw new Error('This controller is already supported and no longer needs a survey. Your saved JSON remains valid for maintainer review.');if(!confirm('Resume this survey? Only reconnect the SAME physical controller and keep its settings unchanged.'))return;await detach();report=saved;autoStage='idle';skippedDisplays.clear();$('model').value=report.profile_id;stepIndex=0;draw();notify('Progress restored. Click Add HID interface to reconnect the same controller. Re-select MIDI inputs.');});
 try{db=await new Promise((resolve,reject)=>{const req=indexedDB.open('machinista-controller-lab',1);req.onupgradeneeded=()=>req.result.createObjectStore('state');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});const saved=await new Promise(resolve=>{const req=db.transaction('state').objectStore('state').get('survey');req.onsuccess=()=>resolve(req.result);req.onerror=()=>resolve(null);});if(saved && (!profiles[saved.profile_id]||!availableProfiles(profiles).some(p=>p.id===saved.profile_id))){notify('Your previous survey belongs to an already supported controller. Choose one of the remaining models. Your saved JSON can still be reviewed.');}else if(saved && confirm('Restore your previous controller survey?')){report=upgradeChecklist(saved,profiles);$('model').value=report.profile_id;notify('Recovered progress. Reconnect the same controller with Add HID interface.');}}catch{notify('Browser recovery storage is unavailable. Download JSON regularly to save progress.');}
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&['controls','displays'].includes(autoStage))pauseMapping('Mapping paused because the page was hidden.');if(document.hidden&&capture){clearInterval(capture.timer);capture=null;notify('Recording cancelled because the page was hidden. Keep this page visible and repeat.');draw();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&['controls','displays','leds'].includes(autoStage))pauseMapping('Mapping paused because the page was hidden.');if(document.hidden&&capture){clearInterval(capture.timer);capture=null;notify('Recording cancelled because the page was hidden. Keep this page visible and repeat.');draw();}});
 $('submit-info').append(document.createTextNode(config.submissionEmail?' Send your downloaded JSON to '+config.submissionEmail+'. Prepare email opens your mail app; attach the file yourself. Webmail also works.':' The public email address has not been configured yet. You can already download your JSON.'));
 window.addEventListener('beforeunload',e=>{if(capture){e.preventDefault();e.returnValue='';}});draw();

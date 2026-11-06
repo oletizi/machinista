@@ -68,7 +68,10 @@ def display_inventory(identity):
   return [dict(id='display_'+str(i+1),name='Right display' if i else 'Left display',index=i,width=480,height=272,color=True,protocol='ni-color',usbInterface=1 if identity=='maschine_studio' else 3,endpoint=2 if identity=='maschine_studio' else 3) for i in range(2)]
  if re.fullmatch(r'kk_s\d+_mk3',identity):return [dict(id='display_1',name='Wide color display',index=0,width=1280,height=480,color=True,protocol='pending-odr',reason='Kontrol S-MK3 uses ODR rather than the Studio/S-MK2 bulk format. Browser rendering is not implemented; record this as blocked, not passed.')]
  return []
-for identity,profile in PROFILES.items():profile['displays']=display_inventory(identity)
+from app.controller_survey_outputs import output_inventory
+for identity,profile in PROFILES.items():
+ profile['displays']=display_inventory(identity)
+ profile['led_banks'],profile['led_tests']=output_inventory(identity,profile)
 
 def checklist(profile_id,extras=(),version=3,keyboard_test="quick"):
  if profile_id not in PROFILES:raise ValueError('Choose a controller model first.')

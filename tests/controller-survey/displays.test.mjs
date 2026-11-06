@@ -38,3 +38,5 @@ test('MK2 nested collection descriptions of one output report send once, not amb
  await assert.rejects(sendMono(profile,d,'border',[missing]),/0xe0: 0 compatible HID interfaces.*no report/);
  await assert.rejects(sendMono(profile,d,'border',[hid(0x1140),hid(0x1140)]),/2 compatible HID interfaces/);
 });
+
+test('large monochrome prompts use doubled bold pixels and fit three lines',async()=>{const {promptImage}=await import('../../web/controller-survey/displays.mjs');const d=profiles.maschine_mk2.displays[0],rgb=promptImage(d,['CHECK COMPLETE','DOWNLOAD JSON','IN THE BROWSER']);const lit=(x,y)=>rgb[(y*d.width+x)*3]===255;assert(lit(10,4));assert(lit(11,4));assert(lit(12,4));assert(lit(10,5));assert(Array.from({length:256*16},(_,n)=>rgb[((36+Math.floor(n/256))*256+n%256)*3]).some(Boolean));});

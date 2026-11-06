@@ -114,9 +114,19 @@ def validate(value):
   if selected is not None and (type(selected) is not int or not 0<=selected<len(candidates)):raise ValueError('Invalid candidate selection.')
   if row['status']=='confirmed' and selected is None:raise ValueError('Confirmed control has no measured candidate.')
  leds=value.get('leds',[])
- if not isinstance(leds,list) or len(leds)>250:raise ValueError('Invalid LED evidence.')
+ if not isinstance(leds,list) or len(leds)>1024:raise ValueError('Invalid LED evidence.')
+ led_tests={t['id']:t for t in PROFILES[profile].get('led_tests',[])};seen_leds=set()
  for led in leds:
-  if device['product_id']!=STUDIO or not isinstance(led,dict) or type(led.get('bank')) is not int or led['bank'] not in LED_BANKS or type(led.get('offset')) is not int or not 1<=led['offset']<LED_BANKS[led['bank']]:raise ValueError('Invalid LED probe.')
+  if not isinstance(led,dict):raise ValueError('Invalid LED evidence.')
+  if 'id' not in led:
+   if device['product_id']!=STUDIO or type(led.get('bank')) is not int or led['bank'] not in LED_BANKS or type(led.get('offset')) is not int or not 1<=led['offset']<LED_BANKS[led['bank']]:raise ValueError('Invalid LED probe.')
+  else:
+   t=led_tests.get(led['id'])
+   if t is None or led['id'] in seen_leds or led.get('status') not in ('confirmed','failed','not_tested','blocked'):raise ValueError('Invalid LED test.')
+   seen_leds.add(led['id'])
+   if led.get('bank',t['bank'])!=t['bank'] or led.get('offset',t['offset'])!=t['offset'] or led.get('value',t['value'])!=t['value']:raise ValueError('Invalid LED address.')
+   if not isinstance(led.get('color',''),str) or len(led.get('color',''))>30 or not isinstance(led.get('note',''),str) or len(led.get('note',''))>300 or type(led.get('sent',False)) is not bool:raise ValueError('Invalid LED observation.')
+   if led['status']=='confirmed' and (led.get('sent') is not True or not isinstance(led.get('observed'),str) or not led['observed'].strip()):raise ValueError('LED confirmation requires visible observation and output.')
   if not isinstance(led.get('observed'),str) or len(led['observed'])>120:raise ValueError('Invalid LED observation.')
  displays=value.get('displays',{})
  if not isinstance(displays,dict) or any(k not in ('left','right') or not isinstance(v,dict) or v.get('status') not in ('not_tested','sent','confirmed','incorrect','unavailable') or not isinstance(v.get('note',''),str) or len(v.get('note',''))>300 for k,v in displays.items()):raise ValueError('Invalid display observations.')

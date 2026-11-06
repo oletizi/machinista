@@ -52,3 +52,9 @@ class ControllerSurveyTests(unittest.TestCase):
   r=self.sample();r['profile_id']='maschine_mk2';r['device']['product_id']=0x1140;r['controls']=[]
   r['display_checks']=[dict(display_id='display_1',pattern='border',status='confirmed',note='',transport='hid',transfer_count=8,bytes_sent=2120,sha256='a'*64)]
   self.assertEqual(validate(r)['display_checks'][0]['transfer_count'],8)
+ def test_mk2_led_observations_are_preserved(self):
+  t=PROFILES['maschine_mk2']['led_tests'][0];r=self.sample();r['profile_id']='maschine_mk2';r['device']['product_id']=0x1140;r['controls']=[]
+  r['leds']=[dict(id=t['id'],bank=t['bank'],offset=t['offset'],value=t['value'],status='confirmed',observed=t['name'],color='white',sent=True)]
+  self.assertEqual(review(r)['leds'][0]['id'],t['id'])
+  r['leds'][0]['sent']=False
+  with self.assertRaises(ValueError):validate(r)

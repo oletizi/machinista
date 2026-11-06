@@ -2,7 +2,7 @@
 // Conservative event completion. Unknown/ambiguous evidence never advances.
 const key=(id,b)=>id+':'+b[0]+':'+b.length;
 export class ActionDetector {
- constructor(step,initial=[],now=0){this.step=step;this.started=now;this.readyAt=now+1000;this.base=new Map();this.unstable=new Map();this.warmValues=new Map();this.stats=new Map();this.frames=[];this.active=null;this.firstAction=null;this.lastMove=now;this.done=false;this.problem='';this.lastPackets=new Map();this.calibrating=new Set();for(const f of initial){const b=Uint8Array.from(f.hex.match(/../g)||[],x=>parseInt(x,16));this.base.set(key(f.interface,b),b);}this.initial=initial;}
+ constructor(step,initial=[],now=0){this.step=step;this.started=now;this.readyAt=initial.length?now:now+250;this.base=new Map();this.unstable=new Map();this.warmValues=new Map();this.stats=new Map();this.frames=[];this.active=null;this.firstAction=null;this.lastMove=now;this.done=false;this.problem='';this.lastPackets=new Map();this.calibrating=new Set();for(const f of initial){const b=Uint8Array.from(f.hex.match(/../g)||[],x=>parseInt(x,16));this.base.set(key(f.interface,b),b);}this.initial=initial;}
  record(id,b,now){const k=key(id,b),h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join(''),previous=this.lastPackets.get(k);if(id.startsWith('hid')&&previous?.hex===h)return;if(b[0]===0x20&&previous&&now-previous.time<20)return;this.lastPackets.set(k,{hex:h,time:now});if(this.firstAction===null)this.frames=this.frames.filter(f=>f.time>=now-1200);if(this.frames.length>=3000){this.problem='Too much input data. Pause other controllers and retry.';return;}this.frames.push({time:now,interface:id,hex:h});}
 
  feed(id,b,now){
@@ -53,7 +53,7 @@ export class ActionDetector {
   return {state:this.active?'release':'waiting',message:this.calibrating.size?'Release, then operate this control once more to verify its idle state.':undefined};
  }
  evidence(){
-  const start=Math.max(this.started,this.firstAction-1000), initial=[...this.base].map(([k,b])=>({ms:0,interface:k.split(':')[0],hex:Array.from(b,x=>x.toString(16).padStart(2,'0')).join('')}));
+  const start=this.firstAction-1000, initial=[...this.base].map(([k,b])=>({ms:0,interface:k.split(':')[0],hex:Array.from(b,x=>x.toString(16).padStart(2,'0')).join('')}));
   // Idle snapshots are retained at window start; actual event times stay relative to it.
   return [...initial,...this.frames.filter(f=>f.time>=start).map(f=>({ms:Math.round(f.time-start),interface:f.interface,hex:f.hex}))].sort((a,b)=>a.ms-b.ms);
  }

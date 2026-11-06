@@ -3,3 +3,5 @@
 #display-preview{display:block;max-width:100%;width:min(100%,640px);height:auto;margin:20px auto;background:#000;border:1px solid var(--line);image-rendering:pixelated} [hidden]{display:none!important}
 
 .mapping-running #mapping-flow{position:sticky;top:0;z-index:10;padding:14px 20px;box-shadow:0 8px 18px #0008}.mapping-running #mapping-flow>p:not(#mapping-status){display:none}.mapping-running #mapping-flow h2{margin:0;font-size:17px}.mapping-running #mapping-flow .actions{margin:10px 0}.mapping-running #mapping-status{margin:6px 0;font-size:14px}#wizard,#display-panel{scroll-margin-top:200px}
+
+.completion{border:3px solid var(--accent);text-align:center}.completion h2{font-size:36px;color:var(--accent)}#led-panel,#completion{scroll-margin-top:200px}
