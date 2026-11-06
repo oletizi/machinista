@@ -1,5 +1,7 @@
 # Machinista Pi 3B Sampler — experimental test image
 
+[Download the Pi 3B test image](https://github.com/photogeen/machinista/releases/tag/v0.1.0-beta.16).
+
 For Raspberry Pi 3 Model B with 1 GB RAM. This is a separate hardware target;
 existing Pi 4 / Pi 5 images and update feeds remain available.
 

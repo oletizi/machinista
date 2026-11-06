@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "channel": "beta",
+  "version": "0.1.0-beta.16",
+  "minimum_version": "0.1.0-beta.16",
+  "os_codename": "trixie",
+  "architecture": "arm64",
+  "hardware_profile": "pi3b-sampler",
+  "notes": "Experimental Pi 3B sampler target: 16 voices, 192 MiB sample budget, built-in effects, unchanged MK3 display scheduling. Synths, external LV2 and stems disabled. Physical Pi 3B testing required.",
+  "artifact": {
+    "url": "https://github.com/photogeen/machinista/releases/download/v0.1.0-beta.16/machinista-0.1.0-beta.16-pi3b-sampler-arm64.tar.gz",
+    "size": 5238827,
+    "sha256": "cd975f0442a90f68b5c5f725de267e8305d45740074102c38198b0f0c6249416"
+  }
+}
