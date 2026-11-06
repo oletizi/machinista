@@ -82,7 +82,9 @@ def validate(value):
  if type(value.get('demo')) is not bool:raise ValueError('Missing demo marker.')
  profile=value.get('profile_id');extras=value.get('extra_controls',[])
  if not isinstance(extras,list) or len(extras)>64:raise ValueError('Invalid additional controls.')
- expected=checklist(profile,extras)
+ inventory_version=value.get('checklist_version',1)
+ if type(inventory_version) is not int or inventory_version not in (1,2):raise ValueError('Unsupported checklist version.')
+ expected=checklist(profile,extras,inventory_version)
  if PROFILES[profile]['product_ids'] and device['product_id'] not in PROFILES[profile]['product_ids']:raise ValueError('USB device does not match model.')
  controls=value.get('controls');known={s['id']:s for s in expected}
  if not isinstance(controls,list) or len(controls)>len(expected):raise ValueError('Invalid controls.')
@@ -93,6 +95,8 @@ def validate(value):
   if row.get('status') not in ('confirmed','captured','skipped'):raise ValueError('Invalid control status.')
   if type(row.get('tester_confirmed',False)) is not bool:raise ValueError('Invalid observation marker.')
   if not isinstance(row.get('note',''),str) or len(row.get('note',''))>300:raise ValueError('Invalid observation.')
+  detection=row.get('detection')
+  if detection is not None and (not isinstance(detection,dict) or detection.get('method')!='automatic' or not isinstance(detection.get('signature'),str) or len(detection['signature'])>180 or re.fullmatch('[a-zA-Z0-9:._-]+',detection['signature']) is None):raise ValueError('Invalid automatic detection metadata.')
   frames=row.get('frames')
   if not isinstance(frames,list) or len(frames)>320:raise ValueError('Too many raw frames.')
   last=-1
@@ -124,6 +128,10 @@ def validate(value):
   seen_checks.add(key)
   if check['status'] in ('sent','confirmed','failed'):
    if display['protocol']=='pending-odr' or check.get('transport') not in ('hid','webusb') or type(check.get('transfer_count')) is not int or not 1<=check['transfer_count']<=4 or type(check.get('bytes_sent')) is not int or not 1<=check['bytes_sent']<=261152 or not isinstance(check.get('sha256'),str) or re.fullmatch('[a-f0-9]{64}',check['sha256']) is None:raise ValueError('Invalid display transmission evidence.')
+ legacy=value.get('legacy_controls')
+ if legacy is not None:
+  if inventory_version!=2 or not isinstance(legacy,list) or len(legacy)>len(PROFILES[profile]['encoders'])*2:raise ValueError('Invalid legacy encoder evidence.')
+  original=dict(value,checklist_version=1,controls=legacy);original.pop('legacy_controls',None);validate(original)
  return value
 
 def read_report(path):
@@ -146,12 +154,12 @@ def review(value):
    if identity in bindings:conflicts.append([bindings[identity],row['id']])
    bindings[identity]=row['id'];mapped.append(dict(id=row['id'],name=row['name'],binding=candidate))
   else:unresolved.append(row['id'])
- return dict(format='Machinista-controller-review',version=1,device=copy.deepcopy(value['device']),profile_id=value['profile_id'],demo=value['demo'],coverage=coverage(value),activation_allowed=False,candidates={r['id']:summarize(r['kind'],r['frames']) for r in value['controls']},mappings=mapped,unresolved=unresolved,conflicts=conflicts,missing=[s['id'] for s in checklist(value['profile_id'],value.get('extra_controls',[])) if s['id'] not in {r['id'] for r in value['controls']}],leds=copy.deepcopy(value.get('leds',[])),displays=copy.deepcopy(value.get('displays',{})),display_checks=copy.deepcopy(value.get('display_checks',[])),display_inventory=copy.deepcopy(PROFILES[value['profile_id']].get('displays',[])),note='Evidence for driver development. No live controller driver is installed or enabled. Encoder decoding, timings and output mappings require hardware review.')
+ return dict(format='Machinista-controller-review',version=1,device=copy.deepcopy(value['device']),profile_id=value['profile_id'],demo=value['demo'],coverage=coverage(value),activation_allowed=False,legacy_controls=copy.deepcopy(value.get('legacy_controls',[])),candidates={r['id']:summarize(r['kind'],r['frames']) for r in value['controls']},mappings=mapped,unresolved=unresolved,conflicts=conflicts,missing=[s['id'] for s in checklist(value['profile_id'],value.get('extra_controls',[]),value.get('checklist_version',1)) if s['id'] not in {r['id'] for r in value['controls']}],leds=copy.deepcopy(value.get('leds',[])),displays=copy.deepcopy(value.get('displays',{})),display_checks=copy.deepcopy(value.get('display_checks',[])),display_inventory=copy.deepcopy(PROFILES[value['profile_id']].get('displays',[])),note='Evidence for driver development. No live controller driver is installed or enabled. Encoder decoding, timings and output mappings require hardware review.')
 
 
 def coverage(value):
- required=[s for s in checklist(value['profile_id'],value.get('extra_controls',[])) if not s['optional']]
+ required=[s for s in checklist(value['profile_id'],value.get('extra_controls',[]),value.get('checklist_version',1)) if not s['optional']]
  rows={r['id']:r for r in value['controls']}
  missing=[s['id'] for s in required if rows.get(s['id'],{}).get('status')!='confirmed']
- optional=[s['id'] for s in checklist(value['profile_id'],value.get('extra_controls',[])) if s['optional'] and rows.get(s['id'],{}).get('status')!='confirmed']
+ optional=[s['id'] for s in checklist(value['profile_id'],value.get('extra_controls',[]),value.get('checklist_version',1)) if s['optional'] and rows.get(s['id'],{}).get('status')!='confirmed']
  return dict(total=len(required),tested=len(required)-len(missing),untested=missing,optional_untested=optional,layout_audited=value.get('layout_audited',False),input_check_complete=not value['demo'] and not missing and value.get('layout_audited',False),driver_ready=False)

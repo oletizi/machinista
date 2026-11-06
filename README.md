@@ -167,7 +167,7 @@ public internet interfaces. See [security guidance](SECURITY.md).
 
 ## Help test another controller
 
-Open **[Controller Lab](https://photogeen.github.io/machinista/controller-survey/)** in desktop Chrome or Edge, choose your model and follow the guided input checks. No test app installation is needed. Send the downloaded JSON in **#controllers** on [Discord](https://discord.gg/3B8mQMyQR) or email to machinista@photogeen.com. The assistant opens the destination; attach and send the file yourself.
+Open **[Controller Lab](https://photogeen.github.io/machinista/controller-survey/)** in desktop Chrome or Edge, choose your model, connect and click **Start mapping**. Check the displays first; button presses/releases and a clockwise encoder turn then advance automatically. Tested displays also show the current instruction. No test app installation is needed. Send the downloaded JSON in **#controllers** on [Discord](https://discord.gg/3B8mQMyQR) or email to machinista@photogeen.com. The assistant opens the destination; attach and send the file yourself.
 
 Includes model checklists for Maschine Studio, Jam, Mikro MK3 and Komplete Kontrol. Controllers already supported by Machinista are excluded from the selection. This gathers evidence for future support; it does not make an untested controller compatible yet. Browser/OS USB restrictions may apply. Display tests cover each physical panel with fixed test images and individual confirmations. Kontrol S-MK3 rendering remains blocked pending its separate ODR implementation; access may also depend on the OS. LEDs are not tested yet. [Instructions and limitations](docs/CONTROLLER_SURVEY.md).
 

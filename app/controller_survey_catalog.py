@@ -67,14 +67,16 @@ def display_inventory(identity):
  return []
 for identity,profile in PROFILES.items():profile['displays']=display_inventory(identity)
 
-def checklist(profile_id,extras=()):
+def checklist(profile_id,extras=(),version=2):
  if profile_id not in PROFILES:raise ValueError('Choose a controller model first.')
  p=PROFILES[profile_id];result=[]
  def step(kind,name,instruction,optional=False,**more):
   identity=kind+'_'+re.sub('[^a-z0-9]+','_',name.lower().replace('+',' plus ').replace('-',' minus ')).strip('_');result.append(dict(id=identity,name=name,kind=kind,instruction=instruction,optional=optional,**more))
  for name in p['buttons']:step('button',name,'Press and release this physical button three times. Do not hold SHIFT unless SHIFT itself is being tested.')
  for name in p['encoders']:
-  for direction in ('clockwise','counterclockwise'):step('encoder',name+' / '+direction,'Turn slowly '+direction+' through several steps. Do not press it.',direction=direction)
+  if version==1:
+   for direction in ('clockwise','counterclockwise'):step('encoder',name+' / '+direction,'Turn slowly '+direction+' through several steps. Do not press it.',direction=direction)
+  else:step('encoder',name,'Turn slowly clockwise through a few steps, then stop. Do not press it.',direction='clockwise')
  for name in p['touches']:step('touch',name+' TOUCH','Touch and release three times without turning or moving the control.')
  for i in range(1,p['pads']+1):step('pad','PAD '+str(i),'Play this pad soft, medium and firm; release between hits. Pad 1 is bottom left, pad 16 top right.')
  for name in p['strips']:step('slider',name,'Move over the whole range slowly and return to rest. For two-finger strips move two fingers apart and together.')

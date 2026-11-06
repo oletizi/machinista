@@ -6,7 +6,7 @@ from app.controller_survey_catalog import PROFILES,checklist
 class ControllerSurveyTests(unittest.TestCase):
  def sample(self):
   s=checklist('maschine_studio')[0]
-  return dict(format='Machinista-controller-survey',version=2,demo=False,profile_id='maschine_studio',layout_audited=False,device=dict(vendor_id=0x17cc,product_id=0x1300,interfaces=[dict(id='hid0')]),controls=[dict(**s,status='captured',tester_confirmed=True,frames=[dict(ms=0,interface='hid0',hex='0100'),dict(ms=1500,interface='hid0',hex='0104'),dict(ms=3000,interface='hid0',hex='0100')])])
+  return dict(format='Machinista-controller-survey',version=2,checklist_version=2,demo=False,profile_id='maschine_studio',layout_audited=False,device=dict(vendor_id=0x17cc,product_id=0x1300,interfaces=[dict(id='hid0')]),controls=[dict(**s,status='captured',tester_confirmed=True,frames=[dict(ms=0,interface='hid0',hex='0100'),dict(ms=1500,interface='hid0',hex='0104'),dict(ms=3000,interface='hid0',hex='0100')])])
  def test_catalog_matches_browser(self):
   self.assertEqual({k:v for k,v in PROFILES.items() if v['survey_required']},json.loads(Path('web/controller-survey/catalog.json').read_text()))
  def test_valid_export_is_evidence_only(self):
@@ -38,3 +38,7 @@ class ControllerSurveyTests(unittest.TestCase):
   with self.assertRaises(ValueError):validate(r)
   r=self.sample();r['profile_id']='kk_s49_mk3';r['device']['product_id']=0x2100;r['controls']=[];r['display_checks']=[dict(display_id='display_1',pattern='border',status='confirmed',note='',transport='webusb',transfer_count=1,bytes_sent=200,sha256='a'*64)]
   with self.assertRaises(ValueError):validate(r)
+ def test_legacy_and_single_encoder_checklists_are_both_importable(self):
+  for version in (1,2):
+   r=self.sample();r['checklist_version']=version;s=next(s for s in checklist('maschine_studio',version=version) if s['kind']=='encoder');r['controls']=[dict(**s,status='captured',frames=[])];validate(r)
+  self.assertEqual(len([s for s in checklist('maschine_studio',version=2) if s['kind']=='encoder']),10)
