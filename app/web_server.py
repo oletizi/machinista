@@ -217,9 +217,21 @@ class Handler(BaseHTTPRequestHandler):
                 origin=self.headers.get('Origin')
                 if origin and origin!='http://'+self.headers.get('Host'):raise PermissionError('Invalid origin.')
                 if not secrets.compare_digest(self.headers.get('X-Machinista-Token',self.headers.get('X-Machinist-Token','')),library.token):raise PermissionError('Please reload the page.')
-                if path=='/api/sets/upload':
+                if path in ('/api/sets/import','/api/sets/upload','/api/sets/stage/file'):
                     if self.headers.get('Transfer-Encoding'):raise ValueError('Content-Length required.')
-                    self.json(library.sets.upload(q.get('name',''),self.rfile,int(self.headers.get('Content-Length','0'))));return
+                    length=int(self.headers.get('Content-Length','0'))
+                    if path=='/api/sets/stage/file':result=library.sets.editor.upload_file(q.get('upload',''),q.get('path',''),self.rfile,length)
+                    elif path=='/api/sets/import':result=library.sets.editor.import_archive(q.get('name',''),self.rfile,length)
+                    else:result=library.sets.upload(q.get('name',''),self.rfile,length)
+                    self.json(result);return
+                if path in ('/api/sets/save','/api/sets/delete','/api/sets/stage/start','/api/sets/import-folder'):
+                    length=int(self.headers.get('Content-Length','0'))
+                    if self.headers.get('Transfer-Encoding') or not 0<length<=2*1024**2:raise ValueError('Invalid sample-set request size.')
+                    value=json.loads(self.rfile.read(length))
+                    if not isinstance(value,dict):raise ValueError('Invalid sample-set request.')
+                    editor=library.sets.editor
+                    operation={'/api/sets/save':editor.save,'/api/sets/delete':editor.delete,'/api/sets/import-folder':editor.import_folder}.get(path)
+                    self.json(operation(value) if operation else editor.start());return
                 if path in ('/api/stems/start','/api/stems/install','/api/stems/cancel'):
                     length=int(self.headers.get('Content-Length','0'))
                     if self.headers.get('Transfer-Encoding') or not 0<length<=8192:raise ValueError('Invalid stem request size.')
@@ -366,6 +378,15 @@ class Handler(BaseHTTPRequestHandler):
                     self.json(request('connect',ssid=value.get('ssid'),password=value.get('password','')));return
             else:
                 if path=='/api/sets':self.json(library.sets.listing());return
+                if path=='/api/sets/item':self.json(library.sets.editor.item(q.get('id','')));return
+                if path=='/api/sets/audio':
+                    raw=q.get('ref','')
+                    if len(raw)>4096:raise ValueError('Invalid sample reference.')
+                    ref=json.loads(raw)
+                    extension=Path(ref.get('name') or ref.get('path','')).suffix.lower() if isinstance(ref,dict) else ''
+                    mime={'.mp3':'audio/mpeg','.ogg':'audio/ogg','.flac':'audio/flac','.aif':'audio/aiff','.aiff':'audio/aiff'}.get(extension,'audio/wav')
+                    with library.sets.editor.asset(ref) as stream:self.audio_stream(stream,mime)
+                    return
                 if path=='/api/sets/file':
                     with library.sets.download(q.get('id','')) as (stream,mime,name):
                         stream.seek(0,2);size=stream.tell();stream.seek(0)
@@ -429,7 +450,7 @@ class Handler(BaseHTTPRequestHandler):
                     from app.network_client import request
                     self.json(request('scan' if path.endswith('/scan') else 'status'));return
                 if path=='/api/file':self.download(q);return
-                assets={'/stems.js':('stems.js','text/javascript; charset=utf-8'),'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/sounds.js':('sounds.js','text/javascript; charset=utf-8'),'/soundfonts.js':('soundfonts.js','text/javascript; charset=utf-8'),'/oscillators.js':('oscillators.js','text/javascript; charset=utf-8'),'/synth.js':('synth.js','text/javascript; charset=utf-8'),'/virtualjv.js':('virtualjv.js','text/javascript; charset=utf-8'),'/updates.js':('updates.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/logo.png':('logo.png','image/png')}
+                assets={'/sets.js':('sets.js','text/javascript; charset=utf-8'),'/stems.js':('stems.js','text/javascript; charset=utf-8'),'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/sounds.js':('sounds.js','text/javascript; charset=utf-8'),'/soundfonts.js':('soundfonts.js','text/javascript; charset=utf-8'),'/oscillators.js':('oscillators.js','text/javascript; charset=utf-8'),'/synth.js':('synth.js','text/javascript; charset=utf-8'),'/virtualjv.js':('virtualjv.js','text/javascript; charset=utf-8'),'/updates.js':('updates.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/logo.png':('logo.png','image/png')}
                 if path in assets:
                     name,mime=assets[path];body=(library.root/'web'/name).read_bytes();self.response_headers(200,mime,len(body));self.wfile.write(body);return
             self.json({'error':'Not found.'},404)
@@ -445,22 +466,25 @@ class Handler(BaseHTTPRequestHandler):
         with library.directory(source,q.get('path','')) as directory:
             fd=os.open(name,os.O_RDONLY|os.O_NOFOLLOW,dir_fd=directory)
         with os.fdopen(fd,'rb') as stream:
-            info=os.fstat(stream.fileno())
-            if not stat.S_ISREG(info.st_mode):raise PermissionError('Not a sample file.')
-            start,end,status=0,info.st_size-1,200;extra=[('Accept-Ranges','bytes')]
-            value=self.headers.get('Range')
-            if value:
-                import re
-                match=re.fullmatch(r'bytes=(\d*)-(\d*)',value)
-                if not match or not any(match.groups()):self.response_headers(416,mime,0);return
-                first,last=match.groups()
-                if first:start=int(first);end=min(end,int(last)) if last else end
-                else:start=max(0,info.st_size-int(last))
-                if start>end or start>=info.st_size:self.response_headers(416,mime,0,[('Content-Range',f'bytes */{info.st_size}')]);return
-                status=206;extra.append(('Content-Range',f'bytes {start}-{end}/{info.st_size}'))
-            if q.get('download')=='1':extra.append(('Content-Disposition',"attachment; filename*=UTF-8''"+quote(name)))
-            remaining=max(0,end-start+1);self.response_headers(status,mime,remaining,extra);stream.seek(start)
-            while remaining:
-                block=stream.read(min(CHUNK,remaining))
-                if not block:break
-                self.wfile.write(block);remaining-=len(block)
+            self.audio_stream(stream,mime,name if q.get('download')=='1' else None)
+
+    def audio_stream(self,stream,mime='audio/wav',name=None):
+        info=os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode):raise PermissionError('Not a sample file.')
+        start,end,status=0,info.st_size-1,200;extra=[('Accept-Ranges','bytes')]
+        value=self.headers.get('Range')
+        if value:
+            import re
+            match=re.fullmatch(r'bytes=(\d*)-(\d*)',value)
+            if not match or not any(match.groups()):self.response_headers(416,mime,0);return
+            first,last=match.groups()
+            if first:start=int(first);end=min(end,int(last)) if last else end
+            else:start=max(0,info.st_size-int(last))
+            if start>end or start>=info.st_size:self.response_headers(416,mime,0,[('Content-Range',f'bytes */{info.st_size}')]);return
+            status=206;extra.append(('Content-Range',f'bytes {start}-{end}/{info.st_size}'))
+        if name:extra.append(('Content-Disposition',"attachment; filename*=UTF-8''"+quote(name)))
+        remaining=max(0,end-start+1);self.response_headers(status,mime,remaining,extra);stream.seek(start)
+        while remaining:
+            block=stream.read(min(CHUNK,remaining))
+            if not block:break
+            self.wfile.write(block);remaining-=len(block)

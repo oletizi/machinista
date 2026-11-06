@@ -1,4 +1,4 @@
-"""Portable Group sample-set transfer. No live-engine access or native expansion decoding."""
+"""Portable Group sample-set transfer. No live-engine access; sample-only expansion conversion."""
 from contextlib import contextmanager
 from pathlib import Path
 import copy,json,re,shutil,stat,tempfile,uuid,wave,zipfile
@@ -6,9 +6,12 @@ from app.web_projects import parts,MAX_PACKAGE,RESERVE,read_project,plugins
 from app.assets import resolve_assets,sample_references
 
 class SampleSets:
- def __init__(self,library):self.library=library;self.folder=library.root/'presets/Groups';self.folder.mkdir(parents=True,exist_ok=True)
+ def __init__(self,library):
+  self.library=library;self.folder=library.root/'presets/Groups';self.folder.mkdir(parents=True,exist_ok=True)
+  from app.sample_set_editor import SetEditor
+  self.editor=SetEditor(self)
  def bundle(self,name):
-  if not isinstance(name,str) or not re.fullmatch(r'[A-Za-z0-9 _-]{1,32}',name):raise ValueError('Invalid sample-set name.')
+  if not isinstance(name,str) or not re.fullmatch(r'(?:[A-Za-z0-9 _-]{1,32}|set-[a-f0-9]{32})',name):raise ValueError('Invalid sample-set name.')
   p=self.folder/name
   if p.is_symlink() or not p.is_dir():raise ValueError('Sample set unavailable.')
   return p
@@ -28,14 +31,16 @@ class SampleSets:
   for p in sorted(self.folder.iterdir(),key=lambda p:p.name.casefold()):
    if p.name.startswith('.') or not p.is_dir():continue
    try:
-    base=self.bundle(p.name);d=self.document(base);rows.append(dict(id=p.name,name=d.get('name',p.name),pads=sum(bool(t.get('sample') or t.get('plugins')) for t in d['project']['groups'][0]['pads'])))
+    rows.append(self.editor.listing(p.name))
    except (ValueError,OSError,KeyError,TypeError):continue
   return rows
  @contextmanager
  def download(self,name):
   if not self.library.upload_lock.acquire(False):raise BlockingIOError('Another transfer is in progress.')
   try:
-   base=self.bundle(name);self.document(base)
+   base=self.bundle(name)
+   _,banks=self.editor.banks(name)
+   for _,bank in banks:self.document(bank)
    with tempfile.TemporaryFile(dir=self.folder) as stream:
     total=0
     with zipfile.ZipFile(stream,'w',zipfile.ZIP_DEFLATED) as z:
@@ -47,7 +52,7 @@ class SampleSets:
        total+=os.fstat(f.fileno()).st_size
        if total>MAX_PACKAGE:raise ValueError('Set exceeds 1 GiB.')
        with z.open(str(p.relative_to(base)),'w') as target:shutil.copyfileobj(f,target,65536)
-    stream.seek(0);yield stream,'application/zip',name+'.zip'
+    stream.seek(0);yield stream,'application/zip',re.sub(r'[^A-Za-z0-9 _-]','',self.editor.item(name)['name'])+'.zip'
   finally:self.library.upload_lock.release()
  def upload(self,name,stream,length):
   if Path(name).suffix.lower()!='.zip' or not 0<length<=MAX_PACKAGE:raise ValueError('Upload a ZIP up to 1 GiB.')

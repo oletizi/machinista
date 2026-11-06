@@ -61,7 +61,20 @@ class Browser:
     def label(self, path):
         if self.directory is None:
             return next(source.name for source in self.sources if source.path == path)
-        if path.name=='Preset.json':return path.parent.name
+        if path.name=='Preset.json':
+            if (path.parent.parent/'Set.json').is_file():
+                try:
+                    import json
+                    if (path.parent.parent/'Set.json').stat().st_size<=256*1024:
+                        data=json.loads((path.parent.parent/'Set.json').read_text())
+                        return next(str(b['name'])[:80] for b in data['banks'] if b['id']==path.parent.name)
+                except (ValueError,OSError,KeyError,TypeError,StopIteration):pass
+            return path.parent.name
+        if path.is_dir() and (path/'Set.json').is_file() and not (path/'Set.json').is_symlink():
+            try:
+                import json
+                if (path/'Set.json').stat().st_size<=256*1024:return str(json.loads((path/'Set.json').read_text()).get('name',path.name))[:80]
+            except (ValueError,OSError,TypeError):pass
         if path.suffix.lower()=='.sound':return path.stem
         return path.name
 

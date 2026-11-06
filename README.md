@@ -69,6 +69,7 @@ this setup lets you play without a laptop, monitor or mouse beside it.
   use supported Bluetooth MIDI devices, and choose audio inputs and outputs.
 - **Share your music:** [export WAV, AIFF or MP3](docs/MP3_EXPORT.md), with MP3 quality from 128 to 320 kbit/s.
 - **Separate samples:** optional [local four-stem separation](docs/STEM_SEPARATION.md) in the WebUI creates vocals, drums, bass and other parts from short samples. Requires a separate engine/model download and enough free RAM.
+- **Sample sets and expansions:** build kits in the [Sample Sets editor](docs/SAMPLE_SETS.md), with named banks, 4×4 pads, drag-and-drop and browser preview. Import audio folders, MPC sample programs and readable Maschine expansion samples.
 - **Easy file management:** open the WebUI (a browser control page) on a phone,
   tablet or computer to upload samples, back up projects and organize Sounds.
 
