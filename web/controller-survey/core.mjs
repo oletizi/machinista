@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Shared data-only validation for browser exports.
-import {sanitizeDisplayChecks,displayCoverage} from './displays.mjs?v=9';
-import {sanitizeLeds,ledCoverage} from './outputs.mjs?v=9';
+import {sanitizeDisplayChecks,displayCoverage} from './displays.mjs?v=10';
+import {sanitizeLeds,ledCoverage} from './outputs.mjs?v=10';
 export const MAX_BYTES = 8 * 1024 * 1024;
 export const FORMAT = 'Machinista-controller-survey';
 const assert = (yes, message) => { if (!yes) throw new Error(message); };
@@ -87,7 +87,7 @@ export function emailDraft(address, model, summary) {
   return 'mailto:'+encodeURIComponent(address)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
 
-export function availableProfiles(profiles) { return Object.values(profiles).filter(p=>p.survey_required===true||p.survey_test===true); }
+export function availableProfiles(profiles) { return Object.values(profiles).filter(p=>p.survey_required===true); }
 
 export function upgradeChecklist(input,profiles){
  const report=validateReport(input,profiles);if(report.checklist_version>=2)return report;

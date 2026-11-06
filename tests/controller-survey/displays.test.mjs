@@ -2,7 +2,8 @@ import test from 'node:test';import assert from 'node:assert/strict';import {rea
 import {displayInventory,testImage,monoPackets,colorPacket,sendMono,sendColor,sanitizeDisplayChecks,displayCoverage,transmissionEvidence} from '../../web/controller-survey/displays.mjs';
 import {validateReport} from '../../web/controller-survey/core.mjs';
 const profiles=JSON.parse(await readFile(new URL('../../web/controller-survey/catalog.json',import.meta.url)));
-test('inventory explicitly covers every physical panel on remaining models',()=>{for(const p of Object.values(profiles).filter(p=>p.survey_required||p.survey_test)){const ds=displayInventory(p);assert.equal(ds.length,p.id==='maschine_jam'?0:p.id==='maschine_studio'||/_mk2$/.test(p.id)?2:/_mk1$/.test(p.id)?8:1);assert.equal(new Set(ds.map(d=>d.id)).size,ds.length);}});
+const mk2=JSON.parse(await readFile(new URL('./fixtures/mk2.json',import.meta.url)));
+test('inventory explicitly covers every physical panel on remaining models',()=>{for(const p of Object.values(profiles).filter(p=>p.survey_required)){const ds=displayInventory(p);assert.equal(ds.length,p.id==='maschine_jam'?0:p.id==='maschine_studio'||/_mk2$/.test(p.id)?2:/_mk1$/.test(p.id)?8:1);assert.equal(new Set(ds.map(d=>d.id)).size,ds.length);}});
 test('Mikro MK3 produces two exact 265-byte display packets and stable image',()=>{const d=displayInventory(profiles.maschine_mikro_mk3)[0],p=monoPackets(d,'border',264);assert.equal(p.length,2);assert.deepEqual([...p[0].data.slice(0,8)],[0,0,0,0,128,0,2,0]);assert.equal(p[1].data[2],2);assert(p.every(p=>p.reportId===0xe0&&p.data.length===264));assert.equal(p[0].data[8],255);assert.throws(()=>monoPackets(d,'border',63));assert.equal(testImage(d,'grid').length,128*32*3);});
 test('S MK1 display IDs remain distinct and direct OLED frames are bounded',()=>{const ds=displayInventory(profiles.kk_s49_mk1);for(const d of ds){const p=monoPackets(d,'border',512);assert.equal(p[0].reportId,0xe0+d.index);assert.equal(p[0].data.length,512);}});
 test('A/M OLED test covers 32 rows, not a guessed 64-row panel',()=>{for(const p of [profiles.kk_a25,profiles.kk_m32]){const d=displayInventory(p)[0];assert.equal(d.height,32);assert.equal(monoPackets(d,'levels',264).length,2);}});
@@ -16,7 +17,7 @@ test('ODR and unknown display observations cannot be marked passed; notes surviv
 test('guided instruction text produces distinct bounded display frames',async()=>{const {promptImage}=await import('../../web/controller-survey/displays.mjs');for(const p of [profiles.maschine_mikro_mk3,profiles.maschine_studio]){const d=displayInventory(p)[0],first=promptImage(d,['1 / 99','CHANNEL','PRESS RELEASE']),second=promptImage(d,['2 / 99','PLUG-IN','PRESS RELEASE']);assert.equal(first.length,d.width*d.height*3);assert.notDeepEqual(first,second);if(d.color)assert.notDeepEqual(colorPacket(d,'border',first),colorPacket(d,'border',second));else assert.notDeepEqual(monoPackets(d,'border',264,first)[0].data,monoPackets(d,'border',264,second)[0].data);}});
 
 test('MK2 uses the established eight row-packed reports per display, including prompts and evidence',async()=>{
- const profile=profiles.maschine_mk2,ds=displayInventory(profile);assert.equal(ds.length,2);
+ const profile=mk2,ds=displayInventory(profile);assert.equal(ds.length,2);
  for(const d of ds){const rgb=new Uint8Array(256*64*3);rgb[0]=255;rgb[7*3]=255;rgb[(8*256+8)*3]=255;
  const packets=monoPackets(d,'border',264,rgb);assert.equal(packets.length,8);
  for(let i=0;i<8;i++){assert.equal(packets[i].reportId,0xe0+d.index);assert.equal(packets[i].data.length,264);assert.deepEqual([...packets[i].data.slice(0,8)],[0,0,i*8,0,32,0,8,0]);}
@@ -29,7 +30,7 @@ test('MK2 uses the established eight row-packed reports per display, including p
 });
 
 test('MK2 nested collection descriptions of one output report send once, not ambiguous',async()=>{
- const profile=profiles.maschine_mk2,d=profile.displays[0],h=hid(0x1140);
+ const profile=mk2,d=profile.displays[0],h=hid(0x1140);
  const output={reportId:0xe0,items:[{reportSize:16,reportCount:4},{reportSize:8,reportCount:256}]};
  h.device.collections=[{outputReports:[output],children:[{outputReports:[output]}]}];
  await sendMono(profile,d,'border',[h]);assert.equal(h.sent.length,8);
@@ -39,4 +40,4 @@ test('MK2 nested collection descriptions of one output report send once, not amb
  await assert.rejects(sendMono(profile,d,'border',[hid(0x1140),hid(0x1140)]),/2 compatible HID interfaces/);
 });
 
-test('large monochrome prompts use doubled bold pixels and fit three lines',async()=>{const {promptImage}=await import('../../web/controller-survey/displays.mjs');const d=profiles.maschine_mk2.displays[0],rgb=promptImage(d,['CHECK COMPLETE','DOWNLOAD JSON','IN THE BROWSER']);const lit=(x,y)=>rgb[(y*d.width+x)*3]===255;assert(lit(10,4));assert(lit(11,4));assert(lit(12,4));assert(lit(10,5));assert(Array.from({length:256*16},(_,n)=>rgb[((36+Math.floor(n/256))*256+n%256)*3]).some(Boolean));});
+test('large monochrome prompts use doubled bold pixels and fit three lines',async()=>{const {promptImage}=await import('../../web/controller-survey/displays.mjs');const d=mk2.displays[0],rgb=promptImage(d,['CHECK COMPLETE','DOWNLOAD JSON','IN THE BROWSER']);const lit=(x,y)=>rgb[(y*d.width+x)*3]===255;assert(lit(10,4));assert(lit(11,4));assert(lit(12,4));assert(lit(10,5));assert(Array.from({length:256*16},(_,n)=>rgb[((36+Math.floor(n/256))*256+n%256)*3]).some(Boolean));});

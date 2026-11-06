@@ -53,8 +53,6 @@ add('kk_m32','Komplete Kontrol M32',[],AM_BUTTONS,(*KNOBS,'4D'),KNOBS,strips=('P
 # controllers already supported by Machinista.
 SUPPORTED_PROFILES={'maschine_mk1','maschine_mk2','maschine_mk3','maschine_plus','maschine_mikro_mk1','maschine_mikro_mk2'}
 for identity,profile in PROFILES.items():profile['survey_required']=identity not in SUPPORTED_PROFILES
-# Deliberate exception for testing the browser workflow on known hardware.
-PROFILES['maschine_mk2']['survey_test']=True
 
 
 def display_inventory(identity):

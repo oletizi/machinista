@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=9';
-import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=9';
-import {enableBacklight,restoreBacklight,ledInventory,showLed,clearLeds,ledCoverage} from './outputs.mjs?v=9';
-import {ActionDetector} from './guided.mjs?v=9';
-const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=9',{cache:'no-cache'})).json();
+import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=10';
+import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=10';
+import {enableBacklight,restoreBacklight,ledInventory,showLed,clearLeds,ledCoverage} from './outputs.mjs?v=10';
+import {ActionDetector} from './guided.mjs?v=10';
+const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=10',{cache:'no-cache'})).json();
 const config=await (await fetch('config.json',{cache:'no-cache'})).json();
 let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false, autoStage='idle', resumeStage='controls', autoDetector=null, autoTimer=null, autoGeneration=0, colorLink=null, promptEnabled=true, skippedDisplays=new Set(),ledIndex=0,ledSent=false,ledBusy=false,ledDetector=null,ledError='';
 const hex=b=>Array.from(b,n=>n.toString(16).padStart(2,'0')).join('');
@@ -13,7 +13,7 @@ const steps=()=>stepsFor(profile(),report?.extra_controls||[],report?.checklist_
 const current=()=>steps()[stepIndex];
 const row=()=>report?.controls.find(r=>r.id===current()?.id);
 const safe=fn=>async(...args)=>{try{await fn(...args);}catch(e){notify(e.message || String(e));}};
-for(const p of availableProfiles(profiles)){const o=document.createElement('option');o.value=p.id;o.textContent=p.name+(p.survey_test?' · workflow test':'');$('model').append(o);}
+for(const p of availableProfiles(profiles)){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('model').append(o);}
 function blank(demo,device){return {format:FORMAT,version:2,checklist_version:3,keyboard_test:$('keyboard-test').value,profile_id:profile().id,demo,layout_audited:false,extra_controls:[],device,controls:[],leds:[],displays:{},display_checks:[],tool:{name:'Machinista Browser Survey',version:1}};}
 async function persist(){if(!db||!report)return;const copy=structuredClone(report);saveQueue=saveQueue.catch(()=>{}).then(()=>new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(copy,'survey');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);}));try{await saveQueue;}catch{notify('Browser storage is unavailable. Download a JSON copy to keep your progress.');}}
 function setInterface(id,fingerprint){if(!report.device.interfaces.some(i=>i.id===id)){if(report.device.interfaces.length>=8)throw new Error('At most eight inputs can be recorded.');report.device.interfaces.push({id,...(fingerprint?{fingerprint}:{})});}}

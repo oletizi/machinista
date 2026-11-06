@@ -8,7 +8,7 @@ class ControllerSurveyTests(unittest.TestCase):
   s=checklist('maschine_studio')[0]
   return dict(format='Machinista-controller-survey',version=2,checklist_version=2,demo=False,profile_id='maschine_studio',layout_audited=False,device=dict(vendor_id=0x17cc,product_id=0x1300,interfaces=[dict(id='hid0')]),controls=[dict(**s,status='captured',tester_confirmed=True,frames=[dict(ms=0,interface='hid0',hex='0100'),dict(ms=1500,interface='hid0',hex='0104'),dict(ms=3000,interface='hid0',hex='0100')])])
  def test_catalog_matches_browser(self):
-  self.assertEqual({k:v for k,v in PROFILES.items() if v['survey_required'] or v.get('survey_test')},json.loads(Path('web/controller-survey/catalog.json').read_text()))
+  self.assertEqual({k:v for k,v in PROFILES.items() if v['survey_required']},json.loads(Path('web/controller-survey/catalog.json').read_text()))
  def test_valid_export_is_evidence_only(self):
   r=review(self.sample());self.assertFalse(r['activation_allowed']);self.assertFalse(r['coverage']['driver_ready']);self.assertFalse(r['coverage']['input_check_complete'])
  def test_wrong_device_rejected(self):
@@ -47,8 +47,8 @@ class ControllerSurveyTests(unittest.TestCase):
   self.assertEqual(len([s for s in checklist('kk_s49_mk2',version=3,keyboard_test='full') if s['kind']=='key']),49)
   self.assertEqual(len([s for s in checklist('kk_s49_mk2',version=2) if s['kind']=='key']),49)
 
- def test_mk2_test_profile_and_display_evidence(self):
-  self.assertFalse(PROFILES['maschine_mk2']['survey_required']);self.assertTrue(PROFILES['maschine_mk2']['survey_test'])
+ def test_historical_mk2_profile_and_display_evidence(self):
+  self.assertFalse(PROFILES['maschine_mk2']['survey_required']);self.assertFalse(PROFILES['maschine_mk2'].get('survey_test',False))
   r=self.sample();r['profile_id']='maschine_mk2';r['device']['product_id']=0x1140;r['controls']=[]
   r['display_checks']=[dict(display_id='display_1',pattern='border',status='confirmed',note='',transport='hid',transfer_count=8,bytes_sent=2120,sha256='a'*64)]
   self.assertEqual(validate(r)['display_checks'][0]['transfer_count'],8)
