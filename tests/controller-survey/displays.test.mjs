@@ -27,3 +27,14 @@ test('MK2 uses the established eight row-packed reports per display, including p
  assert.throws(()=>monoPackets(d,'border',512));
  }
 });
+
+test('MK2 nested collection descriptions of one output report send once, not ambiguous',async()=>{
+ const profile=profiles.maschine_mk2,d=profile.displays[0],h=hid(0x1140);
+ const output={reportId:0xe0,items:[{reportSize:16,reportCount:4},{reportSize:8,reportCount:256}]};
+ h.device.collections=[{outputReports:[output],children:[{outputReports:[output]}]}];
+ await sendMono(profile,d,'border',[h]);assert.equal(h.sent.length,8);
+ await sendMono(profile,d,'grid',[h,h]);assert.equal(h.sent.length,16);
+ const missing=hid(0x1140);missing.device.collections=[];
+ await assert.rejects(sendMono(profile,d,'border',[missing]),/0xe0: 0 compatible HID interfaces.*no report/);
+ await assert.rejects(sendMono(profile,d,'border',[hid(0x1140),hid(0x1140)]),/2 compatible HID interfaces/);
+});

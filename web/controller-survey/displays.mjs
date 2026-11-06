@@ -63,9 +63,17 @@ function checkIdentity(profile,device){
 }
 export async function sendMono(profile,display,pattern,devices,pixels=null){
  if(!['mono-pages','mono-oled','mono-mk2'].includes(display.protocol))throw new Error('No known HID display protocol.');
- const matches=[];for(const entry of devices){const device=entry.device;checkIdentity(profile,device);for(const r of reports(device))if(r.reportId===0xe0+display.index&&[264,display.width*display.height/8].includes(reportSize(r)))matches.push({device,size:reportSize(r)});}
- if(matches.length!==1)throw new Error('A unique compatible display output report was not found. Add the display HID interface, or mark this test blocked.');
- const packets=monoPackets(display,pattern,matches[0].size,pixels);for(const p of packets)await matches[0].device.sendReport(p.reportId,p.data);
+ const matches=[],observed=[],seenDevices=new Set(),reportId=0xe0+display.index;
+ for(const entry of devices){
+  const device=entry.device;if(seenDevices.has(device))continue;seenDevices.add(device);checkIdentity(profile,device);
+  // WebHID can describe the same report in both a parent and child collection.
+  // Collections describe one physical output endpoint, not separate devices.
+  const sizes=new Set(reports(device).filter(r=>r.reportId===reportId).map(reportSize));
+  observed.push(sizes.size?[...sizes].join('/')+' bytes':'no report');
+  if(sizes.size===1){const size=[...sizes][0];if(size===264||display.protocol==='mono-oled'&&size===display.width*display.height/8)matches.push({device,size});}
+ }
+ if(matches.length!==1)throw new Error(`Display report 0x${reportId.toString(16)}: ${matches.length} compatible HID interfaces (${observed.join(', ')||'none connected'}). ${matches.length?'Disconnect duplicate controller connections and retry.':'Click Add HID interface and choose the display interface of this controller.'}`);
+ const packets=monoPackets(display,pattern,matches[0].size,pixels);for(const p of packets)await bounded(matches[0].device.sendReport(p.reportId,p.data));
  return {transport:'hid',packets:packets.map(p=>new Uint8Array([p.reportId,...p.data]))};
 }
 async function bounded(promise){let timer;try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Display access timed out. Reconnect and repeat this test.')),8000);})]);}finally{clearTimeout(timer);}}
