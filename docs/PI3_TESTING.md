@@ -1,4 +1,6 @@
-# Machinista Pi 3B Sampler — experimental test image
+# Machinista Pi 3B Sampler — testing paused
+
+This target is not recommended for beta testers. Physical testing found controller/network stability problems and high CPU load. Development is paused; use the current Pi 4 / Pi 5 image. The older download below remains available for reference.
 
 [Download the Pi 3B test image](https://github.com/photogeen/machinista/releases/tag/v0.1.0-beta.16).
 
