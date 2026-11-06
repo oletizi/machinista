@@ -111,7 +111,7 @@ int main(int argc,char** argv) {
     // Immutable samples are reclaimed only by an explicit idle control-thread purge.
     std::vector<std::unique_ptr<Sample>> assets;
     std::size_t asset_bytes = 0;
-    constexpr std::size_t memory_limit = 512*1024*1024;
+    const std::size_t memory_limit = maschine::hardware_profile().sample_memory;
     for (unsigned accent = 0; accent < 2; ++accent) {
         auto click = std::make_unique<Sample>();
         constexpr unsigned frames = 480; // own 10-ms click, stereo 48 kHz
@@ -181,7 +181,7 @@ int main(int argc,char** argv) {
         using PDC=maschine::LatencyCompensation<kBuses,kMaster>;
         auto pdc_storage=std::make_unique<PDC>();auto prepared=std::make_shared<std::latch>(1);
         worker = std::thread([&,pdc=std::move(pdc_storage),prepared,write_chunk] {
-            std::array<Voice, 64> voices{};
+            std::vector<Voice> voices(maschine::hardware_profile().sampler_voices);
             auto fx_storage=std::make_unique<LiveFxDSP>();auto& live_fx_dsp=*fx_storage;
             std::array<float,256> fx_main_l{},fx_main_r{};
             std::array<std::int16_t, 256*2> output{};

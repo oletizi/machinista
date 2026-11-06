@@ -5,15 +5,16 @@ Native executables must have been compiled/tested in the ARM image toolchain.
 This tool creates archives/manifests only; it never mounts a disk or edits a Pi.
 """
 from pathlib import Path
-import argparse,hashlib,json,tarfile,struct,getpass,re
+import argparse,hashlib,json,tarfile,struct,getpass,re,sys
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
 
 def main():
- parser=argparse.ArgumentParser();parser.add_argument('--version',required=True);parser.add_argument('--native',type=Path,required=True)
+ parser=argparse.ArgumentParser();parser.add_argument('--version',required=True);parser.add_argument('--native',type=Path,required=True);parser.add_argument('--hardware-profile',choices=('standard','pi3b-sampler'),default='standard');parser.add_argument('--work',type=Path);parser.add_argument('--release',type=Path)
  args=parser.parse_args();version=args.version
  from app.branding import VERSION
  assert version==VERSION,(version,VERSION)
- work=ROOT/'.build'/('beta-'+version);release=ROOT/'releases'/version
+ work=args.work or ROOT/'.build'/('beta-'+version);release=args.release or ROOT/'releases'/version
  work.mkdir(parents=True,exist_ok=True);release.mkdir(parents=True,exist_ok=True)
  files={}
  def add(p,name=None):
@@ -25,7 +26,7 @@ def main():
   if p.is_file() and p.suffix in ('.py','.cpp','.cjs') and p.name not in ('install_machinista_branding.py','install_lv2_web.py'):add(p)
  for folder in ('audit','obxd'):
   for p in (ROOT/'tools'/folder).glob('*.py'):add(p)
- for name in ('SAMPLE_SETS.md','WEB_UI.md','USER_MANUALS.md','SOUNDS_AND_AUTOSAMPLER.md','SOUNDFONT_IMPORT.md','PLUGIN_PROFILES.md','MK1_MIDI.md','MK3_SUPPORT.md','LIVE_FX_PITCH.md','BETA_WORKFLOW_SMOKE.md','UPDATER_PLAN.md'):add(ROOT/'docs'/name)
+ for name in ('HARDWARE_TARGETS.md','PI3_TESTING.md','SAMPLE_SETS.md','WEB_UI.md','USER_MANUALS.md','SOUNDS_AND_AUTOSAMPLER.md','SOUNDFONT_IMPORT.md','PLUGIN_PROFILES.md','MK1_MIDI.md','MK3_SUPPORT.md','UPDATER_PLAN.md'):add(ROOT/'docs'/name)
  for p in (ROOT/'output/pdf').glob('Machinista_*_User_Manual_*.pdf'):add(p)
  for name in ('CMakeLists.txt','THIRD_PARTY_NOTICES.md','README.md','LICENSE.md','LICENSING.md'):add(ROOT/name)
  maps=work/'maps';maps.mkdir(exist_ok=True)
@@ -38,7 +39,8 @@ def main():
  # Bundle only the declared original Factory bank and its referenced generated tables.
  # Never copy the user's oscillator library or other plugin banks wholesale.
  from tools.factory_payload import factory_files
- for path in factory_files(ROOT):add(path)
+ if args.hardware_profile=='standard':
+  for path in factory_files(ROOT):add(path)
  for p in args.native.iterdir():
   if not p.is_file():continue
   body=p.read_bytes();assert body[:4]==b'\x7fELF' and body[4]==2 and struct.unpack_from('<H',body,18)[0]==183,p
@@ -46,7 +48,7 @@ def main():
  for needed in ('audio_engine','mikro_monitor','mk1_monitor','mk2_monitor','mk3_frame_encoder'):assert 'build/'+needed in files
  for p in release.glob('*.md'):add(p,p.name)
  add(release/'README.md','BETA-README.txt')
- edition=work/'image-edition.json';edition.write_text(json.dumps(dict(edition='standard',updater=True,channel='beta' if '-beta.' in version else 'release'),indent=2)+'\n');add(edition,'deploy/image-edition.json')
+ edition=work/'image-edition.json';edition.write_text(json.dumps(dict(edition='standard',hardware_profile=args.hardware_profile,architecture='arm64',updater=True,channel='beta' if '-beta.' in version else 'release'),indent=2)+'\n');add(edition,'deploy/image-edition.json')
  for name,p in files.items():
   assert not any(part.endswith('.lv2') for part in Path(name).parts),name
   assert p.suffix.lower() not in ('.wav','.mp3','.flac','.rom','.bin','.sound','.xpm'),name

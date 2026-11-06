@@ -1,4 +1,5 @@
 """Headless LV2 slot browser and stable-symbol parameter persistence."""
+from app.hardware_profiles import environment
 from app.layout import SOUNDS,GROUP_BASE,MASTER,PREVIEW,CLICK,ZONE_BASE,bus_targets
 import copy
 import json
@@ -10,7 +11,7 @@ from functools import lru_cache
 
 @lru_cache(maxsize=4)
 def scan_plugins(path,stamp):
-    return json.loads(subprocess.check_output([path,"--plugins"],timeout=15,text=True))
+    return json.loads(subprocess.check_output([path,"--plugins"],timeout=15,text=True,env=environment()))
 
 
 class Plugins:

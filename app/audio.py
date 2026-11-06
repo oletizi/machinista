@@ -1,4 +1,5 @@
 """Control the native sampler and disk-based ALSA recording away from the UI."""
+from app.hardware_profiles import current,environment
 from app.note_tokens import NoteTokens
 from app.layout import SOUNDS,GROUP_BASE,MASTER,PREVIEW,CLICK,ZONE_BASE,bus_targets
 import array
@@ -84,7 +85,7 @@ class AudioBackend:
         self.cache.mkdir(exist_ok=True)
         self.on_message = on_message
         self.engine = subprocess.Popen([str(self.root/'build/audio_engine')],
-                                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
+                                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1,env=environment())
         self.recorder = None
         self.native_capture=None;self.native_cancel=False;self.capture_peak=0
         self.capture_pending=None
@@ -92,14 +93,14 @@ class AudioBackend:
         self.record_target = None
         self.desired = None
         self.sample_rate = sample_rate
-        self.buffer_frames = buffer_frames
+        self.buffer_frames = buffer_frames or current()['audio_buffer']
         self.loaded = {};self.wave_preview=None
         self.instrument_tokens=NoteTokens()
         self.tempo=120
         self.plugin_chains={}
         self.routing_signature=None
         self.input_device=None;self.sampling_input=False;self.monitor_source=0;self.meter_source=-99
-        self.plugin_metadata=json.loads(subprocess.check_output([str(self.root/'build/audio_engine'),'--plugins'],text=True,timeout=15))
+        self.plugin_metadata=json.loads(subprocess.check_output([str(self.root/'build/audio_engine'),'--plugins'],text=True,timeout=15,env=environment()))
         self.record_errors = None
 
     def command(self, text):

@@ -9,11 +9,12 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from app.update_manager import ALLOWED,members,version
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--payload',type=Path,required=True);p.add_argument('--key',type=Path,required=True);p.add_argument('--repository',required=True);p.add_argument('--channel',choices=('beta','release'),required=True);p.add_argument('--version',required=True);p.add_argument('--minimum-version',required=True);p.add_argument('--os-codename',required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--notes',default='');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--payload',type=Path,required=True);p.add_argument('--key',type=Path,required=True);p.add_argument('--repository',required=True);p.add_argument('--channel',choices=('beta','release'),required=True);p.add_argument('--version',required=True);p.add_argument('--minimum-version',required=True);p.add_argument('--os-codename',required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--notes',default='');p.add_argument('--hardware-profile',default='standard');p.add_argument('--architecture',choices=('arm64','amd64'),default='arm64');args=p.parse_args()
     version(args.version);version(args.minimum_version)
     assert re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',args.repository)
     if args.channel=='release' and '-' in args.version:raise ValueError('Release channel requires a final version.')
-    args.output.mkdir(parents=True,exist_ok=True);name=f'machinista-{args.version}-arm64.tar.gz';target=args.output/name
+    assert re.fullmatch(r'[a-z0-9][a-z0-9-]{0,47}',args.hardware_profile)
+    args.output.mkdir(parents=True,exist_ok=True);suffix='' if args.hardware_profile=='standard' else '-'+args.hardware_profile;name=f'machinista-{args.version}{suffix}-{args.architecture}.tar.gz';target=args.output/name
     with tarfile.open(args.payload) as source,tarfile.open(target,'w:gz') as dest:
         for item in source:
             parts=PurePosixPath(item.name).parts
@@ -33,8 +34,8 @@ def main():
                 import io
                 stream=io.BytesIO(body)
             item.uid=item.gid=0;item.uname=item.gname='';dest.addfile(item,stream)
-    members(target)
-    m=dict(schema=1,channel=args.channel,version=args.version,minimum_version=args.minimum_version,os_codename=args.os_codename,architecture='arm64',notes=args.notes,
+    members(target,args.architecture)
+    m=dict(schema=1,channel=args.channel,version=args.version,minimum_version=args.minimum_version,os_codename=args.os_codename,architecture=args.architecture,hardware_profile=args.hardware_profile,notes=args.notes,
         artifact=dict(url=f'https://github.com/{args.repository}/releases/download/v{args.version}/{name}',size=target.stat().st_size,sha256=hashlib.sha256(target.read_bytes()).hexdigest()))
     raw=(json.dumps(m,indent=2)+'\n').encode();manifest=args.output/'update.json';manifest.write_bytes(raw)
     with tempfile.TemporaryDirectory() as tmp:

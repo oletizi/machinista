@@ -31,6 +31,8 @@ def filename(value):
 class Library:
     def __init__(self, root, source_scan=mounted_sources, password=None):
         self.authorization=('Basic '+base64.b64encode(('admin:'+password).encode()).decode()) if password else None
+        from app.hardware_profiles import current
+        self.hardware_profile=current()
         self.root=Path(root);self.samples=self.root/'samples';self.scan=source_scan
         self.token=secrets.token_urlsafe(32);self.upload_lock=threading.Lock();self.stats_lock=threading.Lock()
         from app.web_projects import Projects
@@ -162,7 +164,7 @@ class Library:
                 def number(path,scale=1):
                     try:return float(Path(path).read_text().split()[0])/scale
                     except (OSError,ValueError,IndexError):return None
-                resources.update(hostname=socket.gethostname(),uptime=number('/proc/uptime'),temperature=number('/sys/class/thermal/thermal_zone0/temp',1000))
+                resources.update(hardware_profile=self.hardware_profile,hostname=socket.gethostname(),uptime=number('/proc/uptime'),temperature=number('/sys/class/thermal/thermal_zone0/temp',1000))
                 self.stats=resources;self.next_stats=now+1
             return self.stats
 
@@ -209,6 +211,8 @@ class Handler(BaseHTTPRequestHandler):
             path,q=self.parsed();library=self.server.library
             if library.authorization and not secrets.compare_digest(self.headers.get('Authorization','').encode(),library.authorization.encode()):
                 self.close_connection=True;self.response_headers(401,'text/plain; charset=utf-8',0,[('WWW-Authenticate','Basic realm="Machinista", charset="UTF-8"')]);return
+            disabled=(not library.hardware_profile['lv2'] and path.startswith(('/api/lv2','/api/plugin-banks'))) or (not library.hardware_profile['synth'] and path.startswith(('/api/synth','/api/oscillators'))) or (not library.hardware_profile['stems'] and path.startswith('/api/stems'))
+            if disabled:raise PermissionError('This feature is disabled on '+library.hardware_profile['name']+'.')
             if write:
                 origin=self.headers.get('Origin')
                 if origin and origin!='http://'+self.headers.get('Host'):raise PermissionError('Invalid origin.')
@@ -403,7 +407,7 @@ class Handler(BaseHTTPRequestHandler):
                 if path=='/api/lv2':
                     from app.lv2_client import request
                     self.json(request('status'));return
-                if path=='/api/session':self.json({'token':library.token});return
+                if path=='/api/session':self.json({'token':library.token,'hardware_profile':library.hardware_profile});return
                 if path=='/api/sources':
                     self.json([dict(id=k,name=v.name,readOnly=v.read_only) for k,v in library.sources().items()]);return
                 if path=='/api/list':self.json(library.list(q.get('source','sd'),q.get('path','')));return

@@ -147,6 +147,8 @@ def validate_project(project):
 class Application(ClipArranger,MultiSelection,MidiRemote,AudioExport,Mixer,Relink,Presets,ModulationHistory,Polyphony, GroupDelete, Erasing, RecordingHistory, Recording, MainControls, SettingsMenu, EventShortcuts, Groove, Automation, Preferences, Performance, Banks, Routing, Plugins, Sampler, Slicing, Navigation, Sampling, Timing, ProjectManager, PatternEditor, LiveEffects, OriginalSurface, Workspaces):
     def __init__(self, root):
         self.root = Path(root)
+        from app.hardware_profiles import current
+        self.hardware_profile=current()
         self.samples = self.root/'samples'
         self.samples.mkdir(parents=True, exist_ok=True)
         self.mp3_serial=0;self.mp3_requests={};self.browser_decoded={}
@@ -179,7 +181,7 @@ class Application(ClipArranger,MultiSelection,MidiRemote,AudioExport,Mixer,Relin
         if set(port(self.settings['main_output'],'OUT') or ()) & set(port(self.settings['cue_output'],'OUT') or ()):raise ValueError('overlapping main/cue')
         self.settings.setdefault('plugin_delay',False)
         if type(self.settings['plugin_delay']) is not bool:raise ValueError('invalid plugin delay setting')
-        self.settings.setdefault('audio_buffer', 0)
+        self.settings.setdefault('audio_buffer', self.hardware_profile['audio_buffer'])
         if type(self.settings['audio_buffer']) is not int or self.settings['audio_buffer'] not in AUDIO_BUFFERS:raise ValueError('invalid audio buffer')
         from app.codec_levels import CONTROLS,MUTES
         for key,_ in MUTES.values():

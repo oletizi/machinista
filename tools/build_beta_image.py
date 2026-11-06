@@ -13,10 +13,11 @@ import subprocess
 import sys
 import tarfile
 
-VERSION='0.1.0-beta.15'
+VERSION='0.1.0-beta.16'
 
 def main():
- root=Path(sys.argv[1]).resolve();payload=Path(sys.argv[2]).resolve()
+ root=Path(sys.argv[1]).resolve();payload=Path(sys.argv[2]).resolve();profile_id=sys.argv[3] if len(sys.argv)>3 else 'standard'
+ if profile_id not in ('standard','pi3b-sampler'):raise SystemExit('Unknown image hardware profile')
  if root==Path('/') or not (root/'etc/rpi-issue').exists():raise SystemExit('Requires an offline official Raspberry Pi OS root')
  def run(*args,**kw):return subprocess.run(['chroot',str(root),*args],check=True,text=True,**kw)
  # Package maintainer scripts must not start services in the build VM.
@@ -54,6 +55,11 @@ def main():
  sys.path.insert(0,str(app));from app.model import new_project,Application
  (app/'projects/current.json').write_text(json.dumps(new_project(),indent=2)+'\n')
  (app/'config/settings.json').write_text(json.dumps({'audio':'AUTO','midi_in':'OFF','midi_out':'OFF','midi_channel':1,'display_brightness':100,'display_contrast':42},indent=2)+'\n')
+ (root/'etc/machinista').mkdir(exist_ok=True)
+ (root/'etc/machinista/hardware-profile').write_text(profile_id+'\n')
+ if profile_id=='pi3b-sampler':
+  settings=json.loads((app/'config/settings.json').read_text());settings['audio_buffer']=512;(app/'config/settings.json').write_text(json.dumps(settings,indent=2)+'\n')
+ os.environ['MACHINISTA_HARDWARE_PROFILE']=profile_id
  Application(app)  # Validate generic configuration and blank project in situ.
  manager=root/'usr/local/lib/machinista/lv2_manager.py';manager.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(app/'app/lv2_manager.py',manager);manager.chmod(0o644)
  shutil.copy2(app/'tools/power_service.py',manager.parent/'power_service.py');(manager.parent/'power_service.py').chmod(0o644)
@@ -64,6 +70,7 @@ def main():
   (root/'etc/machinista').mkdir(exist_ok=True)
   updater_config=json.loads((app/'deploy/updater.example.json').read_text())
   updater_config['current_version']=VERSION
+  updater_config.update(hardware_profile=profile_id,architecture='arm64')
   (root/'etc/machinista/updater.json').write_text(json.dumps(updater_config,indent=2)+'\n')
   if (app/'deploy/update-public.pub').is_file():shutil.copy2(app/'deploy/update-public.pub',root/'etc/machinista/update-public.pem')
   (root/'etc/machinista/updater.json').chmod(0o644)
@@ -74,11 +81,17 @@ def main():
  for unit in (app/'deploy').glob('*.service'):
   if unit.name=='machinista-updater.service' and not updates:continue
   text=unit.read_text()
+  if profile_id=='pi3b-sampler':text=text.replace('Wants=machinista-lv2.service\n','').replace('After=sound.target machinista-lv2.service','After=sound.target').replace('After=network.target machinista-media.service machinista-lv2.service','After=network.target machinista-media.service')
   if unit.name!='machinista-firstboot.service':text=text.replace('[Unit]','[Unit]\nRequires=machinista-firstboot.service\nAfter=machinista-firstboot.service',1)
   (root/'etc/systemd/system'/unit.name).write_text(text)
  for rule in (app/'deploy').glob('*.rules'):shutil.copy2(rule,root/'etc/udev/rules.d'/rule.name)
- run('systemctl','enable','machinista-firstboot','machinista-lv2','machinista-power','machinista','machinista-web','machinista-network','machinista-media','machinista-bluetooth','smbd','avahi-daemon','NetworkManager')
+ run('systemctl','enable','machinista-firstboot',*(['machinista-lv2'] if profile_id=='standard' else []),'machinista-power','machinista','machinista-web','machinista-network','machinista-media','machinista-bluetooth','smbd','avahi-daemon','NetworkManager')
  if updates:run('systemctl','enable','machinista-updater')
+ if profile_id=='pi3b-sampler':
+  run('systemctl','disable','machinista-lv2','machinista-lv2-scan')
+  for name in ('machinista-lv2.service','machinista-lv2-scan.service'):
+   (root/'etc/systemd/system'/name).unlink(missing_ok=True)
+  run('systemctl','mask','machinista-lv2.service','machinista-lv2-scan.service')
  # Prepared account replaces stock first-user provisioning; no shared SSH login.
  for unit in ('userconfig.service','ssh.service','ssh.socket','regenerate_ssh_host_keys.service'):
   subprocess.run(['chroot',str(root),'systemctl','disable',unit],check=False,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
@@ -91,7 +104,7 @@ def main():
  run('ldd','/home/machinista/Machinista/build/mikro_monitor')
  run('ldd','/home/machinista/Machinista/build/mk2_monitor')
  if (app/'build/mk1_monitor').exists():run('ldd','/home/machinista/Machinista/build/mk1_monitor')
- run('sh','-c','cd /home/machinista/Machinista && python3 -m unittest tests.test_network_manager tests.test_web_server tests.test_wave_zoom tests.test_manual_surface tests.test_mk2_surface tests.test_fokus_fein -q')
+ run('sh','-c','cd /home/machinista/Machinista && MACHINISTA_HARDWARE_PROFILE=standard python3 -m unittest tests.test_network_manager tests.test_web_server tests.test_wave_zoom tests.test_manual_surface tests.test_mk2_surface tests.test_fokus_fein tests.test_hardware_profiles -q')
  # Keep package/source provenance; apt clean removes download payloads only.
  packages=run('dpkg-query','-W','-f=${Package}\t${Version}\t${Architecture}\n',capture_output=True).stdout
  (app/'BETA-PACKAGES.tsv').write_text(packages)

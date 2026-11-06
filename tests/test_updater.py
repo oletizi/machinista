@@ -210,3 +210,19 @@ class PublisherTests(unittest.TestCase):
    raw=(out/'update.json').read_bytes();pub.chmod(0o644);verify_signature(raw,(out/'update.json.sig').read_bytes(),pub)
    m=manifest(raw,'release',{'repository':'example/machinista'},'trixie','aarch64')
    artifact=out/'machinista-0.1.1-arm64.tar.gz';self.assertEqual(m['artifact']['sha256'],hashlib.sha256(artifact.read_bytes()).hexdigest());self.assertIn('build/audio_engine',members(artifact));self.assertNotIn('presets/plugin-banks/obxd/machinista-bass.json',members(artifact))
+
+class HardwareTargetUpdaterTests(unittest.TestCase):
+ def setUp(self):
+  self.cfg=dict(repository='example/machinista',architecture='arm64')
+  self.feed=dict(schema=1,version='0.1.1',minimum_version='0.1.0-beta.6',channel='release',architecture='arm64',os_codename='trixie',notes='',artifact=dict(url='https://github.com/example/machinista/releases/download/v0.1.1/update.tar.gz',size=1,sha256='0'*64))
+
+ def test_hardware_profiles_cannot_receive_each_others_updates(self):
+  small=dict(self.cfg,hardware_profile='pi3b-sampler',architecture='arm64')
+  with self.assertRaisesRegex(ValueError,'hardware profile'):manifest(json.dumps(self.feed),'release',small,'trixie','aarch64')
+  feed=dict(self.feed,hardware_profile='pi3b-sampler')
+  self.assertEqual(manifest(json.dumps(feed),'release',small,'trixie','aarch64')['hardware_profile'],'pi3b-sampler')
+  with self.assertRaisesRegex(ValueError,'hardware profile'):manifest(json.dumps(feed),'release',self.cfg,'trixie','aarch64')
+ def test_x64_update_architecture_is_explicit(self):
+  cfg=dict(self.cfg,architecture='amd64');feed=dict(self.feed,architecture='amd64')
+  self.assertEqual(manifest(json.dumps(feed),'release',cfg,'trixie','x86_64')['architecture'],'amd64')
+  with self.assertRaises(ValueError):manifest(json.dumps(feed),'release',cfg,'trixie','aarch64')

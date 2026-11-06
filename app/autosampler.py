@@ -29,6 +29,8 @@ def configuration(value):
     if notes[-1]!=hi:notes.append(hi)
     if len(notes)*len(velocities)>128:raise ValueError('Maximum 128 recorded zones.')
     result.update(low=lo,high=hi,step=step,velocities=velocities,hold=number(value.get('hold',2),.05,30),tail=number(value.get('tail',1),0,10),gap=number(value.get('gap',.2),.05,5),channel=number(value.get('channel',1),1,16,True))
+    from app.hardware_profiles import current
+    if result.get('source')=='LV2' and not current()['lv2']:raise ValueError('Use External MIDI on this hardware profile.')
     if result.get('source') not in ('EXTERNAL','LV2'):raise ValueError('Choose External MIDI or the current LV2 Sound.')
     tasks=[]
     for note in notes:

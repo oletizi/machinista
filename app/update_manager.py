@@ -34,6 +34,8 @@ def config(path):
     if type(value.get('enabled')) is not bool:raise ValueError('Invalid updater edition.')
     repo=value.get('repository','')
     if repo and not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',repo):raise ValueError('Invalid GitHub repository.')
+    if value.get('architecture','arm64') not in ('arm64','amd64'):raise ValueError('Invalid update architecture.')
+    if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,47}',value.get('hardware_profile','standard')):raise ValueError('Invalid update hardware profile.')
     version(value.get('current_version',''))
     return value
 
@@ -73,7 +75,9 @@ def verify_signature(raw,signature,key,run=subprocess.run):
 def manifest(raw,channel,cfg,os_name,machine):
     m=json.loads(raw);version(m.get('version'));version(m.get('minimum_version'))
     if m.get('schema')!=1 or m.get('channel')!=channel:raise ValueError('Update channel/schema mismatch.')
-    if m.get('architecture')!='arm64' or machine not in ('aarch64','arm64'):raise ValueError('Update needs an ARM64 system.')
+    architecture=cfg.get('architecture','arm64');actual={'aarch64':'arm64','arm64':'arm64','x86_64':'amd64','amd64':'amd64'}.get(machine)
+    if m.get('architecture')!=architecture or actual!=architecture:raise ValueError('Update architecture does not match this system.')
+    if m.get('hardware_profile','standard')!=cfg.get('hardware_profile','standard'):raise ValueError('Update hardware profile does not match this image.')
     if m.get('os_codename')!=os_name:raise ValueError('This update needs a different OS image.')
     if channel=='release' and '-' in m['version']:raise ValueError('Release channel needs a final version.')
     if version(m['minimum_version'])>version(m['version']):raise ValueError('Invalid minimum update version.')
@@ -84,7 +88,7 @@ def manifest(raw,channel,cfg,os_name,machine):
     if not isinstance(m.get('notes',''),str) or len(m.get('notes',''))>4000:raise ValueError('Invalid release notes.')
     return m
 
-def members(path):
+def members(path,architecture="arm64"):
     total=0;seen=set();result=[]
     with tarfile.open(path,'r:gz') as archive:
         for m in archive:
@@ -103,7 +107,7 @@ def members(path):
             if m.size<0 or m.size>128*1024**2:raise ValueError('Update file is too large.')
             if parts[0]=='build':
                 data=archive.extractfile(m).read(20)
-                if data[:5]!=b'\x7fELF\x02' or data[5]!=1 or data[18:20]!=b'\xb7\x00':raise ValueError('Update contains a non-ARM64 binary.')
+                if data[:5]!=b'\x7fELF\x02' or data[5]!=1 or data[18:20]!={'arm64':b'\xb7\x00','amd64':b'\x3e\x00'}.get(architecture):raise ValueError('Update contains a binary for another architecture.')
             seen.add(m.name);result.append(m.name)
     if not {'app/branding.py','tools/machinista.py','build/audio_engine'}<=seen:raise ValueError('Incomplete application update.')
     return result
@@ -172,7 +176,7 @@ class Manager:
     def status(self):
         configured=bool(self.cfg.get('repository') and self.cfg.get('public_key'))
         return dict(enabled=self.cfg['enabled'],configured=configured,current=self.current,latest=self.latest['version'] if self.latest else None,
-            channel=self.channel,state=self.phase,error=self.error,message=self.error or ('Ready' if configured else 'Update source not configured'),
+            hardware_profile=self.cfg.get('hardware_profile','standard'),architecture=self.cfg.get('architecture','arm64'),channel=self.channel,state=self.phase,error=self.error,message=self.error or ('Ready' if configured else 'Update source not configured'),
             progress=self.progress,busy=self.phase in BUSY,available=bool(self.latest and version(self.latest['version'])>version(self.current)),
             notes=self.latest.get('notes','') if self.latest else self.feed_notes,os=self.os_name,kernel=platform.release(),os_included=True,reboot_required=self.reboot_required,checked=self.checked)
     def publish(self,phase=None,progress=None,error=None):
@@ -209,6 +213,8 @@ class Manager:
         try:
             if op=='check':
                 base=f"https://raw.githubusercontent.com/{self.cfg['repository']}/{self.channel}/updates/"
+                profile=self.cfg.get('hardware_profile','standard')
+                if profile!='standard':base+='targets/'+profile+'/'
                 raw=self.fetch(base+'update.json',32768);signature=self.fetch(base+'update.json.sig',1024)
                 self.verify(raw,signature,self.cfg['public_key'])
                 data=json.loads(raw)
@@ -260,7 +266,7 @@ class Manager:
             artifact=self.latest['artifact'];package=self.state/'download.tar.gz'
             size=self.fetch(artifact['url'],artifact['size'],package)
             if size!=artifact['size'] or hashlib.sha256(package.read_bytes()).hexdigest()!=artifact['sha256']:raise ValueError('Update checksum or size mismatch.')
-            self.publish('VALIDATING',20);files=members(package);self.idle()
+            self.publish('VALIDATING',20);files=members(package,self.cfg.get('architecture','arm64'));self.idle()
             with tarfile.open(package) as archive:
                 branding=archive.extractfile('app/branding.py').read(65536)
             found=re.search(rb'VERSION\s*=\s*[\'"]([^\'"]+)',branding)

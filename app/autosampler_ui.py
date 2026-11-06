@@ -9,7 +9,7 @@ LABELS=('SOURCE','LOW NOTE','HIGH NOTE','INTERVAL','LAYERS','HOLD','TAIL','GAP',
 class AutosamplerUI:
     def auto_setup(self):
         if not hasattr(self,'auto_config'):
-            self.auto_config=dict(name='',folder='Autosampled',tags=['autosampled'],source='LV2',low=48,high=84,step=12,
+            self.auto_config=dict(name='',folder='Autosampled',tags=['autosampled'],source='LV2' if self.hardware_profile['lv2'] else 'EXTERNAL',low=48,high=84,step=12,
                                   velocities=[100],hold=2.,tail=1.,gap=.2,channel=1,input='IN 1/2',trim=True,midi_out='')
             self.auto_field=0;self.auto_status={'state':'IDLE'};self.auto_command=None
         return self.auto_config
@@ -36,6 +36,7 @@ class AutosamplerUI:
         if key in ('name','folder'):
             self.auto_name(key);return
         if key is None:return
+        if key=='source' and not self.hardware_profile['lv2']:v[key]='EXTERNAL';return
         if key=='source':v[key]=('LV2','EXTERNAL')[max(0,min(1,('LV2','EXTERNAL').index(v[key])+delta))]
         elif key=='layers':
             count=max(1,min(8,len(v['velocities'])+delta))

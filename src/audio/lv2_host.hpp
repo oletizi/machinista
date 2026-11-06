@@ -1,5 +1,6 @@
 #pragma once
 #include <lilv/lilv.h>
+#include "audio/hardware_profile.hpp"
 #include <lv2/atom/atom.h>
 #include <lv2/atom/util.h>
 #include <lv2/atom/forge.h>
@@ -46,7 +47,7 @@ public:
     LV2_Feature map_feature{LV2_URID__map,&mapper};
     LV2_Feature bounded_feature{"http://lv2plug.in/ns/ext/buf-size#boundedBlockLength",nullptr};
     const LV2_Feature* features[3]{&map_feature,&bounded_feature,nullptr};
-    LV2World(){auto dynamic=lilv_new_bool(world,false);lilv_world_set_option(world,LILV_OPTION_DYN_MANIFEST,dynamic);lilv_node_free(dynamic);lilv_world_load_all(world);map(LV2_ATOM__Sequence);map(LV2_MIDI__MidiEvent);}
+    LV2World(){auto dynamic=lilv_new_bool(world,false);lilv_world_set_option(world,LILV_OPTION_DYN_MANIFEST,dynamic);lilv_node_free(dynamic);if(hardware_profile().lv2)lilv_world_load_all(world);map(LV2_ATOM__Sequence);map(LV2_MIDI__MidiEvent);}
     ~LV2World(){lilv_world_free(world);}
     LV2_URID map(const char* uri){
         const unsigned count=id_count.load();for(unsigned i=0;i<count;++i){const char* value=ids[i].load();if(value&&std::string_view(value)==uri)return i+1;}
@@ -95,7 +96,7 @@ public:
             }
             out<<"]}";lilv_node_free(name);
         }
-        if(comma)out<<',';Ducktor::inventory(out);out<<',';NativeSynth::inventory(out);out<<',';NativeEffect::inventory(out);
+        if(comma)out<<',';Ducktor::inventory(out);if(hardware_profile().synth){out<<',';NativeSynth::inventory(out);}out<<',';NativeEffect::inventory(out);
         out<<"]\n";lilv_node_free(audio);lilv_node_free(control);lilv_node_free(input);lilv_node_free(midi);lilv_node_free(integer);lilv_node_free(toggle);lilv_node_free(logarithmic);
     }
 };
@@ -140,10 +141,12 @@ public:
             return;
         }
         if(uri==NativeSynth::uri){
+            if(!hardware_profile().synth)throw std::runtime_error("Synth disabled on this hardware profile");
             synth=std::make_unique<NativeSynth>(sample_rate);instrument=true;
             for(const auto& p:NativeSynth::ports)desired.emplace_back(std::make_unique<std::atomic<float>>(p.initial));
             return;
         }
+        if(!hardware_profile().lv2)throw std::runtime_error("External LV2 disabled on this hardware profile");
         lv2_atom_forge_init(&forge,&world.mapper);
         time_ids={world.map(LV2_TIME__Position),world.map(LV2_TIME__frame),world.map(LV2_TIME__speed),world.map(LV2_TIME__bar),world.map(LV2_TIME__barBeat),world.map(LV2_TIME__beat),world.map(LV2_TIME__beatUnit),world.map(LV2_TIME__beatsPerBar),world.map(LV2_TIME__beatsPerMinute),world.map(LV2_TIME__framesPerSecond)};
         const auto integer=world.map(LV2_ATOM__Int),floating=world.map(LV2_ATOM__Float);

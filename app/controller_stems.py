@@ -15,6 +15,7 @@ def browser_sample(app):
     return path if path and path.suffix.lower() in ('.wav','.mp3') and path.is_file() else None
 
 def open_page(app,browser=False):
+    if not app.hardware_profile['stems']:app.message='STEMS UNAVAILABLE ON THIS HARDWARE';return
     path=browser_sample(app) if browser else app.track().get('sample')
     if not path:app.message='SELECT A SAMPLE FIRST';return
     app.stem_origin=app.page;app.stem_asset={'browser' if browser else 'current':str(path)}
