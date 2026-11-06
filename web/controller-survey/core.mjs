@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Shared data-only validation for browser exports.
-import {sanitizeDisplayChecks,displayCoverage} from './displays.mjs?v=4';
+import {sanitizeDisplayChecks,displayCoverage} from './displays.mjs?v=5';
 export const MAX_BYTES = 8 * 1024 * 1024;
 export const FORMAT = 'Machinista-controller-survey';
 const assert = (yes, message) => { if (!yes) throw new Error(message); };
 const text = (v, n) => typeof v === 'string' && v.length <= n && !/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(v);
-export function stepsFor(profile, extras = [], version = 2) {
+export function stepsFor(profile, extras = [], version = 3, keyboardTest = 'quick') {
   const steps = [];
   const add = (kind, name, instruction, optional = false) => steps.push({id: kind + '_' + name.toLowerCase().replace(/\+/g, ' plus ').replace(/-/g, ' minus ').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), kind, name, instruction, optional});
   for (const name of profile.buttons) add('button', name, 'Press and release this button three times. Test only this control.');
@@ -13,7 +13,8 @@ export function stepsFor(profile, extras = [], version = 2) {
   for (const name of profile.touches) add('touch', name + ' TOUCH', 'Touch and release three times without turning.');
   for (let n=1;n<=profile.pads;n++) add('pad', 'PAD ' + n, 'Play soft, medium and firm, releasing between hits. Pad 1 is bottom left; pad 16 top right.');
   for (const name of profile.strips) add('slider', name, 'Move slowly over the whole range, then return to rest.');
-  for (let n=1;n<=profile.keys;n++) add('key', 'KEY ' + n + ' FROM LEFT', 'Play this physical key three times, then release. Leave octave/transpose unchanged.');
+  const keyNumbers=profile.keys&&version>=3&&keyboardTest==='quick'?[1,profile.keys,2]:Array.from({length:profile.keys},(_,i)=>i+1);
+  for (const n of keyNumbers) add('key','KEY '+n+' FROM LEFT',version>=3&&keyboardTest==='quick'&&n===2?'Play the first black key from the left (second physical key), then release.':'Play this physical key, then release. Leave octave/transpose unchanged.');
   if (profile.pressure) for (const n of [1, Math.floor((profile.keys+1)/2), profile.keys]) add('pressure', 'AFTERTOUCH KEY ' + n + ' FROM LEFT', 'Hold this key, vary pressure, then release. Do not force the mechanism.');
   for (const name of profile.pedals) add('pedal', name, 'Operate a connected pedal. Mark untested if no pedal is available.', true);
   assert(Array.isArray(extras) && extras.length <= 64, 'Too many extra controls.');
@@ -35,8 +36,9 @@ export function validateReport(input, profiles) {
   const interfaces=d.interfaces.map(i=>{assert(text(i.id,32) && /^(hid|midi)\d+$/.test(i.id), 'Invalid interface ID.');assert(i.fingerprint===undefined||(text(i.fingerprint,512)&&/^[0-9:;]*$/.test(i.fingerprint)), 'Invalid interface descriptor.');return {id:i.id,transport:i.id.startsWith('midi')?'midi':'hid',...(i.fingerprint?{fingerprint:i.fingerprint}:{})};});
   assert(new Set(interfaces.map(i=>i.id)).size===interfaces.length, 'Duplicate interface.');
   const ids=new Set(interfaces.map(i=>i.id)), extras=input.extra_controls || [];
-  const inventoryVersion=input.checklist_version??1;assert([1,2].includes(inventoryVersion),'Unsupported checklist version.');
-  const steps=stepsFor(profile,extras,inventoryVersion), known=new Map(steps.map(s=>[s.id,s])), seen=new Set();
+  const inventoryVersion=input.checklist_version??1;assert([1,2,3].includes(inventoryVersion),'Unsupported checklist version.');
+  const keyboardTest=inventoryVersion>=3?(input.keyboard_test??'quick'):'full';assert(['quick','full'].includes(keyboardTest),'Invalid keyboard test mode.');
+  const steps=stepsFor(profile,extras,inventoryVersion,keyboardTest), known=new Map(steps.map(s=>[s.id,s])), seen=new Set();
   assert(Array.isArray(input.controls) && input.controls.length<=steps.length, 'Invalid control list.');
   const controls=input.controls.map(r=>{
     const s=known.get(r.id);
@@ -52,13 +54,13 @@ export function validateReport(input, profiles) {
     // Claimed mappings are intentionally discarded. Maintainers derive them from raw evidence.
     return {id:s.id,name:s.name,kind:s.kind,status:r.status==='skipped'?'skipped':'captured',frames,tester_confirmed:r.tester_confirmed===true,note:r.note || '',...(r.detection&&typeof r.detection.signature==='string'&&r.detection.signature.length<=180&&/^[a-zA-Z0-9:._-]+$/.test(r.detection.signature)?{detection:{method:'automatic',signature:r.detection.signature}}:{})};
   });
-  const out={format:FORMAT,version:2,checklist_version:inventoryVersion,profile_id:profile.id,demo:input.demo,layout_audited:input.layout_audited,extra_controls:extras.map(e=>({name:e.name,kind:e.kind})),device:{vendor_id:0x17cc,product_id:d.product_id,name:profile.name,identity_verified:input.device.identity_verified===true,interfaces},controls,leds:[],displays:{},display_checks:sanitizeDisplayChecks(input.display_checks,profile),tool:{name:'Machinista Browser Survey',version:1}};
-  if(input.legacy_controls!==undefined){assert(inventoryVersion===2&&Array.isArray(input.legacy_controls)&&input.legacy_controls.length<=profile.encoders.length*2,'Invalid legacy captures.');out.legacy_controls=validateReport({...input,checklist_version:1,controls:input.legacy_controls,legacy_controls:undefined},profiles).controls;}
+  const out={format:FORMAT,version:2,checklist_version:inventoryVersion,keyboard_test:keyboardTest,profile_id:profile.id,demo:input.demo,layout_audited:input.layout_audited,extra_controls:extras.map(e=>({name:e.name,kind:e.kind})),device:{vendor_id:0x17cc,product_id:d.product_id,name:profile.name,identity_verified:input.device.identity_verified===true,interfaces},controls,leds:[],displays:{},display_checks:sanitizeDisplayChecks(input.display_checks,profile),tool:{name:'Machinista Browser Survey',version:1}};
+  if(input.legacy_controls!==undefined){assert(inventoryVersion>=2&&Array.isArray(input.legacy_controls)&&input.legacy_controls.length<=profile.encoders.length*2,'Invalid legacy captures.');out.legacy_controls=validateReport({...input,checklist_version:1,controls:input.legacy_controls,legacy_controls:undefined},profiles).controls;}
   assert(new TextEncoder().encode(JSON.stringify(out)).length<=MAX_BYTES, 'Survey is too large.');
   return out;
 }
 export function coverage(report, profiles) {
-  const steps=stepsFor(profiles[report.profile_id],report.extra_controls,report.checklist_version??1), rows=new Map(report.controls.map(r=>[r.id,r]));
+  const steps=stepsFor(profiles[report.profile_id],report.extra_controls,report.checklist_version??1,report.keyboard_test??'quick'), rows=new Map(report.controls.map(r=>[r.id,r]));
   const done=s=>{const r=rows.get(s.id);return r && r.status!=='skipped' && r.tester_confirmed && r.frames.some(f=>f.ms>=1000 && f.ms<5000);};
   const required=steps.filter(s=>!s.optional), missing=required.filter(s=>!done(s)).map(s=>s.name);
   return {total:required.length,recorded:required.length-missing.length,missing,optional_untested:steps.filter(s=>s.optional&&!done(s)).map(s=>s.name),
@@ -87,7 +89,7 @@ export function emailDraft(address, model, summary) {
 export function availableProfiles(profiles) { return Object.values(profiles).filter(p=>p.survey_required===true); }
 
 export function upgradeChecklist(input,profiles){
- const report=validateReport(input,profiles);if(report.checklist_version===2)return report;
+ const report=validateReport(input,profiles);if(report.checklist_version>=2)return report;
  const modern=stepsFor(profiles[report.profile_id],report.extra_controls,2),oldEncoders=report.controls.filter(r=>r.kind==='encoder');
  report.legacy_controls=oldEncoders;report.controls=report.controls.filter(r=>r.kind!=='encoder');
  for(const step of modern.filter(s=>s.kind==='encoder')){

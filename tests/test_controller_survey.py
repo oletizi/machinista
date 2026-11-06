@@ -42,3 +42,7 @@ class ControllerSurveyTests(unittest.TestCase):
   for version in (1,2):
    r=self.sample();r['checklist_version']=version;s=next(s for s in checklist('maschine_studio',version=version) if s['kind']=='encoder');r['controls']=[dict(**s,status='captured',frames=[])];validate(r)
   self.assertEqual(len([s for s in checklist('maschine_studio',version=2) if s['kind']=='encoder']),10)
+ def test_keyboard_quick_full_and_legacy_counts(self):
+  self.assertEqual([s['name'] for s in checklist('kk_s49_mk2') if s['kind']=='key'],['KEY 1 FROM LEFT','KEY 49 FROM LEFT','KEY 2 FROM LEFT'])
+  self.assertEqual(len([s for s in checklist('kk_s49_mk2',version=3,keyboard_test='full') if s['kind']=='key']),49)
+  self.assertEqual(len([s for s in checklist('kk_s49_mk2',version=2) if s['kind']=='key']),49)

@@ -67,7 +67,7 @@ def display_inventory(identity):
  return []
 for identity,profile in PROFILES.items():profile['displays']=display_inventory(identity)
 
-def checklist(profile_id,extras=(),version=2):
+def checklist(profile_id,extras=(),version=3,keyboard_test="quick"):
  if profile_id not in PROFILES:raise ValueError('Choose a controller model first.')
  p=PROFILES[profile_id];result=[]
  def step(kind,name,instruction,optional=False,**more):
@@ -80,7 +80,8 @@ def checklist(profile_id,extras=(),version=2):
  for name in p['touches']:step('touch',name+' TOUCH','Touch and release three times without turning or moving the control.')
  for i in range(1,p['pads']+1):step('pad','PAD '+str(i),'Play this pad soft, medium and firm; release between hits. Pad 1 is bottom left, pad 16 top right.')
  for name in p['strips']:step('slider',name,'Move over the whole range slowly and return to rest. For two-finger strips move two fingers apart and together.')
- for i in range(1,p['keys']+1):step('key','KEY '+str(i)+' FROM LEFT','Play this physical key three times, then release. Keep octave and transpose settings unchanged.')
+ key_numbers=([1,p['keys'],2] if p['keys'] and version>=3 and keyboard_test=='quick' else range(1,p['keys']+1))
+ for i in key_numbers:step('key','KEY '+str(i)+' FROM LEFT',('Play the first black key from the left (second physical key), then release.' if version>=3 and keyboard_test=='quick' and i==2 else 'Play this physical key, then release. Keep octave and transpose settings unchanged.'))
  if p['pressure']:
   for i in (1,(p['keys']+1)//2,p['keys']):step('pressure','AFTERTOUCH KEY '+str(i)+' FROM LEFT','Hold the indicated key, press firmly to vary aftertouch, then release. Do not force the mechanism.')
  for name in p['pedals']:step('pedal',name,'Connect a compatible pedal to this socket, operate it and release. Skip explicitly if no pedal is available.',True)

@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=4';
-import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=4';
-import {ActionDetector} from './guided.mjs?v=4';
-const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=4',{cache:'no-cache'})).json();
+import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=5';
+import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=5';
+import {ActionDetector} from './guided.mjs?v=5';
+const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=5',{cache:'no-cache'})).json();
 const config=await (await fetch('config.json',{cache:'no-cache'})).json();
 let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false, autoStage='idle', resumeStage='controls', autoDetector=null, autoTimer=null, autoGeneration=0, colorLink=null, promptEnabled=true, skippedDisplays=new Set();
 const hex=b=>Array.from(b,n=>n.toString(16).padStart(2,'0')).join('');
 const notify=s=>{$('message').textContent=s;};
 const profile=()=>profiles[$('model').value];
-const steps=()=>stepsFor(profile(),report?.extra_controls||[],report?.checklist_version??2);
+const steps=()=>stepsFor(profile(),report?.extra_controls||[],report?.checklist_version??3,report?.keyboard_test??$('keyboard-test').value);
 const current=()=>steps()[stepIndex];
 const row=()=>report?.controls.find(r=>r.id===current()?.id);
 const safe=fn=>async(...args)=>{try{await fn(...args);}catch(e){notify(e.message || String(e));}};
 for(const p of availableProfiles(profiles)){const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('model').append(o);}
-function blank(demo,device){return {format:FORMAT,version:2,checklist_version:2,profile_id:profile().id,demo,layout_audited:false,extra_controls:[],device,controls:[],leds:[],displays:{},display_checks:[],tool:{name:'Machinista Browser Survey',version:1}};}
+function blank(demo,device){return {format:FORMAT,version:2,checklist_version:3,keyboard_test:$('keyboard-test').value,profile_id:profile().id,demo,layout_audited:false,extra_controls:[],device,controls:[],leds:[],displays:{},display_checks:[],tool:{name:'Machinista Browser Survey',version:1}};}
 async function persist(){if(!db||!report)return;const copy=structuredClone(report);saveQueue=saveQueue.catch(()=>{}).then(()=>new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(copy,'survey');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);}));try{await saveQueue;}catch{notify('Browser storage is unavailable. Download a JSON copy to keep your progress.');}}
 function setInterface(id,fingerprint){if(!report.device.interfaces.some(i=>i.id===id)){if(report.device.interfaces.length>=8)throw new Error('At most eight inputs can be recorded.');report.device.interfaces.push({id,...(fingerprint?{fingerprint}:{})});}}
 function receive(id,bytes){
@@ -32,8 +32,10 @@ function receive(id,bytes){
  capture.frames.push({ms,interface:id,hex:h});
 }
 function draw(){
+ if(report)$('keyboard-test').value=report.checklist_version<3?'full':report.keyboard_test||'quick';
+ $('keyboard-test').disabled=!!report;$('keyboard-choice').hidden=!profile().keys;
  const p=profile(), list=steps(), s=list[stepIndex];
- $('inventory').textContent=`${p.buttons.length} buttons · ${p.encoders.length} rotary controls (one step each) · ${p.pads} pads · ${p.keys} keys. Touch sensors, strips and pedal sockets have separate checks.`;
+ $('inventory').textContent=`${p.buttons.length} buttons · ${p.encoders.length} rotary controls (one step each) · ${p.pads} pads · ${p.keys} physical keys${p.keys?' · '+list.filter(s=>s.kind==='key').length+' keys to play':''}. Touch sensors, strips and pedal sockets have separate checks.`;
  $('manual').href=p.sources[0];$('step').replaceChildren();
  list.forEach((s,i)=>{const o=document.createElement('option');o.value=i;const r=report?.controls.find(r=>r.id===s.id);o.textContent=(r?.tester_confirmed?'✓ ':r?.status==='skipped'?'— ':'')+s.name+(s.optional?' (optional)':'');$('step').append(o);});$('step').value=stepIndex;
  $('kind').textContent=s.kind.toUpperCase();$('control').textContent=s.name;$('instruction').textContent=autoStage==='controls'?autoInstruction(s):s.instruction;$('count').textContent=`${stepIndex+1} / ${list.length}`;
@@ -49,7 +51,7 @@ function draw(){
  else {const t=document.createElement('span');t.className='symbol';t.textContent=s.kind==='encoder'?(s.name.includes('counterclockwise')?'↶':'↷'):s.kind==='slider'?'↔':s.kind==='touch'?'◎':s.kind==='pressure'?'⇓':'▣';$('visual').append(t);}
  if(['displays','controls'].includes(autoStage))for(const id of ['step','add','skip','confirm','more','resume','midi'])$(id).disabled=true;
  if(midi)for(const checkbox of $('ports').querySelectorAll('input'))checkbox.disabled=!!capture||['controls','displays'].includes(autoStage)||!report||report.demo;
- $('missing').replaceChildren();if(report){const c=coverage(report,profiles);$('coverage').textContent=`${report.demo?'DEMO · ':''}${c.recorded} / ${c.total} required actions recorded and confirmed. ${c.physical_check_complete?'Physical input check finished.':'Input check incomplete.'} Driver mappings still need review. Displays: ${c.displays.confirmed}/${c.displays.total} test images confirmed. LEDs: not tested.`;for(const n of [...c.missing,...c.displays.missing]){const li=document.createElement('li');li.textContent=n;$('missing').append(li);}}
+ $('missing').replaceChildren();if(report){const c=coverage(report,profiles);$('coverage').textContent=`${report.demo?'DEMO · ':''}${c.recorded} / ${c.total} required actions recorded and confirmed. ${c.physical_check_complete?(p.keys&&report.checklist_version>=3&&report.keyboard_test==='quick'?'Quick input mapping finished; other keys were not individually tested.':'Physical input check finished.'):'Input check incomplete.'} Driver mappings still need review. Displays: ${c.displays.confirmed}/${c.displays.total} test images confirmed. LEDs: not tested.`;for(const n of [...c.missing,...c.displays.missing]){const li=document.createElement('li');li.textContent=n;$('missing').append(li);}}
  $('disconnect').disabled=displayBusy;drawDisplays();drawFlow();
 }
 
@@ -175,7 +177,7 @@ async function openHid(additional=false){
 $('connect').onclick=safe(()=>openHid());$('more').onclick=safe(()=>openHid(true));
 $('disconnect').onclick=safe(async()=>{await persist();await detach();if((report?.controls.length||report?.display_checks?.length) && !confirm('End this session? Download a copy first if you need it. A browser recovery copy remains until the next session is saved.'))return;report=null;stepIndex=0;autoStage='idle';skippedDisplays.clear();draw();});
 if(navigator.hid)navigator.hid.addEventListener('disconnect',safe(async e=>{if(devices.some(d=>d.device===e.device)){await detach();notify('USB disconnected. Download your progress, then resume and reconnect the same controller.');}}));
-$('model').onchange=()=>{stepIndex=0;draw();};$('step').onchange=()=>{pauseMapping('Manual control selection.');stepIndex=Number($('step').value);draw();};
+$('model').onchange=()=>{stepIndex=0;draw();};$('keyboard-test').onchange=()=>{stepIndex=0;draw();};$('step').onchange=()=>{pauseMapping('Manual control selection.');stepIndex=Number($('step').value);draw();};
 $('demo').onclick=()=>{report=blank(true,{vendor_id:0x17cc,product_id:profile().product_ids[0]||0,name:profile().name,identity_verified:false,interfaces:[{id:'hid0'}]});draw();notify('Demo mode. These measurements cannot be submitted as real hardware data.');};
 $('record').onclick=()=>{
  const s=current();if(!report||capture||['displays','controls'].includes(autoStage))return;
@@ -191,7 +193,7 @@ $('confirm').onclick=safe(async()=>{if(!row()||!row().frames.some(f=>f.ms>=1000&
 $('skip').onclick=safe(async()=>{const s=current();report.controls=report.controls.filter(r=>r.id!==s.id);report.controls.push({id:s.id,name:s.name,kind:s.kind,status:'skipped',tester_confirmed:false,frames:[],note:$('note').value});report.layout_audited=false;stepIndex=Math.min(stepIndex+1,steps().length-1);draw();await persist();});
 $('note').onchange=()=>{if(row()){row().note=$('note').value;persist();}};
 $('audit').onchange=()=>{if(report){report.layout_audited=$('audit').checked;persist();draw();}};
-$('add').onclick=safe(async()=>{const extra={name:$('extra-name').value.trim(),kind:$('extra-kind').value};const next=[...report.extra_controls,extra];stepsFor(profile(),next);report.extra_controls=next;report.layout_audited=false;stepIndex=steps().length-1;$('extra-name').value='';await persist();draw();});
+$('add').onclick=safe(async()=>{const extra={name:$('extra-name').value.trim(),kind:$('extra-kind').value};const next=[...report.extra_controls,extra];stepsFor(profile(),next,report.checklist_version,report.keyboard_test);report.extra_controls=next;report.layout_audited=false;stepIndex=steps().length-1;$('extra-name').value='';await persist();draw();});
 $('midi').onclick=safe(async()=>{
  if(!navigator.requestMIDIAccess)throw new Error('Web MIDI is unavailable in this browser.');
  midi=await navigator.requestMIDIAccess({sysex:false});const suggested=matchedMidiPorts([...midi.inputs.values()],profile());if(report&&!report.demo&&suggested.length===1){const port=suggested[0],id='midi'+[...midi.inputs.values()].indexOf(port);setInterface(id);selectedPorts.add(port.id);port.onmidimessage=e=>{const b=new Uint8Array(e.data);if(b[0]<0xf0)receive(id,b);};}renderPorts();midi.onstatechange=()=>{for(const id of [...selectedPorts])if(!midi.inputs.has(id)){selectedPorts.delete(id);notify('A MIDI input disconnected. Repeat any interrupted capture.');}renderPorts();};
