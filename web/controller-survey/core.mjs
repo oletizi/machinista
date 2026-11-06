@@ -86,7 +86,7 @@ export function emailDraft(address, model, summary) {
   return 'mailto:'+encodeURIComponent(address)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
 
-export function availableProfiles(profiles) { return Object.values(profiles).filter(p=>p.survey_required===true); }
+export function availableProfiles(profiles) { return Object.values(profiles).filter(p=>p.survey_required===true||p.survey_test===true); }
 
 export function upgradeChecklist(input,profiles){
  const report=validateReport(input,profiles);if(report.checklist_version>=2)return report;

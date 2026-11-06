@@ -129,7 +129,7 @@ def validate(value):
   if display is None or key[1] not in ('border','grid','levels') or key in seen_checks or check.get('status') not in ('sent','confirmed','failed','blocked','not_tested') or not isinstance(check.get('note'),str) or len(check['note'])>300:raise ValueError('Invalid display check.')
   seen_checks.add(key)
   if check['status'] in ('sent','confirmed','failed'):
-   if display['protocol']=='pending-odr' or check.get('transport') not in ('hid','webusb') or type(check.get('transfer_count')) is not int or not 1<=check['transfer_count']<=4 or type(check.get('bytes_sent')) is not int or not 1<=check['bytes_sent']<=261152 or not isinstance(check.get('sha256'),str) or re.fullmatch('[a-f0-9]{64}',check['sha256']) is None:raise ValueError('Invalid display transmission evidence.')
+   if display['protocol']=='pending-odr' or check.get('transport') not in ('hid','webusb') or type(check.get('transfer_count')) is not int or not 1<=check['transfer_count']<=(8 if display['protocol']=='mono-mk2' else 4) or type(check.get('bytes_sent')) is not int or not 1<=check['bytes_sent']<=261152 or not isinstance(check.get('sha256'),str) or re.fullmatch('[a-f0-9]{64}',check['sha256']) is None:raise ValueError('Invalid display transmission evidence.')
  legacy=value.get('legacy_controls')
  if legacy is not None:
   if inventory_version<2 or not isinstance(legacy,list) or len(legacy)>len(PROFILES[profile]['encoders'])*2:raise ValueError('Invalid legacy encoder evidence.')

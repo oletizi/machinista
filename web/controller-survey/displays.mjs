@@ -33,8 +33,14 @@ export function testImage(display,pattern){
  return rgb;
 }
 export function monoPackets(display,pattern,payloadSize,pixels=null){
- if(!['mono-pages','mono-oled'].includes(display.protocol))throw new Error('Not a monochrome display.');
- const rgb=pixels||testImage(display,pattern);if(rgb.length!==display.width*display.height*3)throw new Error('Invalid prompt image.');const pages=new Uint8Array(display.width*display.height/8);
+ if(!['mono-pages','mono-oled','mono-mk2'].includes(display.protocol))throw new Error('Not a monochrome display.');
+ const rgb=pixels||testImage(display,pattern);if(rgb.length!==display.width*display.height*3)throw new Error('Invalid prompt image.');
+ if(display.protocol==='mono-mk2'){
+  if(display.width!==256||display.height!==64||![0,1].includes(display.index)||payloadSize!==264)throw new Error('Invalid MK2 display geometry or HID report length.');
+  const packed=new Uint8Array(2048);for(let i=0;i<256*64;i++)if(rgb[i*3]>=128)packed[i>>3]|=0x80>>(i&7);
+  return Array.from({length:8},(_,chunk)=>{const data=new Uint8Array(264);data.set([0,0,chunk*8,0,32,0,8,0]);data.set(packed.subarray(chunk*256,(chunk+1)*256),8);return {reportId:0xe0+display.index,data};});
+ }
+ const pages=new Uint8Array(display.width*display.height/8);
  for(let y=0;y<display.height;y++)for(let x=0;x<display.width;x++)if(rgb[(y*display.width+x)*3]>=128)pages[Math.floor(y/8)*display.width+x]|=1<<(y%8);
  const id=0xe0+display.index;
  if(display.protocol==='mono-oled'&&payloadSize===pages.length)return [{reportId:id,data:pages}];
@@ -56,7 +62,7 @@ function checkIdentity(profile,device){
  else{const model=profile.id.match(/kk_([am]\d+)/)?.[1];if(!model||!(device.productName||'').toLowerCase().includes(model))throw new Error('The HID device name does not identify this model. Leave the display test blocked for review.');}
 }
 export async function sendMono(profile,display,pattern,devices,pixels=null){
- if(!['mono-pages','mono-oled'].includes(display.protocol))throw new Error('No known HID display protocol.');
+ if(!['mono-pages','mono-oled','mono-mk2'].includes(display.protocol))throw new Error('No known HID display protocol.');
  const matches=[];for(const entry of devices){const device=entry.device;checkIdentity(profile,device);for(const r of reports(device))if(r.reportId===0xe0+display.index&&[264,display.width*display.height/8].includes(reportSize(r)))matches.push({device,size:reportSize(r)});}
  if(matches.length!==1)throw new Error('A unique compatible display output report was not found. Add the display HID interface, or mark this test blocked.');
  const packets=monoPackets(display,pattern,matches[0].size,pixels);for(const p of packets)await matches[0].device.sendReport(p.reportId,p.data);
@@ -91,7 +97,7 @@ export function sanitizeDisplayChecks(input,profile){
   if(!display||!PATTERNS.includes(r.pattern)||seen.has(key)||!['sent','confirmed','failed','blocked','not_tested'].includes(r.status)||typeof r.note!=='string'||r.note.length>300)throw new Error('Invalid display observation.');seen.add(key);
   const clean={display_id:display.id,pattern:r.pattern,status:r.status,note:r.note};
   if(['sent','confirmed','failed'].includes(r.status)){
-   if(display.protocol==='pending-odr'||!['hid','webusb'].includes(r.transport)||!Number.isInteger(r.transfer_count)||r.transfer_count<1||r.transfer_count>4||!Number.isInteger(r.bytes_sent)||r.bytes_sent<1||r.bytes_sent>261152||!/^[a-f0-9]{64}$/.test(r.sha256||''))throw new Error('Missing or unsupported display transmission evidence.');
+   if(display.protocol==='pending-odr'||!['hid','webusb'].includes(r.transport)||!Number.isInteger(r.transfer_count)||r.transfer_count<1||r.transfer_count>(display.protocol==='mono-mk2'?8:4)||!Number.isInteger(r.bytes_sent)||r.bytes_sent<1||r.bytes_sent>261152||!/^[a-f0-9]{64}$/.test(r.sha256||''))throw new Error('Missing or unsupported display transmission evidence.');
    Object.assign(clean,{transport:r.transport,transfer_count:r.transfer_count,bytes_sent:r.bytes_sent,sha256:r.sha256});
   }
   return clean;

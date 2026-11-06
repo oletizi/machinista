@@ -53,11 +53,14 @@ add('kk_m32','Komplete Kontrol M32',[],AM_BUTTONS,(*KNOBS,'4D'),KNOBS,strips=('P
 # controllers already supported by Machinista.
 SUPPORTED_PROFILES={'maschine_mk1','maschine_mk2','maschine_mk3','maschine_plus','maschine_mikro_mk1','maschine_mikro_mk2'}
 for identity,profile in PROFILES.items():profile['survey_required']=identity not in SUPPORTED_PROFILES
+# Deliberate exception for testing the browser workflow on known hardware.
+PROFILES['maschine_mk2']['survey_test']=True
 
 
 def display_inventory(identity):
  def mono(count,protocol):
   return [dict(id='display_'+str(i+1),name='Display' if count==1 else 'Display '+str(i+1)+' (left to right)',index=i,width=128,height=32,color=False,protocol=protocol) for i in range(count)]
+ if identity=='maschine_mk2':return [dict(id='display_'+str(i+1),name='Right display' if i else 'Left display',index=i,width=256,height=64,color=False,protocol='mono-mk2') for i in range(2)]
  if identity=='maschine_mikro_mk3':return mono(1,'mono-pages')
  if re.fullmatch(r'kk_s\d+_mk1',identity):return mono(8,'mono-oled')
  if re.match(r'kk_[am]',identity):return mono(1,'mono-pages')
