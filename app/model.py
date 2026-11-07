@@ -574,7 +574,12 @@ class Application(ClipArranger,MultiSelection,MidiRemote,AudioExport,Mixer,Relin
             previous=self.browser_index
             self.browser_index = max(0, min(max(0, len(self.entries())-1), self.browser_index+delta))
             if self.browser.prehear and self.browser_index!=previous:
-                self.defer_browser_preview()
+                selected=self.browser.selected()
+                if selected is not None and self.browser.kit_source(selected):
+                    self.defer_browser_preview()
+                else:
+                    self.browser_preview_pending=None
+                    self.preview_selected()
         elif self.page in ('SAMPLE EDIT','SAMPLER'):
             track = self.track()
             if track['sample']:
