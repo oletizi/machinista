@@ -170,6 +170,9 @@ class Browser:
         manifest=path/'Set.json'
         if not self.kit_source(path) or not manifest.is_file() or manifest.is_symlink():
             return None
+        # LOAD needs the current bank list even if the filesystem gave a
+        # recent edit the same directory timestamp as the previous scan.
+        _directory_rows.cache_clear()
         rows=_directory_rows(path,self.current_root(),path.stat().st_mtime_ns)
         if len(rows)==1:
             bank=next(iter(rows))
