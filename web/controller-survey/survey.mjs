@@ -2,7 +2,7 @@
 import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=10';
 import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=10';
 import {enableBacklight,restoreBacklight,ledInventory,showLed,clearLeds,ledCoverage} from './outputs.mjs?v=10';
-import {ActionDetector} from './guided.mjs?v=10';
+import {ActionDetector} from './guided.mjs?v=11';
 const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=10',{cache:'no-cache'})).json();
 const config=await (await fetch('config.json',{cache:'no-cache'})).json();
 let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false, autoStage='idle', resumeStage='controls', autoDetector=null, autoTimer=null, autoGeneration=0, colorLink=null, promptEnabled=true, skippedDisplays=new Set(),ledIndex=0,ledSent=false,ledBusy=false,ledDetector=null,ledError='';
@@ -109,7 +109,7 @@ async function beginLeds(){
 async function armLed(){
  const t=ledInventory(profile())[ledIndex];if(!t){await finishAll();return;}const generation=++autoGeneration;ledBusy=true;ledSent=false;ledDetector=null;ledError='';$('led-observed').value='';$('led-note').value='';$('led-color').value=t.color==='observe'?'unknown':t.color;draw();
  try{await showLed(profile(),devices,t);if(autoStage!=='leds'||generation!==autoGeneration)return;ledSent=true;await devicePrompt(['LED '+(ledIndex+1)+' / '+ledInventory(profile()).length,t.color==='observe'?'WHICH LED IS ON':t.name+' '+t.color,'PRESS LIT CONTROL']);
- if(t.kind!=='unknown')ledDetector=new ActionDetector({kind:t.kind},[...latest.values()],performance.now());
+ if(t.kind!=='unknown')ledDetector=new ActionDetector({kind:t.kind},[...latest.values()],performance.now(),{profileId:profile().id,hidConnected:devices.length>0});
  }catch(e){ledError=e.message;}finally{ledBusy=false;draw();}
 }
 async function saveLed(status,observed){
@@ -123,7 +123,7 @@ $('completion-download').onclick=()=>download();
 
 async function armStep(){
  if(autoStage!=='controls')return;autoDetector=null;const generation=++autoGeneration,s=current();if(['key','pressure'].includes(s.kind)&&profile().keys&&!selectedPorts.size){pauseMapping('Select this keyboard in MIDI inputs, then resume mapping.');return;}draw();$('phase').textContent='Preparing next control…';
- autoDetector=new ActionDetector(s,[...latest.values()],performance.now(),{profileId:profile().id});$('phase').textContent='Ready · '+autoInstruction(s);drawFlow();
+ autoDetector=new ActionDetector(s,[...latest.values()],performance.now(),{profileId:profile().id,hidConnected:devices.length>0});$('phase').textContent='Ready · '+autoInstruction(s);drawFlow();
  await devicePrompt([String(stepIndex+1)+' / '+steps().length,s.name,s.kind==='encoder'?'TURN RIGHT':s.kind==='pad'||s.kind==='key'?'PLAY - RELEASE':'PRESS - RELEASE']);
  if(autoStage!=='controls'||generation!==autoGeneration)return;
 

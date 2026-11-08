@@ -21,3 +21,44 @@ test('MK2 master 4-bit wrap works and knob 2 has its own signature',()=>{const m
 test('MK2 held buttons and unchanged reports do not count as turning; two knobs pause',()=>{const d=mk2Detector(mk2Packet(100));const b=mk2Packet(100);b[1]=1;d.feed('hid0',b,100);assert.equal(d.tick(500).state,'waiting');d.feed('hid0',mk2Packet(101,0,1),600);assert.equal(d.tick(900).state,'ambiguous');});
 
 test('unchanged periodic reports cannot indefinitely postpone unknown-stream calibration',()=>{const d=new ActionDetector({kind:'encoder'},[],0);d.feed('hid0',new Uint8Array([1,0,10]),500);for(let t=550;t<1200;t+=50)d.feed('hid0',new Uint8Array([1,0,10]),t);d.feed('hid0',new Uint8Array([1,0,11]),1300);d.feed('hid0',new Uint8Array([1,0,12]),1400);assert.equal(d.tick(1700).state,'complete');});
+
+const jamButton = bits => Uint8Array.of(1, 2, bits, ...new Uint8Array(14));
+const jamOptions = {profileId:'maschine_jam',hidConnected:true};
+const jamIdle = [{interface:'hid0',hex:'0102'+'00'.repeat(15)}];
+
+test('JAM guided button uses its HID packet even when MIDI arrives first',()=>{
+ const d=new ActionDetector({kind:'button'},jamIdle,0,jamOptions);
+ d.feed('midi0',Uint8Array.of(0x90,60,100),1000);
+ d.feed('midi1',Uint8Array.of(0xb0,20,127),1010);
+ d.feed('hid0',jamButton(1),1020);
+ assert.equal(d.tick(1200).state,'release');
+ d.feed('hid0',jamButton(0),1300);
+ const result=d.tick(1600);
+ assert.equal(result.state,'complete');
+ assert.equal(result.signature,'hid0:bit:1:2:1');
+ assert(result.frames.every(frame=>frame.interface==='hid0'));
+});
+
+test('JAM guided mapping still pauses for a second physical button',()=>{
+ const d=new ActionDetector({kind:'button'},jamIdle,0,jamOptions);
+ d.feed('hid0',jamButton(1),1000);
+ d.feed('hid0',jamButton(3),1100);
+ assert.equal(d.tick(1400).state,'ambiguous');
+});
+
+test('JAM MIDI-only button capture still accepts MIDI',()=>{
+ const d=new ActionDetector({kind:'button'},[],0,{profileId:'maschine_jam'});
+ d.feed('midi0',Uint8Array.of(0x90,60,100),1000);
+ d.feed('midi0',Uint8Array.of(0x80,60,0),1200);
+ assert.equal(d.tick(1500).state,'complete');
+});
+
+test('JAM encoder push can arrive with its companion touch bit',()=>{
+ const d=new ActionDetector({id:'button_encoder_push',kind:'button'},jamIdle,0,jamOptions);
+ const held=jamButton(0);
+ held[16]=0x18;
+ d.feed('hid0',held,1000);
+ held[16]=0x10;
+ d.feed('hid0',held,1200);
+ assert.equal(d.tick(1500).signature,'hid0:bit:1:16:8');
+});
