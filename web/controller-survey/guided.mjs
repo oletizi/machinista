@@ -76,3 +76,39 @@ export class ActionDetector {
   return [...initial,...this.frames.filter(f=>f.time>=start).map(f=>({ms:Math.round(f.time-start),interface:f.interface,hex:f.hex}))].sort((a,b)=>a.ms-b.ms);
  }
 }
+
+// A connected JAM can report a button over HID, MIDI, or both. Track each
+// transport independently so mirrored messages cannot look like two controls.
+export function createActionDetector(step,initial,now,options){
+ if(options.profileId!=='maschine_jam'||step.kind!=='button'||!options.hidConnected)
+  return new ActionDetector(step,initial,now,options);
+ const hid=new ActionDetector(step,initial,now,options);
+ const midi=options.midiSelected?new ActionDetector(step,[],now):null;
+ if(midi)midi.readyAt=now;
+ let midiReadyAt=null,hidReports=0,midiReports=0;
+ return {
+  feed(id,bytes,time){
+   if(id.startsWith('midi')){
+    midiReports++;
+    midi?.feed(id,bytes,time);
+   }else{
+    hidReports++;
+    hid.feed(id,bytes,time);
+   }
+  },
+  tick(time){
+   const h=hid.tick(time);
+   if(h.state==='complete'||h.state==='ambiguous')return h;
+   const m=midi?.tick(time);
+   if(m?.state==='complete'){
+    midiReadyAt??=time;
+    if(h.state!=='release'&&time-midiReadyAt>=650)return m;
+   }
+   if(h.state==='release'||m?.state==='release')return {state:'release'};
+   if(m?.state==='ambiguous'&&h.state!=='release'&&time-now>=2000)return m;
+   if(time-now>=15000)return {state:'ambiguous',message:
+    'No complete JAM button press detected (HID: '+hidReports+' reports, MIDI: '+midiReports+' reports). Check the selected JAM MIDI input, then resume or record manually.'};
+   return h;
+  },
+ };
+}

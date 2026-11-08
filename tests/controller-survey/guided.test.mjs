@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {ActionDetector} from '../../web/controller-survey/guided.mjs';
+import {ActionDetector,createActionDetector} from '../../web/controller-survey/guided.mjs';
 const idle=[{interface:'hid0',hex:'010000'}];
 test('one button advances only after press, release and debounce',()=>{const d=new ActionDetector({kind:'button'},idle,0);d.feed('hid0',new Uint8Array([1,4,0]),1100);assert.equal(d.tick(1500).state,'release');d.feed('hid0',new Uint8Array([1,0,0]),1600);assert.notEqual(d.tick(1700).state,'complete');const r=d.tick(1900);assert.equal(r.state,'complete');assert.match(r.signature,/bit:1:1:4/);assert(r.frames.some(f=>f.ms>=1000));});
 test('steady periodic idle packets cannot postpone release completion',()=>{const d=new ActionDetector({kind:'button'},idle,0);d.feed('hid0',new Uint8Array([1,4,0]),1100);d.feed('hid0',new Uint8Array([1,0,0]),1300);for(let t=1350;t<1800;t+=50)d.feed('hid0',new Uint8Array([1,0,0]),t);assert.equal(d.tick(1800).state,'complete');});
@@ -61,4 +61,29 @@ test('JAM encoder push can arrive with its companion touch bit',()=>{
  held[16]=0x10;
  d.feed('hid0',held,1200);
  assert.equal(d.tick(1500).signature,'hid0:bit:1:16:8');
+});
+
+const jamDualOptions = {...jamOptions,midiSelected:true};
+test('JAM with an open but silent HID interface can finish a Windows MIDI button',()=>{
+ const d=createActionDetector({kind:'button'},[],0,jamDualOptions);
+ d.feed('midi0',Uint8Array.of(0x90,60,100),100);
+ d.feed('midi0',Uint8Array.of(0x80,60,0),200);
+ assert.notEqual(d.tick(500).state,'complete');
+ const result=d.tick(1150);
+ assert.equal(result.state,'complete');
+ assert.equal(result.signature,'midi0:note:0:60');
+});
+
+test('JAM keeps HID evidence when MIDI and HID mirror a press',()=>{
+ const d=createActionDetector({kind:'button'},jamIdle,0,jamDualOptions);
+ d.feed('midi0',Uint8Array.of(0x90,60,100),1000);
+ d.feed('midi0',Uint8Array.of(0xb0,20,127),1005);
+ d.feed('hid0',jamButton(1),1020);
+ d.feed('hid0',jamButton(0),1300);
+ assert.equal(d.tick(1600).signature,'hid0:bit:1:2:1');
+});
+
+test('JAM with no button reports times out with transport diagnostics',()=>{
+ const d=createActionDetector({kind:'button'},[],0,jamDualOptions);
+ assert.match(d.tick(15001).message,/HID: 0 reports, MIDI: 0 reports/);
 });
