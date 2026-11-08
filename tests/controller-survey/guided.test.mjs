@@ -87,3 +87,21 @@ test('JAM with no button reports times out with transport diagnostics',()=>{
  const d=createActionDetector({kind:'button'},[],0,jamDualOptions);
  assert.match(d.tick(15001).message,/HID: 0 reports, MIDI: 0 reports/);
 });
+
+test('explicit JAM MIDI mode ignores HID and finishes on MIDI release',()=>{
+ const d=createActionDetector({kind:'button'},jamIdle,0,{...jamDualOptions,jamInput:'midi'});
+ d.feed('hid0',jamButton(3),100);
+ d.feed('midi0',Uint8Array.of(0xb0,20,127),110);
+ d.feed('midi0',Uint8Array.of(0xb0,20,0),200);
+ assert.equal(d.tick(500).signature,'midi0:cc-button:0:20');
+ assert.equal(d.inputStatus(),'HID reports: 1 · MIDI reports: 2');
+});
+test('explicit JAM HID mode does not fall back to MIDI',()=>{
+ const d=createActionDetector({kind:'button'},jamIdle,0,{...jamDualOptions,jamInput:'hid'});
+ d.feed('midi0',Uint8Array.of(0x90,60,100),100);
+ d.feed('midi0',Uint8Array.of(0x80,60,0),200);
+ assert.equal(d.tick(2000).state,'waiting');
+ d.feed('hid0',jamButton(1),2100);
+ d.feed('hid0',jamButton(0),2300);
+ assert.equal(d.tick(2600).signature,'hid0:bit:1:2:1');
+});

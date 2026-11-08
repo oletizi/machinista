@@ -2,7 +2,7 @@
 import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=10';
 import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=10';
 import {enableBacklight,restoreBacklight,ledInventory,showLed,clearLeds,ledCoverage} from './outputs.mjs?v=10';
-import {createActionDetector} from './guided.mjs?v=12';
+import {createActionDetector} from './guided.mjs?v=13';
 const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=10',{cache:'no-cache'})).json();
 const config=await (await fetch('config.json',{cache:'no-cache'})).json();
 let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false, autoStage='idle', resumeStage='controls', autoDetector=null, autoTimer=null, autoGeneration=0, colorLink=null, promptEnabled=true, skippedDisplays=new Set(),ledIndex=0,ledSent=false,ledBusy=false,ledDetector=null,ledError='';
@@ -58,8 +58,14 @@ function draw(){
  $('disconnect').disabled=displayBusy;drawDisplays();drawLeds();drawFlow();
 }
 
+function detectorOptions(){return {profileId:profile().id,hidConnected:devices.length>0,midiSelected:selectedPorts.size>0,jamInput:$('jam-input').value};}
 function autoInstruction(s){return s.kind==='encoder'?'Turn clockwise through a few steps, then stop.':s.kind==='button'||s.kind==='touch'?'Press or touch once, then release.':s.kind==='pad'||s.kind==='key'?'Play once, then release.':'Move only this control, then release or stop.';}
 function drawFlow(){
+ const jam=profile().id==='maschine_jam';
+ $('jam-input-panel').hidden=!jam;
+ $('jam-input').querySelector('[value=midi]').disabled=!selectedPorts.size;
+ if(!selectedPorts.size&&$('jam-input').value==='midi')$('jam-input').value='auto';
+ $('jam-input').disabled=!report||!!capture||autoStage==='leds';
  const running=['displays','controls','leds'].includes(autoStage);document.body.classList.toggle('mapping-running',running);
  $('mapping-start').disabled=ledBusy||!report||report.demo||!devices.length||displayBusy||!!capture||running;
  $('mapping-start').textContent=autoStage==='paused'?'Resume mapping':'Start mapping';
@@ -109,7 +115,7 @@ async function beginLeds(){
 async function armLed(){
  const t=ledInventory(profile())[ledIndex];if(!t){await finishAll();return;}const generation=++autoGeneration;ledBusy=true;ledSent=false;ledDetector=null;ledError='';$('led-observed').value='';$('led-note').value='';$('led-color').value=t.color==='observe'?'unknown':t.color;draw();
  try{await showLed(profile(),devices,t);if(autoStage!=='leds'||generation!==autoGeneration)return;ledSent=true;await devicePrompt(['LED '+(ledIndex+1)+' / '+ledInventory(profile()).length,t.color==='observe'?'WHICH LED IS ON':t.name+' '+t.color,'PRESS LIT CONTROL']);
- if(t.kind!=='unknown')ledDetector=createActionDetector({kind:t.kind},[...latest.values()],performance.now(),{profileId:profile().id,hidConnected:devices.length>0,midiSelected:selectedPorts.size>0});
+ if(t.kind!=='unknown')ledDetector=createActionDetector({kind:t.kind},[...latest.values()],performance.now(),detectorOptions());
  }catch(e){ledError=e.message;}finally{ledBusy=false;draw();}
 }
 async function saveLed(status,observed){
@@ -123,7 +129,7 @@ $('completion-download').onclick=()=>download();
 
 async function armStep(){
  if(autoStage!=='controls')return;autoDetector=null;const generation=++autoGeneration,s=current();if(['key','pressure'].includes(s.kind)&&profile().keys&&!selectedPorts.size){pauseMapping('Select this keyboard in MIDI inputs, then resume mapping.');return;}draw();$('phase').textContent='Preparing next control…';
- autoDetector=createActionDetector(s,[...latest.values()],performance.now(),{profileId:profile().id,hidConnected:devices.length>0,midiSelected:selectedPorts.size>0});$('phase').textContent='Ready · '+autoInstruction(s);drawFlow();
+ autoDetector=createActionDetector(s,[...latest.values()],performance.now(),detectorOptions());$('phase').textContent='Ready · '+autoInstruction(s);drawFlow();
  await devicePrompt([String(stepIndex+1)+' / '+steps().length,s.name,s.kind==='encoder'?'TURN RIGHT':s.kind==='pad'||s.kind==='key'?'PLAY - RELEASE':'PRESS - RELEASE']);
  if(autoStage!=='controls'||generation!==autoGeneration)return;
 
@@ -135,6 +141,7 @@ function autoTick(){
  }
  if(autoStage!=='controls'||!autoDetector)return;
  const result=autoDetector.tick(performance.now());
+ if(autoDetector.inputStatus)$('jam-input-status').textContent=autoDetector.inputStatus();
  if(result.state==='ambiguous'){pauseMapping(result.message);return;}
  if(result.state==='complete'){
   const s=current(),duplicate=report.controls.find(r=>r.id!==s.id&&r.kind===s.kind&&r.detection?.signature===result.signature);
@@ -153,6 +160,10 @@ $('mapping-start').onclick=safe(async()=>{
  if(autoStage==='paused'&&resumeStage==='controls'){autoStage='controls';if(autoTimer)clearInterval(autoTimer);autoTimer=setInterval(autoTick,50);await armStep();return;}
  if(profile().keys&&!selectedPorts.size){if(!midi)await $('midi').onclick();if(!selectedPorts.size){autoStage='displays';pauseMapping('Choose this keyboard in MIDI inputs, then resume mapping.');return;}}
  $('display-enable').checked=true;autoStage='displays';resumeStage='displays';draw();$('display-panel').scrollIntoView({block:'start'});await advanceDisplays();
+});
+$('jam-input').onchange=safe(async()=>{
+ if(autoStage==='controls')await armStep();
+ else if(autoStage==='paused'&&resumeStage==='controls')await $('mapping-retry').onclick();
 });
 $('mapping-pause').onclick=()=>pauseMapping('Paused by tester.');
 $('mapping-retry').onclick=safe(async()=>{if(!report||displayBusy||ledBusy)return;if(autoStage==='leds'||autoStage==='paused'&&resumeStage==='leds'){autoStage='leds';await armLed();return;}if(autoStage==='displays'||autoStage==='paused'&&resumeStage==='displays'){autoStage='displays';await $('display-send').onclick();return;}autoStage='controls';if(autoTimer)clearInterval(autoTimer);autoTimer=setInterval(autoTick,50);await armStep();});

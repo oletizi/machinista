@@ -83,7 +83,8 @@ export function createActionDetector(step,initial,now,options){
  if(options.profileId!=='maschine_jam'||step.kind!=='button'||!options.hidConnected)
   return new ActionDetector(step,initial,now,options);
  const hid=new ActionDetector(step,initial,now,options);
- const midi=options.midiSelected?new ActionDetector(step,[],now):null;
+ const mode=options.jamInput||'auto';
+ const midi=options.midiSelected&&mode!=='hid'?new ActionDetector(step,[],now):null;
  if(midi)midi.readyAt=now;
  let midiReadyAt=null,hidReports=0,midiReports=0;
  return {
@@ -93,16 +94,17 @@ export function createActionDetector(step,initial,now,options){
     midi?.feed(id,bytes,time);
    }else{
     hidReports++;
-    hid.feed(id,bytes,time);
+    if(mode!=='midi')hid.feed(id,bytes,time);
    }
   },
+  inputStatus(){return 'HID reports: '+hidReports+' · MIDI reports: '+midiReports;},
   tick(time){
-   const h=hid.tick(time);
+   const h=mode==='midi'?{state:'waiting'}:hid.tick(time);
    if(h.state==='complete'||h.state==='ambiguous')return h;
    const m=midi?.tick(time);
    if(m?.state==='complete'){
     midiReadyAt??=time;
-    if(h.state!=='release'&&time-midiReadyAt>=650)return m;
+    if(h.state!=='release'&&time-midiReadyAt>=(mode==='midi'?0:650))return m;
    }
    if(h.state==='release'||m?.state==='release')return {state:'release'};
    if(m?.state==='ambiguous'&&h.state!=='release'&&time-now>=2000)return m;
