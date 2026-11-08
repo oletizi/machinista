@@ -60,6 +60,25 @@ configured. Use the supplied image for normal use; starting this command does
 not install system services. Running creates local config/projects/cache paths.
 Back up a working device before changing its installation.
 
+## Run on an x86-64 Linux desktop (MK3)
+
+Verified with a Maschine MK3 on Ubuntu 26.04 x86-64: color displays, pad
+LEDs, buttons, encoders and MK3 audio output all work without code changes.
+
+Without sudo, the native libraries can come from Homebrew:
+
+```sh
+brew install cmake ninja pkgconf hidapi libusb lilv alsa-lib
+tools/run_desktop.sh
+```
+
+The script builds once (set `REBUILD=1` to rebuild) and starts the app with a
+Python that has Pillow. Homebrew's `python3` often shadows the system one on
+PATH without Pillow; set `PYTHON=/usr/bin/python3` if needed. A logged-in desktop
+session normally grants device access through uaccess ACLs; otherwise install
+`deploy/71-machinista-mk3.rules`. Stop the app before using the MK3 for sound in
+other desktop applications.
+
 ## Release image tooling
 
 Read docs/GITHUB_PUBLISH.md and docs/INSTALL.md. tools/prepare_beta_release.py
