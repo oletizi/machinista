@@ -101,6 +101,17 @@ service still exits successfully. Verified on Ubuntu 26.04 x86-64: plug-in start
 and replug restart. Start at boot without a login is expected via linger but
 was not separately tested.
 
+The installer also enables `machinista-web.service`, which runs the web UI
+independently of the MK3 and listens on `127.0.0.1:8080` only (no login, so it
+must not be exposed). From another computer, open an SSH tunnel and browse to
+http://localhost:8080:
+
+```sh
+ssh -L 8080:localhost:8080 <host>
+```
+
+It keeps the Pi unit's low CPU/IO priority and 192 MB memory limit.
+
 ## Release image tooling
 
 Read docs/GITHUB_PUBLISH.md and docs/INSTALL.md. tools/prepare_beta_release.py

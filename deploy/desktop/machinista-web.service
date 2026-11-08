@@ -1,0 +1,27 @@
+# User unit for the web UI on a desktop/headless x86-64 host. Listens on
+# localhost only; reach it over SSH: ssh -L 8080:localhost:8080 <host>, then
+# open http://localhost:8080. Runs independently of the MK3.
+# Installed by tools/install_desktop_service.sh, which replaces @ROOT@.
+[Unit]
+Description=Machinista web UI (localhost)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=@ROOT@
+# --no-auth is acceptable only because the listener is bound to 127.0.0.1.
+ExecStart=/usr/bin/python3 @ROOT@/tools/web_ui.py --host 127.0.0.1 --port 8080 --no-auth
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=3
+# Keep library work from competing with live audio (same limits as the Pi unit).
+Nice=15
+CPUWeight=10
+IOWeight=10
+MemoryMax=192M
+TasksMax=32
+NoNewPrivileges=true
+UMask=0022
+
+[Install]
+WantedBy=default.target
