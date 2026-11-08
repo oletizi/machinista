@@ -79,6 +79,28 @@ session normally grants device access through uaccess ACLs; otherwise install
 `deploy/71-machinista-mk3.rules`. Stop the app before using the MK3 for sound in
 other desktop applications.
 
+### Start automatically when the MK3 is plugged in
+
+For a headless host (for example, used over SSH), install a user service that
+udev starts when the MK3 appears and systemd stops when it is unplugged:
+
+```sh
+tools/run_desktop.sh                       # once, to build; Ctrl-C after it starts
+tools/install_desktop_service.sh           # user unit + linger, no sudo
+tools/install_desktop_service.sh --rule    # udev rule, asks for sudo
+```
+
+Replug the MK3 (or reboot) to start it. `deploy/desktop/71-machinista-mk3-desktop.rules`
+grants `plugdev` access without a seat login, adds `/dev/maschine-mk3`, and
+requests `machinista.service` from the user manager. Linger keeps that manager
+running without a login. Manage it with `systemctl --user status|stop|restart
+machinista` and `journalctl --user -u machinista -f`. Remove it with
+`tools/install_desktop_service.sh --uninstall`. On unplug, the MK3 input
+reader logs an `Input/output error` traceback before the service stops; the
+service still exits successfully. Verified on Ubuntu 26.04 x86-64: plug-in start, unplug stop,
+and replug restart. Start at boot without a login is expected via linger but
+was not separately tested.
+
 ## Release image tooling
 
 Read docs/GITHUB_PUBLISH.md and docs/INSTALL.md. tools/prepare_beta_release.py

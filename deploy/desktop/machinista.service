@@ -1,0 +1,20 @@
+# User unit for a desktop/headless x86-64 host. Started by udev when the MK3
+# appears (71-machinista-mk3-desktop.rules) and stopped when it is unplugged.
+# Installed by tools/install_desktop_service.sh, which replaces @ROOT@.
+[Unit]
+Description=Machinista on Maschine MK3
+BindsTo=dev-maschine\x2dmk3.device
+After=dev-maschine\x2dmk3.device sound.target
+
+[Service]
+Type=simple
+WorkingDirectory=@ROOT@
+ExecStart=@ROOT@/tools/run_desktop.sh
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=15
+# Let the application save plug-in state and stop its audio worker first.
+KillMode=mixed
+# No LimitRTPRIO: a user manager cannot raise the hard limit, and the audio
+# engine already continues without SCHED_FIFO when it is not granted.
