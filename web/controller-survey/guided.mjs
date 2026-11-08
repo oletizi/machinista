@@ -26,6 +26,10 @@ export class ActionDetector {
   if(!midi&&kind!=='pad'&&[0x20,2].includes(b[0]))return;
   if(!midi&&kind==='pad'&&![0x20,2].includes(b[0]))return;
   this.record(id,b,now);
+  if(this.jamHidButton&&!old){
+   this.jamFirstButton(id,k,b,now);
+   return;
+  }
   if(now<this.readyAt){if(old&&!midi&&!this.calibrating.has(k)){const mask=this.unstable.get(k)||new Uint8Array(b.length);for(let i=1;i<b.length;i++){const id=k+':'+i,values=this.warmValues.get(id)||new Set([old[i]]);values.add(b[i]);this.warmValues.set(id,values);if(values.size>=3)mask[i]|=old[i]^b[i];}this.unstable.set(k,mask);}if(this.calibrating.has(k)&&old&&b.some((v,i)=>v!==old[i]))this.readyAt=now+300;this.base.set(k,b.slice());return;}
   this.calibrating.delete(k);
   if(midi){this.midi(id,b,now);return;}
@@ -52,6 +56,29 @@ export class ActionDetector {
    const moved=[...this.stats.values()].filter(s=>s.values.size>=3&&s.changes>=2);if(moved.length>1){this.problem='Several independent values moved. Retry only the named control, or use manual recording.';return;}if(moved.length===1){if(!this.active)this.begin(moved[0].signature,now);this.active.released=true;}return;
   }
  }
+ // JAM button bits are active-high. If the device sends no idle report at
+ // connection, a one-bit press followed by actual idle is sufficient evidence.
+ jamFirstButton(id,k,b,now){
+  const pressed=[];
+  for(let byte=2;byte<17;byte++){
+   const bits=b[byte]&~(this.step.id==='button_encoder_push'&&byte===16?0x08:0);
+   for(let bit=0;bit<8;bit++)if(bits&(1<<bit))pressed.push([byte,1<<bit]);
+  }
+  if(pressed.length>1){this.problem='Several JAM buttons are held. Release everything and repeat this step.';return;}
+  if(pressed.length===1){
+   const [byte,mask]=pressed[0];
+   this.begin(id+':bit:1:'+byte+':'+mask,now);
+   if(!this.problem)Object.assign(this.active,{k,byte,mask});
+   return;
+  }
+  this.base.set(k,b.slice());
+  this.readyAt=now;
+  if(this.active?.k===k){
+   this.active.released=true;
+   this.lastMove=now;
+  }
+ }
+
  jamEncoder(id,k,old,b,now){
   const value=b[1]&15;
   let stat=this.stats.get(k);

@@ -163,3 +163,13 @@ test('JAM footswitch uses the HID button report',()=>{
  d.feed('hid0',pressed,1000);d.feed('hid0',jamButton(0),1200);
  assert.equal(d.tick(1500).signature,'hid0:bit:1:16:32');
 });
+
+test('first JAM press and release work without an idle report at connect time',()=>{
+ const d=createActionDetector({kind:'button'},[],0,{...jamOptions,jamInput:'hid'});
+ d.feed('hid0',jamButton(1),100);
+ assert.notEqual(d.tick(200).state,'complete');
+ d.feed('hid0',jamButton(0),230);
+ const result=d.tick(500);
+ assert.equal(result.signature,'hid0:bit:1:2:1');
+ assert.equal(result.frames.filter(f=>f.ms>=1000).length,2);
+});

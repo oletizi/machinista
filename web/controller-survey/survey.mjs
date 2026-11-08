@@ -2,7 +2,7 @@
 import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=15';
 import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=10';
 import {enableBacklight,restoreBacklight,ledInventory,showLed,clearLeds,ledCoverage} from './outputs.mjs?v=15';
-import {createActionDetector} from './guided.mjs?v=15';
+import {createActionDetector} from './guided.mjs?v=16';
 const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=15',{cache:'no-cache'})).json();
 const config=await (await fetch('config.json',{cache:'no-cache'})).json();
 let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false, autoStage='idle', resumeStage='controls', autoDetector=null, autoTimer=null, autoGeneration=0, colorLink=null, promptEnabled=true, skippedDisplays=new Set(),ledIndex=0,ledSent=false,ledBusy=false,ledDetector=null,ledError='';
