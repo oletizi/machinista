@@ -31,7 +31,9 @@ export async function showLed(profile,devices,test){
 }
 export function sanitizeLeds(input,profile){
  if(input===undefined)return [];if(!Array.isArray(input)||input.length>1024)throw new Error('Invalid LED observations.');const seen=new Set();
- return input.map(r=>{
+ // Old JAM exports included padding bytes as unsent LED probes.
+ return input.filter(r=>!(profile.id==='maschine_jam'&&r.sent===false&&
+  /^led_(80_(5[4-9]|6[0-5])|82_89)_observe$/.test(r.id))).map(r=>{
   // Preserve historical Studio probe files, without treating them as confirmed.
   if(!r.id&&profile.id==='maschine_studio'&&Number.isInteger(r.bank)&&Number.isInteger(r.offset)&&profile.led_banks?.some(b=>b.report_id===r.bank&&r.offset>0&&r.offset<b.size)&&typeof r.observed==='string'&&r.observed.length<=120)return {bank:r.bank,offset:r.offset,observed:r.observed};
   const t=ledInventory(profile).find(t=>t.id===r.id);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Shared data-only validation for browser exports.
 import {sanitizeDisplayChecks,displayCoverage} from './displays.mjs?v=10';
-import {sanitizeLeds,ledCoverage} from './outputs.mjs?v=10';
+import {sanitizeLeds,ledCoverage} from './outputs.mjs?v=15';
 export const MAX_BYTES = 8 * 1024 * 1024;
 export const FORMAT = 'Machinista-controller-survey';
 const assert = (yes, message) => { if (!yes) throw new Error(message); };

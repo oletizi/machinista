@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=10';
+import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=15';
 import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=10';
-import {enableBacklight,restoreBacklight,ledInventory,showLed,clearLeds,ledCoverage} from './outputs.mjs?v=10';
-import {createActionDetector} from './guided.mjs?v=14';
-const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=10',{cache:'no-cache'})).json();
+import {enableBacklight,restoreBacklight,ledInventory,showLed,clearLeds,ledCoverage} from './outputs.mjs?v=15';
+import {createActionDetector} from './guided.mjs?v=15';
+const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=15',{cache:'no-cache'})).json();
 const config=await (await fetch('config.json',{cache:'no-cache'})).json();
 let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false, autoStage='idle', resumeStage='controls', autoDetector=null, autoTimer=null, autoGeneration=0, colorLink=null, promptEnabled=true, skippedDisplays=new Set(),ledIndex=0,ledSent=false,ledBusy=false,ledDetector=null,ledError='';
 const hex=b=>Array.from(b,n=>n.toString(16).padStart(2,'0')).join('');
@@ -59,7 +59,12 @@ function draw(){
 }
 
 function detectorOptions(){return {profileId:profile().id,hidConnected:devices.length>0,midiSelected:selectedPorts.size>0,jamInput:$('jam-input').value};}
-function autoInstruction(s){return s.kind==='encoder'?'Turn clockwise through a few steps, then stop.':s.kind==='button'||s.kind==='touch'?'Press or touch once, then release.':s.kind==='pad'||s.kind==='key'?'Play once, then release.':'Move only this control, then release or stop.';}
+function autoInstruction(s){
+ if(profile().id==='maschine_jam'){
+  if(s.kind==='slider')return 'Move '+(s.name.endsWith('/ two fingers')?'two fingers':'one finger')+' along this strip, then lift.';
+  if(s.kind==='pedal')return 'Press and release the connected footswitch once. Skip if none is connected.';
+ }
+ return s.kind==='encoder'?'Turn clockwise through a few steps, then stop.':s.kind==='button'||s.kind==='touch'?'Press or touch once, then release.':s.kind==='pad'||s.kind==='key'?'Play once, then release.':'Move only this control, then release or stop.';}
 function drawFlow(){
  const jam=profile().id==='maschine_jam';
  $('jam-input-panel').hidden=!jam;
@@ -102,25 +107,25 @@ async function devicePrompt(lines){
 
 function drawLeds(){
  const test=ledInventory(profile())[ledIndex],active=autoStage==='leds';$('led-current').textContent=test?`${ledIndex+1} / ${ledInventory(profile()).length} · ${test.name} · ${test.color.toUpperCase()}`:'No verified LED output protocol for this model.';
- $('led-status').textContent=ledBusy?'Lighting the next LED…':ledError||(!active?'LED check follows the inputs.':ledSent?'Press the illuminated button or pad, then release. You can also identify it below and click Confirm & next.':'No LED output confirmed. Retry or mark untested.');
+ $('led-status').textContent=ledBusy?'Lighting the next LED…':ledError||(!active?'LED check follows the inputs.':ledSent?test?.kind==='unknown'?'Check which light is on, then confirm below.':'Press the illuminated button or pad, then release. You can also identify it below and click Confirm & next.':'No LED output confirmed. Retry or mark untested.');
  for(const id of ['led-observed','led-color','led-note','led-next','led-dark','led-skip-all'])$(id).disabled=!active||ledBusy;
  $('led-next').disabled=!active||ledBusy||!ledSent;
 }
 async function beginLeds(){
  if(autoTimer)clearInterval(autoTimer);autoDetector=null;ledDetector=null;
  if(!ledInventory(profile()).length){await finishAll();return;}
- autoStage='leds';resumeStage='leds';ledIndex=ledInventory(profile()).findIndex(t=>!report.leds.some(r=>r.id===t.id));if(ledIndex<0){await finishAll();return;}
+ autoStage='leds';resumeStage='leds';ledIndex=ledInventory(profile()).findIndex(t=>!report.leds.some(r=>r.id===t.id&&['confirmed','not_tested'].includes(r.status)));if(ledIndex<0){await finishAll();return;}
  $('led-panel').scrollIntoView({block:'start'});autoTimer=setInterval(autoTick,50);await armLed();
 }
 async function armLed(){
  const t=ledInventory(profile())[ledIndex];if(!t){await finishAll();return;}const generation=++autoGeneration;ledBusy=true;ledSent=false;ledDetector=null;ledError='';$('led-observed').value='';$('led-note').value='';$('led-color').value=t.color==='observe'?'unknown':t.color;draw();
- try{await showLed(profile(),devices,t);if(autoStage!=='leds'||generation!==autoGeneration)return;ledSent=true;await devicePrompt(['LED '+(ledIndex+1)+' / '+ledInventory(profile()).length,t.color==='observe'?'WHICH LED IS ON':t.name+' '+t.color,'PRESS LIT CONTROL']);
+ try{await showLed(profile(),devices,t);if(autoStage!=='leds'||generation!==autoGeneration)return;ledSent=true;if(profile().id==='maschine_jam'&&!t.name.startsWith('OUTPUT '))$('led-observed').value=t.name;await devicePrompt(['LED '+(ledIndex+1)+' / '+ledInventory(profile()).length,t.color==='observe'?'WHICH LED IS ON':t.name+' '+t.color,'PRESS LIT CONTROL']);
  if(t.kind!=='unknown')ledDetector=createActionDetector({kind:t.kind},[...latest.values()],performance.now(),detectorOptions());
  }catch(e){ledError=e.message;}finally{ledBusy=false;draw();}
 }
 async function saveLed(status,observed){
  if(autoStage!=='leds'||ledBusy)return;const t=ledInventory(profile())[ledIndex];if(status==='confirmed'&&(!ledSent||!observed.trim()))throw new Error('Name the illuminated control before confirming.');
- report.leds=report.leds.filter(r=>r.id!==t.id);report.leds.push({id:t.id,bank:t.bank,offset:t.offset,value:t.value,status,observed,color:$('led-color').value,note:$('led-note').value,sent:ledSent});ledDetector=null;await persist();ledIndex++;if(ledIndex>=ledInventory(profile()).length)await finishAll();else await armLed();
+ report.leds=report.leds.filter(r=>r.id!==t.id);report.leds.push({id:t.id,bank:t.bank,offset:t.offset,value:t.value,status,observed,color:$('led-color').value,note:$('led-note').value,sent:ledSent});ledDetector=null;await persist();ledIndex=ledInventory(profile()).findIndex((next,index)=>index>ledIndex&&!report.leds.some(r=>r.id===next.id&&['confirmed','not_tested'].includes(r.status)));if(ledIndex<0)await finishAll();else await armLed();
 }
 $('led-next').onclick=safe(()=>saveLed('confirmed',$('led-observed').value.trim()));
 $('led-dark').onclick=safe(()=>saveLed(ledSent?'failed':'blocked',$('led-observed').value.trim()));

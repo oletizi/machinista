@@ -58,9 +58,9 @@ test('JAM encoder push can arrive with its companion touch bit',()=>{
  const held=jamButton(0);
  held[16]=0x18;
  d.feed('hid0',held,1000);
- held[16]=0x10;
+ held[16]=0x08;
  d.feed('hid0',held,1200);
- assert.equal(d.tick(1500).signature,'hid0:bit:1:16:8');
+ assert.equal(d.tick(1500).signature,'hid0:bit:1:16:16');
 });
 
 const jamDualOptions = {...jamOptions,midiSelected:true};
@@ -129,4 +129,37 @@ test('JAM accepts a button report with zero padding and preserves raw evidence',
  const result=d.tick(1500);
  assert.equal(result.signature,'hid0:bit:1:2:2');
  assert(result.frames.every(frame=>frame.hex.length===130));
+});
+
+function jamStripPacket(strip,primary,secondary=0,time=0){
+ const b=new Uint8Array(49);b[0]=2;
+ const view=new DataView(b.buffer),offset=1+strip*6;
+ view.setUint16(offset,time,true);
+ view.setUint16(offset+2,primary,true);
+ view.setUint16(offset+4,secondary,true);
+ return b;
+}
+test('JAM strip position, dual position and touch each use one verified HID gesture',()=>{
+ for(let strip=0;strip<8;strip++)for(const gesture of ['single','dual','touch']){
+  const kind=gesture==='touch'?'touch':'slider';
+  const name='SMART STRIP '+(strip+1)+(gesture==='dual'?' / two fingers':'');
+  const d=createActionDetector({kind,name},[],0,jamOptions);
+  for(let i=1;i<=3;i++)d.feed('hid0',jamStripPacket(strip,255+i,gesture==='dual'?511+i:0,i),i*100);
+  assert.notEqual(d.tick(600).state,'complete');
+  d.feed('hid0',jamStripPacket(strip,0,0,4),700);
+  assert.equal(d.tick(1000).signature,'hid0:strip:'+strip+':'+gesture);
+ }
+});
+test('JAM encoder reads only its wrapped counter and ignores touch changes',()=>{
+ const d=createActionDetector({kind:'encoder'},jamIdle,0,jamOptions);
+ for(const [i,count] of [14,15,0].entries()){
+  const b=jamButton(0);b[1]=count;b[16]=i?8:0;d.feed('hid0',b,300+i*100);
+ }
+ assert.equal(d.tick(800).signature,'hid0:counter:1:1:1:16');
+});
+test('JAM footswitch uses the HID button report',()=>{
+ const d=createActionDetector({kind:'pedal',name:'FOOTSWITCH'},jamIdle,0,jamOptions);
+ const pressed=jamButton(0);pressed[16]=0x20;
+ d.feed('hid0',pressed,1000);d.feed('hid0',jamButton(0),1200);
+ assert.equal(d.tick(1500).signature,'hid0:bit:1:16:32');
 });

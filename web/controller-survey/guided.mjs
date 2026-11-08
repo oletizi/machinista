@@ -3,15 +3,26 @@
 const key=(id,b)=>id+':'+b[0]+':'+b.length;
 const packet=hex=>Uint8Array.from(hex.match(/../g)||[],x=>parseInt(x,16));
 // Some HID stacks pad reports to the endpoint size. Only accept zero padding.
-const jamButtons=b=>b[0]===1&&b.length>=17&&b.length<=65&&b.subarray(17).every(value=>value===0);
+const jamReport=(b,id,length)=>b[0]===id&&b.length>=length&&b.length<=65&&b.subarray(length).every(value=>value===0);
+const jamButtons=b=>jamReport(b,1,17);
 export class ActionDetector {
- constructor(step,initial=[],now=0,options={}){this.step=step;this.profileId=options.profileId;this.jamHidButton=options.hidConnected&&this.profileId==='maschine_jam'&&step.kind==='button';if(this.jamHidButton)initial=initial.filter(f=>f.interface.startsWith('hid')&&jamButtons(packet(f.hex)));this.started=now;this.readyAt=initial.length?now:now+250;this.base=new Map();this.unstable=new Map();this.warmValues=new Map();this.stats=new Map();this.frames=[];this.active=null;this.firstAction=null;this.lastMove=now;this.done=false;this.problem='';this.lastPackets=new Map();this.calibrating=new Set();for(const f of initial){const b=packet(f.hex);this.base.set(key(f.interface,b),b);}this.initial=initial;}
+ constructor(step,initial=[],now=0,options={}){this.step=step;this.profileId=options.profileId;this.jamHidButton=options.hidConnected&&this.profileId==='maschine_jam'&&(step.kind==='button'||step.kind==='pedal'||step.kind==='touch'&&step.id==='touch_encoder_touch');if(this.jamHidButton)initial=initial.filter(f=>f.interface.startsWith('hid')&&jamButtons(packet(f.hex)));this.started=now;this.readyAt=initial.length?now:now+250;this.base=new Map();this.unstable=new Map();this.warmValues=new Map();this.stats=new Map();this.frames=[];this.active=null;this.firstAction=null;this.lastMove=now;this.done=false;this.problem='';this.lastPackets=new Map();this.calibrating=new Set();for(const f of initial){const b=packet(f.hex);this.base.set(key(f.interface,b),b);}this.initial=initial;}
  record(id,b,now){const k=key(id,b),h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join(''),previous=this.lastPackets.get(k);if(id.startsWith('hid')&&previous?.hex===h)return;if(b[0]===0x20&&previous&&now-previous.time<20)return;this.lastPackets.set(k,{hex:h,time:now});if(this.firstAction===null)this.frames=this.frames.filter(f=>f.time>=now-1200);if(this.frames.length>=3000){this.problem='Too much input data. Pause other controllers and retry.';return;}this.frames.push({time:now,interface:id,hex:h});}
 
  feed(id,b,now){
   if(this.done||this.problem||!b.length||b.length>512)return;
   const k=key(id,b),kind=this.step.kind,old=this.base.get(k),midi=id.startsWith('midi');
   if(this.jamHidButton&&(midi||!jamButtons(b)))return;
+  if(this.profileId==='maschine_jam'&&!midi){
+   if((kind==='slider'||kind==='touch')&&this.step.name?.startsWith('SMART STRIP')){
+    if(jamReport(b,2,49)){this.record(id,b,now);this.jamStrip(id,b,now);}
+    return;
+   }
+   if(kind==='encoder'){
+    if(jamButtons(b)){this.record(id,b,now);this.jamEncoder(id,k,old,b,now);}
+    return;
+   }
+  }
   if(!midi&&kind!=='pad'&&[0x20,2].includes(b[0]))return;
   if(!midi&&kind==='pad'&&![0x20,2].includes(b[0]))return;
   this.record(id,b,now);
@@ -25,8 +36,8 @@ export class ActionDetector {
   }
   if([0x20,2].includes(b[0]))return; // continuous pad packets are never button/encoder evidence
   if(!old){this.base.set(k,b.slice());this.calibrating.add(k);this.readyAt=now+400;return;}
-  if(['button','touch'].includes(kind)){
-   const ignored=this.unstable.get(k),changed=[];for(let byte=this.jamHidButton?2:1;byte<b.length;byte++){const jamEncoderTouch=this.jamHidButton&&this.step.id==='button_encoder_push'&&byte===16 ? 0x10 : 0;const delta=(old[byte]^b[byte])&~((ignored?.[byte]||0)|jamEncoderTouch);for(let bit=0;bit<8;bit++)if(delta&(1<<bit))changed.push({byte,mask:1<<bit});}
+  if(['button','touch'].includes(kind)||this.jamHidButton&&kind==='pedal'){
+   const ignored=this.unstable.get(k),changed=[];for(let byte=this.jamHidButton?2:1;byte<b.length;byte++){const jamEncoderTouch=this.jamHidButton&&this.step.id==='button_encoder_push'&&byte===16 ? 0x08 : 0;const delta=(old[byte]^b[byte])&~((ignored?.[byte]||0)|jamEncoderTouch);for(let bit=0;bit<8;bit++)if(delta&(1<<bit))changed.push({byte,mask:1<<bit});}
    if(this.jamHidButton&&this.active&&changed.some(c=>this.active.k!==k||this.active.byte!==c.byte||this.active.mask!==c.mask)){this.problem='More than one control responded. Release everything and retry.';return;}
    if(!this.active&&changed.length>1){this.problem='Several bits changed together. Retry only this control, or use manual recording.';return;}
    if(!this.active&&changed.length===1){const c=changed[0];this.begin(id+':bit:'+b[0]+':'+c.byte+':'+c.mask,now);this.active.k=k;this.active.byte=c.byte;this.active.mask=c.mask;}
@@ -41,6 +52,48 @@ export class ActionDetector {
    const moved=[...this.stats.values()].filter(s=>s.values.size>=3&&s.changes>=2);if(moved.length>1){this.problem='Several independent values moved. Retry only the named control, or use manual recording.';return;}if(moved.length===1){if(!this.active)this.begin(moved[0].signature,now);this.active.released=true;}return;
   }
  }
+ jamEncoder(id,k,old,b,now){
+  const value=b[1]&15;
+  let stat=this.stats.get(k);
+  if(!stat){stat={last:old?old[1]&15:value,moves:0};this.stats.set(k,stat);}
+  if(stat.last===value)return;
+  stat.last=value;
+  this.lastMove=now;
+  if(++stat.moves>=2){
+   this.begin(id+':counter:1:1:1:16',now);
+   if(!this.problem)this.active.released=true;
+  }
+ }
+
+ jamStrip(id,b,now){
+  const occupied=[];
+  for(let strip=0;strip<8;strip++){
+   const offset=3+strip*6;
+   const primary=b[offset]|(b[offset+1]&3)<<8;
+   const secondary=b[offset+2]|(b[offset+3]&3)<<8;
+   if(primary||secondary)occupied.push({strip,primary,secondary});
+  }
+  if(occupied.length>1){this.problem='Touch only the named Smart Strip.';return;}
+  const dual=this.step.name.endsWith('/ two fingers');
+  const contact=occupied[0];
+  if(!contact){
+   if(this.active&&!this.active.released){
+    if(this.step.kind==='touch'||this.active.positions.size>=3){
+     this.active.released=true;
+     this.lastMove=now;
+    }else this.problem='Move along the strip before releasing and repeat this step.';
+   }
+   return;
+  }
+  const signature=id+':strip:'+contact.strip+':'+(this.step.kind==='touch'?'touch':dual?'dual':'single');
+  if(!dual&&contact.secondary){this.problem='Use one finger for this Smart Strip step.';return;}
+  if(dual&&!this.active&&!contact.secondary)return;
+  this.begin(signature,now);
+  if(this.problem)return;
+  this.active.positions??=new Set();
+  if(!dual||contact.secondary)this.active.positions.add(dual?contact.secondary:contact.primary);
+ }
+
  mk2Encoder(id,k,old,b,now){
   const values=p=>[p[8],...Array.from({length:8},(_,i)=>p[9+i*2]|p[10+i*2]<<8)],current=values(b),baseline=values(old);
   if(current[0]>15||baseline[0]>15||current.slice(1).some(v=>v>999)||baseline.slice(1).some(v=>v>999)){this.problem='Invalid MK2 rotary-counter packet. Repeat this control after reconnecting.';return;}
@@ -58,7 +111,7 @@ export class ActionDetector {
  begin(signature,now){if(this.active&&this.active.signature!==signature){this.problem='More than one control responded. Release everything and retry.';return;}if(!this.active){this.active={signature,released:false};this.firstAction=now;this.lastMove=now;}}
  midi(id,b,now){
   const status=b[0]&0xf0,ch=b[0]&15,kind=this.step.kind;
-  if(['key','pad','button','touch'].includes(kind)&&b.length===3&&[0x80,0x90].includes(status)){const signature=id+':note:'+ch+':'+b[1];if(status===0x90&&b[2]>0)this.begin(signature,now);else if(this.active?.signature===signature){if(!this.active.released){this.active.released=true;this.lastMove=now;}}return;}
+  if(['key','pad','button','touch','pedal'].includes(kind)&&b.length===3&&[0x80,0x90].includes(status)){const signature=id+':note:'+ch+':'+b[1];if(status===0x90&&b[2]>0)this.begin(signature,now);else if(this.active?.signature===signature){if(!this.active.released){this.active.released=true;this.lastMove=now;}}return;}
   if(['button','touch'].includes(kind)&&status===0xb0&&b.length===3){const signature=id+':cc-button:'+ch+':'+b[1];if(b[2]>0)this.begin(signature,now);else if(this.active?.signature===signature&&!this.active.released){this.active.released=true;this.lastMove=now;}return;}
   if(kind==='pressure'&&[0xa0,0xd0].includes(status)){const signature=id+':pressure:'+ch;this.begin(signature,now);this.active.pressure ||=new Set();this.active.pressure.add(b.at(-1));if(this.active.pressure.size>=3&&b.at(-1)===0)this.active.released=true;return;}
   if(['encoder','slider','pedal'].includes(kind)&&b.length===3&&[0xb0,0xe0].includes(status)){

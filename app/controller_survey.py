@@ -118,6 +118,9 @@ def validate(value):
  led_tests={t['id']:t for t in PROFILES[profile].get('led_tests',[])};seen_leds=set()
  for led in leds:
   if not isinstance(led,dict):raise ValueError('Invalid LED evidence.')
+  if (profile=='maschine_jam' and led.get('sent') is False and
+      isinstance(led.get('id'),str) and re.fullmatch(r'led_(80_(5[4-9]|6[0-5])|82_89)_observe',led['id'])):
+   continue
   if 'id' not in led:
    if device['product_id']!=STUDIO or type(led.get('bank')) is not int or led['bank'] not in LED_BANKS or type(led.get('offset')) is not int or not 1<=led['offset']<LED_BANKS[led['bank']]:raise ValueError('Invalid LED probe.')
   else:

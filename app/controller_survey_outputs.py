@@ -15,9 +15,23 @@ def output_inventory(identity,profile):
    for channel,color in enumerate(('red','green','blue')):test(0x81,1+i*6+channel,'GROUP '+c,color=color,extra=(4+i*6+channel,))
   for raw,slot in enumerate(PAD_SLOTS):
    for channel,color in enumerate(('red','green','blue')):test(0x80,1+raw*3+channel,'PAD '+str(slot+1),'pad',color)
+ elif identity=='maschine_jam':
+  # WebHID lengths come from the USB HID descriptor, including the ID here.
+  bank(0x80,54);bank(0x81,81);bank(0x82,89)
+  controls=('SONG','STEP','PAD MODE','CLEAR','DUPLICATE','DPAD UP','DPAD LEFT',
+            'DPAD RIGHT','DPAD DOWN','NOTE REPEAT','MST','GRP','IN1',None,'CUE',
+            None,'BROWSE','MACRO','LEVEL','AUX','CONTROL','AUTO','PERFORM',
+            'NOTES','LOCK','TUNE','SWING','SHIFT','PLAY','REC','PAGE LEFT',
+            'PAGE RIGHT','TEMPO','GRID','SOLO','MUTE','SELECT')
+  for i,name in enumerate(controls,1):
+   test(0x80,i,name or f'OUTPUT 80 / {i}',kind='button' if name else 'unknown',color='observe')
+  for i in range(16):test(0x80,38+i,f'VU {"LEFT" if i<8 else "RIGHT"} / {i%8+1}',kind='unknown',color='observe')
+  for i,name in enumerate((*profile['buttons'][1:9],*profile['buttons'][-64:],
+                           *('GROUP '+c for c in 'ABCDEFGH')),1):
+   test(0x81,i,name,color='observe')
+  for i in range(88):test(0x82,i+1,f'SMART STRIP {i//11+1} / LED {i%11+1}',kind='unknown',color='observe')
  else:
   if identity=='maschine_studio':banks={0x80:63,0x81:45,0x82:53,0x83:56}
-  elif identity=='maschine_jam':banks={0x80:66,0x81:81,0x82:90}
   elif identity=='maschine_mikro_mk3':banks={0x80:48,0x81:20}
   elif re.fullmatch(r'kk_s\d+_mk1',identity):banks={0x80:54,0x81:profile['keys']*3+1}
   elif re.fullmatch(r'kk_s\d+_mk2',identity):banks={0x80:79,0x81:249}

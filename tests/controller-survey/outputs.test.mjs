@@ -8,3 +8,24 @@ test('MK2 backlight preserves every unrelated setting and restores on disconnect
 test('MK2 LED inventory covers all pad/group RGB channels and every lighted button',async()=>{const tests=ledInventory(p);assert.equal(tests.filter(t=>t.kind==='pad').length,48);assert.equal(tests.filter(t=>t.name.startsWith('GROUP')).length,24);const d=device(),t=tests.find(t=>t.name==='PAD 1'&&t.color==='red');await showLed(p,[d],t);assert.equal(d.writes.length,4);const last=d.writes.at(-1);assert.equal(last.id,0x80);assert.equal(last.data.filter(Boolean).length,1);assert.equal(last.data[t.offset-1],60);const group=tests.find(t=>t.name==='GROUP A'&&t.color==='blue');await showLed(p,[d],group);assert.equal(d.writes.at(-1).data.filter(Boolean).length,2);});
 test('LED output requires exact model and descriptor framing; unknown IDs are rejected',async()=>{const d=device();d.device.productId=0x1300;await assert.rejects(showLed(p,[d],p.led_tests[0]));await assert.rejects(showLed(p,[device()],{id:'arbitrary'}));});
 test('LED observations survive browser export and cannot claim confirmation without output',()=>{const t=p.led_tests[0],r={id:t.id,status:'confirmed',observed:t.name,color:'white',sent:true};const clean=sanitizeLeds([r],p);assert.equal(clean[0].bank,t.bank);assert.equal(ledCoverage({demo:false,leds:clean},p).confirmed,1);assert.throws(()=>sanitizeLeds([{...r,sent:false}],p));assert.throws(()=>sanitizeLeds([r,r],p));const report={format:'Machinista-controller-survey',version:2,checklist_version:3,keyboard_test:'quick',profile_id:p.id,demo:false,layout_audited:false,device:{vendor_id:0x17cc,product_id:0x1140,interfaces:[{id:'hid0'}]},controls:[],leds:clean};assert.equal(validateReport(report,profiles).leds[0].id,t.id);});
+
+test('JAM tests every declared LED byte using the descriptor payload lengths',async()=>{
+ const jam=profiles.maschine_jam;
+ const sizes=[[128,53],[129,80],[130,88]];
+ const writes=[];
+ const d={device:{vendorId:0x17cc,productId:0x1500,collections:[{outputReports:sizes.map(([reportId,reportCount])=>({
+  reportId,items:[{reportSize:8,reportCount}],
+ }))}],sendReport:async(id,data)=>writes.push({id,data})}};
+ const tests=ledInventory(jam);
+ assert.equal(tests.length,221);
+ for(const t of tests){
+  await showLed(jam,[d],t);
+  const {id,data}=writes.at(-1);
+  assert.equal(id,t.bank);
+  assert.equal(data.length,sizes.find(([bank])=>bank===id)[1]);
+  assert.equal(data.filter(Boolean).length,1);
+  assert.equal(data[t.offset-1],t.value);
+ }
+ assert.equal(tests.filter(t=>t.name.startsWith('SMART STRIP')).length,88);
+ assert.deepEqual(sanitizeLeds([{id:'led_80_65_observe',status:'blocked',sent:false}],jam),[]);
+});
