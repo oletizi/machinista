@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Conservative event completion. Unknown/ambiguous evidence never advances.
 const key=(id,b)=>id+':'+b[0]+':'+b.length;
+const packet=hex=>Uint8Array.from(hex.match(/../g)||[],x=>parseInt(x,16));
+// Some HID stacks pad reports to the endpoint size. Only accept zero padding.
+const jamButtons=b=>b[0]===1&&b.length>=17&&b.length<=65&&b.subarray(17).every(value=>value===0);
 export class ActionDetector {
- constructor(step,initial=[],now=0,options={}){this.step=step;this.profileId=options.profileId;this.jamHidButton=options.hidConnected&&this.profileId==='maschine_jam'&&step.kind==='button';if(this.jamHidButton)initial=initial.filter(f=>f.interface.startsWith('hid')&&f.hex.length===34&&f.hex.startsWith('01'));this.started=now;this.readyAt=initial.length?now:now+250;this.base=new Map();this.unstable=new Map();this.warmValues=new Map();this.stats=new Map();this.frames=[];this.active=null;this.firstAction=null;this.lastMove=now;this.done=false;this.problem='';this.lastPackets=new Map();this.calibrating=new Set();for(const f of initial){const b=Uint8Array.from(f.hex.match(/../g)||[],x=>parseInt(x,16));this.base.set(key(f.interface,b),b);}this.initial=initial;}
+ constructor(step,initial=[],now=0,options={}){this.step=step;this.profileId=options.profileId;this.jamHidButton=options.hidConnected&&this.profileId==='maschine_jam'&&step.kind==='button';if(this.jamHidButton)initial=initial.filter(f=>f.interface.startsWith('hid')&&jamButtons(packet(f.hex)));this.started=now;this.readyAt=initial.length?now:now+250;this.base=new Map();this.unstable=new Map();this.warmValues=new Map();this.stats=new Map();this.frames=[];this.active=null;this.firstAction=null;this.lastMove=now;this.done=false;this.problem='';this.lastPackets=new Map();this.calibrating=new Set();for(const f of initial){const b=packet(f.hex);this.base.set(key(f.interface,b),b);}this.initial=initial;}
  record(id,b,now){const k=key(id,b),h=Array.from(b,x=>x.toString(16).padStart(2,'0')).join(''),previous=this.lastPackets.get(k);if(id.startsWith('hid')&&previous?.hex===h)return;if(b[0]===0x20&&previous&&now-previous.time<20)return;this.lastPackets.set(k,{hex:h,time:now});if(this.firstAction===null)this.frames=this.frames.filter(f=>f.time>=now-1200);if(this.frames.length>=3000){this.problem='Too much input data. Pause other controllers and retry.';return;}this.frames.push({time:now,interface:id,hex:h});}
 
  feed(id,b,now){
   if(this.done||this.problem||!b.length||b.length>512)return;
   const k=key(id,b),kind=this.step.kind,old=this.base.get(k),midi=id.startsWith('midi');
-  if(this.jamHidButton&&(midi||b[0]!==1||b.length!==17))return;
+  if(this.jamHidButton&&(midi||!jamButtons(b)))return;
   if(!midi&&kind!=='pad'&&[0x20,2].includes(b[0]))return;
   if(!midi&&kind==='pad'&&![0x20,2].includes(b[0]))return;
   this.record(id,b,now);
@@ -23,7 +26,7 @@ export class ActionDetector {
   if([0x20,2].includes(b[0]))return; // continuous pad packets are never button/encoder evidence
   if(!old){this.base.set(k,b.slice());this.calibrating.add(k);this.readyAt=now+400;return;}
   if(['button','touch'].includes(kind)){
-   const ignored=this.unstable.get(k),changed=[];for(let byte=1;byte<b.length;byte++){const jamEncoderTouch=this.jamHidButton&&this.step.id==='button_encoder_push'&&byte===16 ? 0x10 : 0;const delta=(old[byte]^b[byte])&~((ignored?.[byte]||0)|jamEncoderTouch);for(let bit=0;bit<8;bit++)if(delta&(1<<bit))changed.push({byte,mask:1<<bit});}
+   const ignored=this.unstable.get(k),changed=[];for(let byte=this.jamHidButton?2:1;byte<b.length;byte++){const jamEncoderTouch=this.jamHidButton&&this.step.id==='button_encoder_push'&&byte===16 ? 0x10 : 0;const delta=(old[byte]^b[byte])&~((ignored?.[byte]||0)|jamEncoderTouch);for(let bit=0;bit<8;bit++)if(delta&(1<<bit))changed.push({byte,mask:1<<bit});}
    if(this.jamHidButton&&this.active&&changed.some(c=>this.active.k!==k||this.active.byte!==c.byte||this.active.mask!==c.mask)){this.problem='More than one control responded. Release everything and retry.';return;}
    if(!this.active&&changed.length>1){this.problem='Several bits changed together. Retry only this control, or use manual recording.';return;}
    if(!this.active&&changed.length===1){const c=changed[0];this.begin(id+':bit:'+b[0]+':'+c.byte+':'+c.mask,now);this.active.k=k;this.active.byte=c.byte;this.active.mask=c.mask;}
@@ -87,6 +90,7 @@ export function createActionDetector(step,initial,now,options){
  const midi=options.midiSelected&&mode!=='hid'?new ActionDetector(step,[],now):null;
  if(midi)midi.readyAt=now;
  let midiReadyAt=null,hidReports=0,midiReports=0;
+ const hidFormats=new Set();
  return {
   feed(id,bytes,time){
    if(id.startsWith('midi')){
@@ -94,6 +98,7 @@ export function createActionDetector(step,initial,now,options){
     midi?.feed(id,bytes,time);
    }else{
     hidReports++;
+    if(hidFormats.size<4)hidFormats.add('0x'+bytes[0].toString(16)+'/'+bytes.length);
     if(mode!=='midi')hid.feed(id,bytes,time);
    }
   },
@@ -109,7 +114,8 @@ export function createActionDetector(step,initial,now,options){
    if(h.state==='release'||m?.state==='release')return {state:'release'};
    if(m?.state==='ambiguous'&&h.state!=='release'&&time-now>=2000)return m;
    if(time-now>=15000)return {state:'ambiguous',message:
-    'No complete JAM button press detected (HID: '+hidReports+' reports, MIDI: '+midiReports+' reports). Check the selected JAM MIDI input, then resume or record manually.'};
+    'No complete JAM button press detected (HID: '+hidReports+' reports, MIDI: '+midiReports+' reports'+(hidFormats.size?', HID formats: '+[...hidFormats].join(', '):'')+'). '+
+    (mode==='hid'?'Check the HID input and repeat this step.':'Check the JAM input and repeat this step.')};
    return h;
   },
  };

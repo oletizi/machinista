@@ -2,7 +2,7 @@
 import {FORMAT, MAX_BYTES, stepsFor, validateReport, coverage, compactFrames, matchedMidiPorts,emailDraft,availableProfiles,upgradeChecklist} from './core.mjs?v=10';
 import {displayInventory,PATTERNS,testImage,sendMono,sendColor,transmissionEvidence,displayCoverage,openColor,sendPrompt} from './displays.mjs?v=10';
 import {enableBacklight,restoreBacklight,ledInventory,showLed,clearLeds,ledCoverage} from './outputs.mjs?v=10';
-import {createActionDetector} from './guided.mjs?v=13';
+import {createActionDetector} from './guided.mjs?v=14';
 const $=id=>document.getElementById(id), profiles=await (await fetch('catalog.json?v=10',{cache:'no-cache'})).json();
 const config=await (await fetch('config.json',{cache:'no-cache'})).json();
 let report=null, devices=[], midi=null, selectedPorts=new Set(), capture=null, latest=new Map(), stepIndex=0, db=null, saveQueue=Promise.resolve(), displayBusy=false, autoStage='idle', resumeStage='controls', autoDetector=null, autoTimer=null, autoGeneration=0, colorLink=null, promptEnabled=true, skippedDisplays=new Set(),ledIndex=0,ledSent=false,ledBusy=false,ledDetector=null,ledError='';
@@ -129,6 +129,7 @@ $('completion-download').onclick=()=>download();
 
 async function armStep(){
  if(autoStage!=='controls')return;autoDetector=null;const generation=++autoGeneration,s=current();if(['key','pressure'].includes(s.kind)&&profile().keys&&!selectedPorts.size){pauseMapping('Select this keyboard in MIDI inputs, then resume mapping.');return;}draw();$('phase').textContent='Preparing next control…';
+ $('instruction').textContent=autoInstruction(s);
  autoDetector=createActionDetector(s,[...latest.values()],performance.now(),detectorOptions());$('phase').textContent='Ready · '+autoInstruction(s);drawFlow();
  await devicePrompt([String(stepIndex+1)+' / '+steps().length,s.name,s.kind==='encoder'?'TURN RIGHT':s.kind==='pad'||s.kind==='key'?'PLAY - RELEASE':'PRESS - RELEASE']);
  if(autoStage!=='controls'||generation!==autoGeneration)return;

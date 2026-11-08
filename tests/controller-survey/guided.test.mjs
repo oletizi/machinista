@@ -105,3 +105,28 @@ test('explicit JAM HID mode does not fall back to MIDI',()=>{
  d.feed('hid0',jamButton(0),2300);
  assert.equal(d.tick(2600).signature,'hid0:bit:1:2:1');
 });
+
+test('JAM next button tolerates a different rotary counter from the previous idle report',()=>{
+ const song=createActionDetector({kind:'button'},jamIdle,0,jamDualOptions);
+ song.feed('hid0',jamButton(1),1000);
+ song.feed('hid0',jamButton(0),1200);
+ assert.equal(song.tick(1500).signature,'hid0:bit:1:2:1');
+ const scene=createActionDetector({kind:'button'},jamIdle,1500,jamDualOptions);
+ const press=jamButton(2),release=jamButton(0);
+ press[1]=3;
+ release[1]=4;
+ scene.feed('hid0',press,1800);
+ scene.feed('hid0',release,2000);
+ assert.equal(scene.tick(2300).signature,'hid0:bit:1:2:2');
+});
+
+test('JAM accepts a button report with zero padding and preserves raw evidence',()=>{
+ const padded=bits=>Uint8Array.of(...jamButton(bits),...new Uint8Array(48));
+ const initial=[{interface:'hid0',hex:Buffer.from(padded(0)).toString('hex')}];
+ const d=createActionDetector({kind:'button'},initial,0,jamDualOptions);
+ d.feed('hid0',padded(2),1000);
+ d.feed('hid0',padded(0),1200);
+ const result=d.tick(1500);
+ assert.equal(result.signature,'hid0:bit:1:2:2');
+ assert(result.frames.every(frame=>frame.hex.length===130));
+});
