@@ -208,6 +208,25 @@ class LayeredPluginBankTests(SeparateDataRoot):
 
 
 
+class StorageLocationTests(unittest.TestCase):
+    """The web UI shows where the internal storage is on disk, but only for a separate data root."""
+    def rows(self, root):
+        from app.web_server import Library
+        return Library(root, source_scan=lambda: []).source_rows()
+
+    def test_separate_data_root_reports_the_samples_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            with mock.patch.object(paths, 'DATA', root):
+                row = self.rows(root)[0]
+        self.assertEqual(row['id'], 'sd')
+        self.assertEqual(row['location'], str(root / 'samples'))
+
+    def test_default_layout_keeps_the_original_listing(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(paths, 'DATA', paths.INSTALL):
+            self.assertEqual(self.rows(tmp), [dict(id='sd', name='SD CARD', readOnly=False)])
+
+
 class CodePathGuardTests(unittest.TestCase):
     """Code-side files must come from paths.code(root), never straight from a data root."""
     PATTERN = r"(?<![.\w])(?<!code_root\()(?<!paths\.code\()(?:self\.root|self\.library\.root|library\.root|root|ROOT)\)?\s*/\s*['\"](?:build|tools|web|captures)\b"

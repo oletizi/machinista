@@ -1,5 +1,5 @@
 """Standalone LAN sample library server. Never imports or changes the live engine."""
-from app.paths import code as code_root
+from app.paths import code as code_root, separate
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -56,6 +56,12 @@ class Library:
         rows=[('sd',Source('SD CARD',self.samples))]
         rows += [('usb-'+hashlib.sha256(str(s.path).encode()).hexdigest()[:16],s) for s in self.scan()]
         return dict(rows)
+
+    def source_rows(self):
+        # With a separate data directory (MACHINISTA_DATA) there is no SD card;
+        # tell the UI where each storage actually lives on disk.
+        shown=separate(self.root)
+        return [dict(id=k,name=v.name,readOnly=v.read_only,**({'location':str(v.path)} if shown else {})) for k,v in self.sources().items()]
 
     def source(self, identity):
         source=self.sources().get(identity)
@@ -435,7 +441,7 @@ class Handler(BaseHTTPRequestHandler):
                     self.json(request('status'));return
                 if path=='/api/session':self.json({'token':library.token,'hardware_profile':library.hardware_profile});return
                 if path=='/api/sources':
-                    self.json([dict(id=k,name=v.name,readOnly=v.read_only) for k,v in library.sources().items()]);return
+                    self.json(library.source_rows());return
                 if path=='/api/list':self.json(library.list(q.get('source','sd'),q.get('path','')));return
                 if path=='/api/system':self.json(library.system());return
                 if path=='/api/update':
