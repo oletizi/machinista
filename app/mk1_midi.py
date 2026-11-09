@@ -5,7 +5,9 @@ import os
 import re
 import stat
 
-MANIFEST=Path(__file__).resolve().parents[1]/'samples/.mk1-midi.json'
+from app.paths import DATA
+
+MANIFEST=DATA/'samples/.mk1-midi.json'
 
 def discover_mk1(manifest=None,proc=Path('/proc')):
     from app.devices import MidiDevice

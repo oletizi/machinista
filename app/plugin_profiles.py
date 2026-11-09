@@ -21,6 +21,24 @@ def profile(uri):return next((p for p in profiles() if p['uri']==uri),None)
 
 def bank_folder(root,p):return Path(root)/'presets/plugin-banks'/p['id']
 
+def factory_bank_folder(root,p):
+    """Read-only factory banks layered under a separate data root, else None."""
+    from app import paths
+    shared=paths.factory(root,'presets/plugin-banks')
+    return shared/p['id'] if shared is not None else None
+
+def built_in(root,p,identity):
+    """True for a factory bank shown under a separate data root without an own copy."""
+    shared=factory_bank_folder(root,p)
+    return shared is not None and not (bank_folder(root,p)/(identity+'.json')).exists() and (shared/(identity+'.json')).is_file()
+
+def bank_file(root,p,identity):
+    """Own bank file, else the layered factory file, else the own (absent) path."""
+    if built_in(root,p,identity):
+        shared=factory_bank_folder(root,p)
+        if not shared.is_symlink():return shared/(identity+'.json')
+    return bank_folder(root,p)/(identity+'.json')
+
 def validate_bank(data,p):
     import math
     if not isinstance(data,dict) or data.get('schema')!=1 or data.get('uri')!=p['uri']:raise ValueError('Wrong plugin bank format')
@@ -66,12 +84,14 @@ def consolidate_factory(result,p):
 
 def read_banks(root,p,old=None):
     now=time.monotonic()
-    paths=[]
-    for path in sorted(bank_folder(root,p).glob('*.json'))[:256]:
-        try:
-            stat=path.stat()
-            if not path.is_symlink() and stat.st_size<=8*1024**2:paths.append((path,stat.st_mtime_ns,stat.st_size))
-        except OSError:continue
+    paths=[];seen=set();shared=factory_bank_folder(root,p)
+    # Own banks first; a factory bank appears unless an own bank has its ID.
+    for folder in [bank_folder(root,p)]+([shared] if shared is not None and not shared.is_symlink() else []):
+        for path in sorted(folder.glob('*.json'))[:256]:
+            try:
+                stat=path.stat()
+                if path.stem not in seen and not path.is_symlink() and stat.st_size<=8*1024**2:paths.append((path,stat.st_mtime_ns,stat.st_size));seen.add(path.stem)
+            except OSError:continue
     signature=tuple((str(path),stamp,size) for path,stamp,size in paths)
     if old and signature==old[2]:
         return (now+1,old[1],signature)

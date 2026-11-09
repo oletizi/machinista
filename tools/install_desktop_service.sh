@@ -6,6 +6,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
 UNITS=(machinista.service machinista-web.service)
+# User data lives outside the checkout; override with MACHINISTA_DATA=/path.
+DATA="${MACHINISTA_DATA:-$HOME/Music/maschinista}"
 RULE_SRC="$ROOT/deploy/desktop/71-machinista-mk3-desktop.rules"
 RULE_DST="/etc/udev/rules.d/71-machinista-mk3-desktop.rules"
 
@@ -34,9 +36,10 @@ if [[ ! -x "$ROOT/build/audio_engine" ]]; then
   exit 1
 fi
 
-mkdir -p "$UNIT_DIR"
+mkdir -p "$UNIT_DIR" "$DATA"
+echo "Data directory: $DATA"
 for unit in "${UNITS[@]}"; do
-  sed "s#@ROOT@#$ROOT#g" "$ROOT/deploy/desktop/$unit" > "$UNIT_DIR/$unit"
+  sed -e "s#@ROOT@#$ROOT#g" -e "s#@DATA@#$DATA#g" "$ROOT/deploy/desktop/$unit" > "$UNIT_DIR/$unit"
   echo "Installed $UNIT_DIR/$unit"
 done
 systemctl --user daemon-reload

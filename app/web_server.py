@@ -1,4 +1,5 @@
 """Standalone LAN sample library server. Never imports or changes the live engine."""
+from app.paths import code as code_root
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -424,8 +425,8 @@ class Handler(BaseHTTPRequestHandler):
                     from app.web_synth import schema
                     self.json(schema(library.root));return
                 if path=='/api/oscillators':
-                    from app.synth_library import listing,FACTORY
-                    self.json(dict(factory=FACTORY,users=listing(library.root)));return
+                    from app.synth_library import listing,FACTORY,built_in
+                    self.json(dict(factory=FACTORY,users=[dict(row,builtIn=built_in(library.root,row['id'])) for row in listing(library.root)]));return
                 if path=='/api/plugin-banks':
                     from app.web_plugin_banks import listing
                     self.json(listing(library.root));return
@@ -455,7 +456,7 @@ class Handler(BaseHTTPRequestHandler):
                 if path=='/api/file':self.download(q);return
                 assets={'/sets.js':('sets.js','text/javascript; charset=utf-8'),'/stems.js':('stems.js','text/javascript; charset=utf-8'),'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/sounds.js':('sounds.js','text/javascript; charset=utf-8'),'/soundfonts.js':('soundfonts.js','text/javascript; charset=utf-8'),'/oscillators.js':('oscillators.js','text/javascript; charset=utf-8'),'/synth.js':('synth.js','text/javascript; charset=utf-8'),'/virtualjv.js':('virtualjv.js','text/javascript; charset=utf-8'),'/updates.js':('updates.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/logo.png':('logo.png','image/png')}
                 if path in assets:
-                    name,mime=assets[path];body=(library.root/'web'/name).read_bytes();self.response_headers(200,mime,len(body));self.wfile.write(body);return
+                    name,mime=assets[path];body=(code_root(library.root)/'web'/name).read_bytes();self.response_headers(200,mime,len(body));self.wfile.write(body);return
             self.json({'error':'Not found.'},404)
         except (BrokenPipeError,ConnectionResetError,TimeoutError):self.close_connection=True
         except Exception as error:

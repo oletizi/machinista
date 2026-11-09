@@ -1,4 +1,5 @@
 """Full-size MK1: independent USB process, eight knobs and dedicated masters."""
+from app.paths import code as code_root
 import os,sys,subprocess,time,threading,select
 from pathlib import Path
 from app.mk2_session import Mk2Session
@@ -143,7 +144,7 @@ class Mk1Session(Mk2Session):
     def connect(self,now):
         self.next_scan=now+2
         self.cleanup=[t for t in self.cleanup if t.is_alive()]
-        if self.cleanup or not (self.root/'build/mk1_monitor').exists():return
+        if self.cleanup or not (code_root(self.root)/'build/mk1_monitor').exists():return
         present=False
         for device in Path('/sys/bus/usb/devices').glob('*'):
             try:
@@ -152,7 +153,7 @@ class Mk1Session(Mk2Session):
         if not present:return
         try:
             self.renderer=Mk2Renderer(startup=True)
-            self.process=subprocess.Popen([str(self.root/'build/mk1_monitor'),'--midi-manifest',str(self.root/'samples/.mk1-midi.json')],stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+            self.process=subprocess.Popen([str(code_root(self.root)/'build/mk1_monitor'),'--midi-manifest',str(self.root/'samples/.mk1-midi.json')],stdin=subprocess.PIPE,stdout=subprocess.PIPE)
             os.set_blocking(self.process.stdout.fileno(),False)
             self.output=Mk1Output(self.process,self.renderer,self.app.settings['controllers']['mk1'])
             self.reader_watch.start(now);self.next_frame=self.next_led=0

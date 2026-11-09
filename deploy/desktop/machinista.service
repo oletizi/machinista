@@ -1,6 +1,6 @@
 # User unit for a desktop/headless x86-64 host. Started by udev when the MK3
 # appears (71-machinista-mk3-desktop.rules) and stopped when it is unplugged.
-# Installed by tools/install_desktop_service.sh, which replaces @ROOT@.
+# Installed by tools/install_desktop_service.sh, which replaces @ROOT@ and @DATA@.
 [Unit]
 Description=Machinista on Maschine MK3
 BindsTo=dev-maschine\x2dmk3.device
@@ -11,6 +11,7 @@ Type=simple
 WorkingDirectory=@ROOT@
 ExecStart=@ROOT@/tools/run_desktop.sh
 Environment=PYTHONUNBUFFERED=1
+Environment=MACHINISTA_DATA=@DATA@
 Restart=on-failure
 RestartSec=3
 TimeoutStopSec=15

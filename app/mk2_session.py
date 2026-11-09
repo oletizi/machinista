@@ -1,4 +1,5 @@
 """Optional MK2 session. Disconnect never terminates the shared engine."""
+from app.paths import code as code_root
 import json
 from collections import deque
 import os
@@ -67,7 +68,7 @@ class Mk2Session:
                 path=str(Path('/dev')/hid.name)
                 self.fd=open_device(path);self.renderer=Mk2Renderer(startup=True)
                 self.output=Mk2Output(self.fd,self.renderer,configure=configure_displays,settings=self.app.settings['controllers']['mk2'])
-                self.process=subprocess.Popen([str(self.root/'build/mk2_monitor'),'--live',path,'0'],stdout=subprocess.PIPE)
+                self.process=subprocess.Popen([str(code_root(self.root)/'build/mk2_monitor'),'--live',path,'0'],stdout=subprocess.PIPE)
                 self.reader_watch.start(now)
                 os.set_blocking(self.process.stdout.fileno(),False)
                 self.next_frame=self.next_led=0

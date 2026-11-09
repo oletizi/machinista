@@ -112,6 +112,20 @@ ssh -L 8080:localhost:8080 <host>
 
 It keeps the Pi unit's low CPU/IO priority and 192 MB memory limit.
 
+### Data directory
+
+By default all user data lives in the checkout, as on the Pi image. Set
+`MACHINISTA_DATA` to keep it elsewhere; `tools/run_desktop.sh` and the
+installed services default to `~/Music/maschinista`. The data root holds
+`samples/` (shown as SD CARD), `projects/`, `config/`, `cache/`, `exports/`,
+`backups/` and `presets/Sounds`, `presets/Groups`. Code, native builds, web
+assets and captures always come from the checkout.
+
+`presets/Oscillators` and `presets/plugin-banks` are layered: factory items are
+read from the checkout and stay read-only, while uploaded waveforms and
+imported banks go to the data root. To move existing data, stop both services
+and move those folders into the data root before starting them again.
+
 ## Release image tooling
 
 Read docs/GITHUB_PUBLISH.md and docs/INSTALL.md. tools/prepare_beta_release.py

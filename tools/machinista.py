@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parent.parent
 managed_lv2_path='/var/lib/machinista/lv2/plugins'
 os.environ['LV2_PATH']=managed_lv2_path+':'+os.environ.get('LV2_PATH',str(Path.home()/'.lv2')+':/usr/local/lib/lv2:/usr/lib/lv2')
 sys.path.insert(0, str(ROOT))
+# User data (samples, projects, config, cache, saved presets); the checkout unless MACHINISTA_DATA is set.
+from app.paths import DATA
 from app.layout import SOUNDS,GROUP_BASE,MASTER,PREVIEW,CLICK,ZONE_BASE,bus_targets
 from app.model import Application
 from app.step_display import StepDisplay
@@ -105,7 +107,8 @@ def main():
     if args.seconds < 0:
         parser.error('seconds must be nonnegative')
     from app.storage import SettingsWriter
-    app = Application(ROOT)
+    DATA.mkdir(parents=True, exist_ok=True)
+    app = Application(DATA)
     channels = load_pad_channels(ROOT/'captures/mikro-mk1-pad-led-map.json')
     stopped = False
 
@@ -122,7 +125,7 @@ def main():
         midi = MidiBackend();midi_clock=MidiClock()
         waveforms = Waveforms();wave_playback=WavePlayback()
         runtime_audio = RuntimeAudio();native_sequence=NativeSequence()
-        plugin_refresh=PluginRefresh(ROOT)
+        plugin_refresh=PluginRefresh(DATA)
         from app.codec_levels import CodecLevels
         codec_levels=CodecLevels()
         from app.hat_button import HatButton,apply_presses
@@ -134,8 +137,8 @@ def main():
         bluetooth.submit('on' if app.settings.get('ble_midi',False) else 'off')
         sample_jobs=SampleJobs()
         export_pending=None;export_cancel=threading.Event();export_progress=queue.SimpleQueue()
-        stretch_jobs=StretchPreview(ROOT/'cache')
-        audio_imports=AudioImports(ROOT/'cache');chord_catalog=ChordCatalog(ROOT)
+        stretch_jobs=StretchPreview(DATA/'cache')
+        audio_imports=AudioImports(DATA/'cache');chord_catalog=ChordCatalog(DATA)
         gates=[];gate_counter=0;collect_pending=None;plugin_transfer_pending=None;preset_pending=None;midi_bindings={};routing_key=None;next_capture_status=0;next_meter_status=0;next_preview_status=0;next_pdc_status=0
         pid = ROOT/'build/machinista.pid'
         pid.write_text(str(os.getpid())+'\n')
@@ -143,16 +146,16 @@ def main():
         live_banks=None
         try:
             from app.live_banks import LiveBanks
-            live_banks=LiveBanks(ROOT)
-            output=MikroSession(ROOT,app,controller_inputs,open_mk1,frame_reports,send,configure_display,args.path)
-            mk2=Mk2Session(ROOT,app,controller_inputs,channels)
-            mk1=Mk1Session(ROOT,app,controller_inputs,channels)
-            mk3=Mk3Session(ROOT,app,controller_inputs,channels)
-            plus=PlusSession(ROOT,app,controller_inputs,channels)
+            live_banks=LiveBanks(DATA)
+            output=MikroSession(DATA,app,controller_inputs,open_mk1,frame_reports,send,configure_display,args.path)
+            mk2=Mk2Session(DATA,app,controller_inputs,channels)
+            mk1=Mk1Session(DATA,app,controller_inputs,channels)
+            mk3=Mk3Session(DATA,app,controller_inputs,channels)
+            plus=PlusSession(DATA,app,controller_inputs,channels)
             step_display=StepDisplay()
-            audio = AudioBackend(ROOT, lambda message: setattr(app, 'message', message),app.settings['sample_rate'],app.settings['audio_buffer'])
+            audio = AudioBackend(DATA, lambda message: setattr(app, 'message', message),app.settings['sample_rate'],app.settings['audio_buffer'])
             midi_performance=MidiPerformance(app,audio,midi)
-            sound_runtime=SoundRuntime(ROOT,app,audio,midi)
+            sound_runtime=SoundRuntime(DATA,app,audio,midi)
             audio.command(f"pdc {int(app.settings['plugin_delay'])}")
             audio.output_settings(app.settings)
             audio.device(None)
@@ -174,13 +177,13 @@ def main():
             streams = {audio.engine.stdout: b''}
             for stream in streams:
                 os.set_blocking(stream.fileno(), False)
-            system_monitor = SystemMonitor(ROOT)
+            system_monitor = SystemMonitor(DATA)
             power_control = PowerControl()
             from app.updater import Control as UpdateControl
             update_control=UpdateControl(ROOT)
             from app.controller_stems import Control as StemControl
             stem_control=StemControl()
-            autosaver = Autosave(ROOT)
+            autosaver = Autosave(DATA)
             device_monitor = DeviceMonitor()
             started = time.monotonic()
             next_scan = next_frame = next_step = started
@@ -258,7 +261,7 @@ def main():
                     if discovered is not None:
                         devices,ports,sources=discovered
                         app.refresh_devices(devices,ports);app.browser.refresh(sources)
-                        if app.relink_browser is not None:app.relink_browser.refresh([Source('PROJECT ASSETS',ROOT/'projects'),Source('PRESET ASSETS',ROOT/'presets')]+list(sources))
+                        if app.relink_browser is not None:app.relink_browser.refresh([Source('PROJECT ASSETS',DATA/'projects'),Source('PRESET ASSETS',DATA/'presets')]+list(sources))
                 except OSError as error:print(f'Device scan: {error}',flush=True)
                 midi_config = (tuple(app.midi_devices), app.settings['midi_in'], app.settings['midi_out'], app.settings['midi_channel'])
                 if midi_config != last_midi_config and midi_retry.ready(midi_config,now):
@@ -332,14 +335,14 @@ def main():
                                 else:app.message='PLUGIN STATE FAILED'
                             if event['kind']=='state_barrier' and export_pending is not None:
                                 request=export_pending;export_pending=None
-                                if not sample_jobs.submit('EXPORT',None,{},render_export,request,ROOT,export_cancel,export_progress):
+                                if not sample_jobs.submit('EXPORT',None,{},render_export,request,DATA,export_cancel,export_progress):
                                     app.export_busy=False;app.message='PROCESS BUSY'
                             if event['kind']=='state_barrier' and preset_pending is not None:
                                 request=preset_pending;preset_pending=None
                                 if request.get('operation')=='LOAD':
                                     if not all(Path(p['state']).is_file() for chain in request['previous'].values() for p in chain):app.message='PLUGIN STATE FAILED'
-                                    elif not sample_jobs.submit('PRESET_LOAD',None,request,read_preset,request['path'],request['kind'],ROOT):app.message='PROCESS BUSY'
-                                elif not sample_jobs.submit('PRESET_SAVE',None,{},write_preset,request,ROOT):app.message='PROCESS BUSY'
+                                    elif not sample_jobs.submit('PRESET_LOAD',None,request,read_preset,request['path'],request['kind'],DATA):app.message='PROCESS BUSY'
+                                elif not sample_jobs.submit('PRESET_SAVE',None,{},write_preset,request,DATA):app.message='PROCESS BUSY'
                             if event['kind']=='state_barrier'  and collect_pending is not None:
                                 revision,generation,project,folder=collect_pending;collect_pending=None
                                 if not sample_jobs.submit('COLLECT',None,{'revision':revision,'_generation':generation},collect_project,project,folder):app.message='PROCESS BUSY'
@@ -574,12 +577,12 @@ def main():
                             if plugin_transfer_pending is not None or collect_pending is not None or preset_pending is not None or export_pending is not None or sample_jobs.pending or audio.recorder or audio.native_capture:
                                 app.export_busy=False;app.message='STATE BUSY';continue
                             export_cancel.clear()
-                            if not sample_jobs.submit('EXPORT',None,{},render_midi_export,value,ROOT,export_cancel,export_progress):app.export_busy=False;app.message='PROCESS BUSY'
+                            if not sample_jobs.submit('EXPORT',None,{},render_midi_export,value,DATA,export_cancel,export_progress):app.export_busy=False;app.message='PROCESS BUSY'
                         elif action=='audio_export':
                             if plugin_transfer_pending is not None or collect_pending is not None or preset_pending is not None or export_pending is not None or sample_jobs.pending or audio.recorder or audio.native_capture:
                                 app.export_busy=False;app.message='STATE BUSY';continue
                             export_cancel.clear();request=value;request['metadata']=copy.deepcopy(audio.plugin_metadata)
-                            directory=ROOT/'cache'/'export-state'/uuid.uuid4().hex;request['state_dir']=str(directory)
+                            directory=DATA/'cache'/'export-state'/uuid.uuid4().hex;request['state_dir']=str(directory)
                             for bus,(_,chain) in request.pop('chains').items():
                                 for index,plugin in enumerate(chain):
                                     folder=directory/str(bus)/str(index);plugin['state']=str(folder/'state.ttl')
@@ -588,7 +591,7 @@ def main():
                         elif action=='preset_save':
                             if app.playing or app.recording or audio.recorder or audio.native_capture:app.message='STOP RECORD/PLAY FIRST';continue
                             if plugin_transfer_pending is not None or collect_pending is not None or preset_pending is not None or export_pending is not None or sample_jobs.pending:app.message='STATE BUSY';continue
-                            preset_pending=value;prepare_preset_state(audio,value,ROOT)
+                            preset_pending=value;prepare_preset_state(audio,value,DATA)
                         elif action=='preset_load':
                             if plugin_transfer_pending is not None or collect_pending is not None or preset_pending is not None or export_pending is not None:app.message='STATE BUSY';continue
                             if app.playing or app.recording or audio.recorder or audio.native_capture:app.message='STOP RECORD/PLAY FIRST';continue
@@ -597,15 +600,15 @@ def main():
                             buses=[group*16+i for i in range(16)]+[GROUP_BASE+group] if request['kind']=='GROUP' else [group*16+pad]
                             targets=bus_targets(app.project);request['previous']={bus:copy.deepcopy(targets[bus].get('plugins',[])) for bus in buses}
                             request['chains']={bus:(bus,chain) for bus,chain in request['previous'].items()}
-                            request['operation']='LOAD';preset_pending=request;prepare_preset_state(audio,request,ROOT)
+                            request['operation']='LOAD';preset_pending=request;prepare_preset_state(audio,request,DATA)
                         elif action=='collect_project':
                             if plugin_transfer_pending is not None or collect_pending is not None or preset_pending is not None or export_pending is not None:app.message='STATE BUSY';continue
-                            revision,project=value;folder=ROOT/'projects'/((project.get('file_id') or 'CURRENT')+'.assets')
+                            revision,project=value;folder=DATA/'projects'/((project.get('file_id') or 'CURRENT')+'.assets')
                             collect_pending=(revision,app.project_generation,project,folder);audio.save_plugin_state(project);audio.command('state_barrier')
                         elif action=='group_delete':
                             if plugin_transfer_pending is not None or collect_pending is not None or preset_pending is not None or export_pending is not None or audio.recorder or audio.native_capture:app.message='STATE BUSY';continue
                             request=value;request['chains']={bus:copy.deepcopy(target['plugins']) for bus,target in bus_targets(app.project).items() if target.get('plugins')}
-                            directory=ROOT/'cache'/'group-delete'/uuid.uuid4().hex
+                            directory=DATA/'cache'/'group-delete'/uuid.uuid4().hex
                             for bus,chain in request['chains'].items():
                                 for index,plugin in enumerate(chain):
                                     folder=directory/str(bus)/str(index);plugin['state']=str(folder/'state.ttl')
@@ -613,14 +616,14 @@ def main():
                             plugin_transfer_pending=request;audio.command('state_barrier')
                         elif action=='plugin_transfer':
                             if plugin_transfer_pending is not None or collect_pending is not None or preset_pending is not None or export_pending is not None:app.message='STATE BUSY';continue
-                            request=value;directory=ROOT/'cache'/'plugin-clipboard'/uuid.uuid4().hex
+                            request=value;directory=DATA/'cache'/'plugin-clipboard'/uuid.uuid4().hex
                             indices=[request['slot']] if request['operation']=='COPY' else range(len(request['chain']))
                             for index in indices:
                                 folder=directory/str(index);request['chain'][index]['state']=str(folder/'state.ttl')
                                 audio.command(f'plugin_save {request["bus"]} {index} '+json.dumps(str(folder)))
                             plugin_transfer_pending=request;audio.command('state_barrier')
                         elif action=='plugin_paste':
-                            if not sample_jobs.submit('PLUGIN_PASTE',None,{},copy_plugin_state,value,ROOT):app.message='PROCESS BUSY'
+                            if not sample_jobs.submit('PLUGIN_PASTE',None,{},copy_plugin_state,value,DATA):app.message='PROCESS BUSY'
                         elif action=='save_plugin_state':audio.save_plugin_state(value)
                         elif action == 'plugin_controls':audio.plugins(*value)
                         elif action == 'plugins':
@@ -686,7 +689,7 @@ def main():
                                 if track.get('source')!='MIDI':audio.hit(app.group,slot,velocity,dict(track,gain=100),semitones)
                         elif action=='process':
                             track,processing=app.sample_process_request(value)
-                            if sample_jobs.submit(value,(app.group,app.pad),track,process_sample,processing,value,ROOT/'samples/edited',ROOT/'cache/clipboard.wav'):app.message='NORMALIZE SAMPLE' if value=='NORMALIZE' else 'PROCESSING'
+                            if sample_jobs.submit(value,(app.group,app.pad),track,process_sample,processing,value,DATA/'samples/edited',DATA/'cache/clipboard.wav'):app.message='NORMALIZE SAMPLE' if value=='NORMALIZE' else 'PROCESSING'
                             else:app.message='PROCESS BUSY'
                         elif action=='stretch_preview':
                             track,context,velocity=value

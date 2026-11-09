@@ -14,12 +14,12 @@ FORMAT='Machinista-bank-sound'
 INSTRUMENTS={'machinista-synth','dexed','obxd','raffosynth'}
 
 def bank_exists(root,data):
-    from app.plugin_profiles import profile,bank_folder
+    from app.plugin_profiles import profile,bank_folder,bank_file
     p=profile(data.get('uri'));identity=data.get('bank')
     if not p or not isinstance(identity,str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,128}',identity):return False
     if identity=='init':return True
-    folder=bank_folder(root,p);path=folder/(identity+'.json')
-    return not folder.is_symlink() and not path.is_symlink() and path.is_file()
+    path=bank_file(root,p,identity)
+    return not path.parent.is_symlink() and not path.is_symlink() and path.is_file()
 
 def remove_snapshots(root,uri,bank):
     """Delete only unchanged generated entries; saved project patches are separate."""

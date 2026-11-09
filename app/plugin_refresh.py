@@ -1,4 +1,5 @@
 """Non-audio plugin catalog refresh; keep disk/scan work outside playback."""
+from app.paths import code as code_root
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import json
@@ -12,7 +13,7 @@ class PluginRefresh:
         self.executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='lv2-catalog');self.future=None
     def scan(self):
         import subprocess
-        return json.loads(subprocess.check_output(['/usr/bin/nice','-n','15',str(self.root/'build/audio_engine'),'--plugins'],text=True,timeout=15))
+        return json.loads(subprocess.check_output(['/usr/bin/nice','-n','15',str(code_root(self.root)/'build/audio_engine'),'--plugins'],text=True,timeout=15))
     def poll(self,app,audio,now):
         if now<self.next:return
         self.next=now+.5

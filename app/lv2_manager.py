@@ -4,6 +4,7 @@ The privileged service runs a root-owned copy of this single module. RPC accepts
 opaque upload/bundle IDs, never paths or shell commands. LV2 execution occurs
 only later when the musician chooses an installed plugin in the audio host.
 """
+from app.paths import code as code_root
 from pathlib import Path, PurePosixPath
 import argparse
 import grp
@@ -171,7 +172,7 @@ def file_path(value):
 class Manager:
     def __init__(self,root,state=STATE,runtime=RUNTIME,roots=None,probe=None,target=None,scanner=None):
         self.root=Path(root);self.state=Path(state);self.runtime=Path(runtime)
-        self.scanner=Path(scanner) if scanner else self.root/'build/audio_engine'
+        self.scanner=Path(scanner) if scanner else code_root(self.root)/'build/audio_engine'
         self.active=self.state/'plugins';self.incoming=self.state/'incoming';self.trash=self.state/'removed'
         for p in (self.state,self.active,self.incoming,self.trash,self.runtime):p.mkdir(parents=True,exist_ok=True)
         self.roots=[self.active]+list(roots if roots is not None else (Path('/usr/local/lib/lv2'),Path('/usr/lib/lv2'),Path.home()/'.lv2'))

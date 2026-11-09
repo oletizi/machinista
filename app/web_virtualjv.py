@@ -3,6 +3,7 @@
 Machinista ships no emulator, ROMs or preparation tool. This UI manages only an
 explicitly installed add-on in the user's preset directory.
 """
+from app.paths import code as code_root
 from pathlib import Path
 import hashlib,json,os,subprocess,sys,tempfile,shutil
 from app.web_server import filename
@@ -18,7 +19,7 @@ class VirtualJV:
             return [b for b in request('status').get('bundles',[]) if b.get('status')=='OK' and any(p.get('uri') in URIS for p in b.get('plugins',[]))]
         except (OSError,ValueError,KeyError):return []
     def helper(self,bundles=None):
-        candidates=[self.root/'tools/roms.py']
+        candidates=[code_root(self.root)/'tools/roms.py']
         for bundle in self.installed_bundles() if bundles is None else bundles:
             base=Path(bundle['path']).resolve();helper=base/'configuration/roms.py'
             if helper.resolve().is_relative_to(base):candidates.append(helper)

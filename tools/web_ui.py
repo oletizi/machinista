@@ -4,10 +4,11 @@ from pathlib import Path
 import argparse
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from app.paths import DATA
 from app.web_server import Library, Server
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]);parser.add_argument('--host',default='0.0.0.0');parser.add_argument('--port',type=int,default=8080)
+    parser=argparse.ArgumentParser();parser.add_argument('--root',type=Path,default=DATA,help='Data root (default: MACHINISTA_DATA, else the checkout)');parser.add_argument('--host',default='0.0.0.0');parser.add_argument('--port',type=int,default=8080)
     parser.add_argument('--password-file',type=Path)
     parser.add_argument('--no-auth',action='store_true',help='Explicitly allow LAN access without login')
     args=parser.parse_args();password=None

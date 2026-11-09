@@ -1,4 +1,5 @@
 """Headless LV2 slot browser and stable-symbol parameter persistence."""
+from app.paths import code as code_root
 from app.hardware_profiles import environment
 from app.layout import SOUNDS,GROUP_BASE,MASTER,PREVIEW,CLICK,ZONE_BASE,bus_targets
 import copy
@@ -18,7 +19,7 @@ class Plugins:
     def init_plugins(self):
         self.plugin_catalog=[];self.plugin_slot=0;self.plugin_param=0;self.plugin_filter='EFFECT';self.plugin_browser_index=0
         self.plugin_origin='PAD';self.plugin_clipboard=None;self.plugin_move_to=0
-        executable=self.root/'build/audio_engine'
+        executable=code_root(self.root)/'build/audio_engine'
         if executable.exists():
             try:self.plugin_catalog=copy.deepcopy(scan_plugins(str(executable),executable.stat().st_mtime_ns))
             except (OSError,ValueError,subprocess.SubprocessError):self.message='PLUGIN SCAN FAILED'

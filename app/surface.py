@@ -1,3 +1,4 @@
+from app.paths import code as code_root
 import time
 """Mikro manual workflows adapted to MK1 controls and our sample/MIDI backend."""
 import copy
@@ -49,7 +50,7 @@ class OriginalSurface:
         self.slice_edit = False
         self.transport_repeat = {}
         self.button_led_map = {}
-        path = self.root/'captures/mikro-mk1-button-led-map.json'
+        path = code_root(self.root)/'captures/mikro-mk1-button-led-map.json'
         if path.exists():
             import json
             self.button_led_map = json.loads(path.read_text())['buttons']

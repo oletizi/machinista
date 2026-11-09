@@ -1,4 +1,5 @@
 """Optional legacy surface session, independent of the shared audio engine."""
+from app.paths import code as code_root
 import os
 from pathlib import Path
 import subprocess
@@ -67,7 +68,7 @@ class MikroSession:
                     from app.mikro_mk2_protocol import open_device,send
                     from tools.mikro_leds import load_pad_channels
                     self.fd=open_device(path)
-                    self.channels=load_pad_channels(self.root/'captures/mikro-mk1-pad-led-map.json')
+                    self.channels=load_pad_channels(code_root(self.root)/'captures/mikro-mk1-pad-led-map.json')
                 else:self.fd=self.open_device(path);send=self.send
                 self.model='mikro_mk2' if mk2 else 'mikro';self.app.mikro_model=self.model
                 self.output=ControllerOutput(self.fd,self.pack,send,self.configure)
@@ -76,7 +77,7 @@ class MikroSession:
                 if self.last_leds or self.last_frame:
                     self.output.submit(boot_frame(128),self.encode_leds(self.last_leds or self.last_frame[1]))
                 if self.last_leds:self.output.submit_leds(self.encode_leds(self.last_leds))
-                self.process=subprocess.Popen([str(self.root/'build/mikro_monitor'),'--live',path,'0'],stdout=subprocess.PIPE)
+                self.process=subprocess.Popen([str(code_root(self.root)/'build/mikro_monitor'),'--live',path,'0'],stdout=subprocess.PIPE)
                 self.reader_watch.start(now)
                 os.set_blocking(self.process.stdout.fileno(),False);streams[self.process.stdout]=b''
                 print(('Mikro MK2' if mk2 else 'Mikro MK1')+' connected: '+path,flush=True);return

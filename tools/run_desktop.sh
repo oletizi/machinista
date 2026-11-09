@@ -4,6 +4,8 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
+# User data (samples, projects, settings) outside the checkout; see app/paths.py.
+export MACHINISTA_DATA="${MACHINISTA_DATA:-$HOME/Music/maschinista}"
 
 if [[ ! -x build/audio_engine || "${REBUILD:-0}" == 1 ]]; then
   flags=()

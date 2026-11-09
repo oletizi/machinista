@@ -11,6 +11,7 @@ import secrets
 import struct
 import subprocess
 from app.sound_library import folders,tags,name as valid_name
+from app import paths
 
 URI='urn:machinista:instrument:synth'
 SOURCES=['Off','Velocity','Key','Mod Wheel','Pressure','Random','Amp Env','Filter Env','Pitch Env','Aux Env','LFO 1','LFO 2','Global LFO 1','Global LFO 2','Ramp 1','Ramp 2','Counter 1','Counter 2']
@@ -22,25 +23,42 @@ def folder(root):
     if path.is_symlink() or (path/'.assets').is_symlink():raise ValueError('Unsafe oscillator library.')
     return path
 
+def factory_folder(root):
+    """Read-only factory waves layered under a separate data root, else None."""
+    path=paths.factory(root,'presets/Oscillators')
+    if path is not None and (path.is_symlink() or (path/'.assets').is_symlink()):raise ValueError('Unsafe oscillator library.')
+    return path
+
 def asset(root,identity):
     if not isinstance(identity,str) or not re.fullmatch('[0-9a-f]{32}',identity):raise ValueError('Invalid waveform ID.')
     path=folder(root)/'.assets'/(identity+'.mwave')
     if path.is_symlink():raise ValueError('Unsafe oscillator asset.')
+    shared=factory_folder(root)
+    if shared is not None and not path.exists():
+        candidate=shared/'.assets'/(identity+'.mwave')
+        if candidate.is_file() and not candidate.is_symlink():return candidate
     return path
+
+def built_in(root,identity):
+    """True for a factory wave shown under a separate data root without an own entry."""
+    shared=factory_folder(root)
+    return shared is not None and not (folder(root)/(identity+'.json')).exists() and (shared/(identity+'.json')).is_file()
 
 _catalog_cache={}
 def listing(root):
     key=str(root);now=time.monotonic();old=_catalog_cache.get(key)
     if old and now<old[0]:return old[1]
-    result=[]
-    for path in sorted(folder(root).glob('*.json'))[:512]:
-        try:
-            if path.is_symlink() or path.stat().st_size>8192:continue
-            row=json.loads(path.read_text());identity=row['id']
-            if path.stem!=identity or not asset(root,identity).is_file():continue
-            valid_name(row['name']);folders(row.get('folder',''));tags(row.get('tags',[]))
-            result.append(row)
-        except (OSError,ValueError,KeyError,TypeError):continue
+    result=[];seen=set();shared=factory_folder(root)
+    # Own waves first; a factory wave appears unless an own entry has its ID.
+    for base in [folder(root)]+([shared] if shared is not None else []):
+        for path in sorted(base.glob('*.json'))[:512]:
+            try:
+                if path.stem in seen or path.is_symlink() or path.stat().st_size>8192:continue
+                row=json.loads(path.read_text());identity=row['id']
+                if path.stem!=identity or not asset(root,identity).is_file():continue
+                valid_name(row['name']);folders(row.get('folder',''));tags(row.get('tags',[]))
+                result.append(row);seen.add(identity)
+            except (OSError,ValueError,KeyError,TypeError):continue
     result=sorted(result,key=lambda r:(r.get('folder','').casefold(),r['name'].casefold()));_catalog_cache[key]=(now+1,result);return result
 
 def parse_wav(data,cycle=0,mono=False):
@@ -90,7 +108,7 @@ def upload(root,filename,stream,length,cycle=0,mono=False,category='',tag_values
         temporary=base/'.assets'/('.'+secrets.token_hex(16))
         try:
             with temporary.open('xb') as f:f.write(prepared);f.flush();os.fsync(f.fileno())
-            engine=Path(root)/'build/audio_engine'
+            engine=paths.code(root)/'build/audio_engine'
             if engine.is_file():
                 rendered=temporary.with_name(temporary.name+'.prepared')
                 try:
@@ -113,6 +131,7 @@ def edit(root,identity,value):
     if not isinstance(value,dict):raise ValueError('Invalid waveform metadata.')
     asset(root,identity);path=folder(root)/(identity+'.json')
     if path.is_symlink():raise ValueError('Unsafe waveform entry.')
+    if built_in(root,identity):raise ValueError('Built-in waveform cannot be changed.')
     row=json.loads(path.read_text());row.update(name=valid_name(value.get('name',row['name'])),folder=folders(value.get('folder',row.get('folder',''))),tags=tags(value.get('tags',row.get('tags',[]))))
     temp=path.with_name('.'+secrets.token_hex(16))
     try:temp.write_text(json.dumps(row,indent=2)+'\n');os.replace(temp,path)
@@ -122,6 +141,7 @@ def edit(root,identity,value):
 def delete(root,identity):
     asset(root,identity);path=folder(root)/(identity+'.json')
     if path.is_symlink():raise ValueError('Unsafe waveform entry.')
+    if built_in(root,identity):raise ValueError('Built-in waveform cannot be deleted.')
     path.unlink();_catalog_cache.clear();return dict(ok=True)
 
 # Port metadata and matrix destination labels are immutable. Building them in

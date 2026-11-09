@@ -1,4 +1,5 @@
 """Bounded, cancelable local separation jobs; no live engine mutations."""
+from app.paths import code as code_root
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
@@ -113,7 +114,7 @@ class Stems:
         return self.submit('INSTALLING',lambda:self._install())
     def _install(self):
         self.progress('Installing local engine and downloading verified model. Keep power and internet connected.')
-        self.process([sys.executable,str(self.library.root/'tools/install_stems.py'),str(self.library.root)],1800)
+        self.process([sys.executable,str(code_root(self.library.root)/'tools/install_stems.py'),str(self.library.root)],1800)
         if not ready(self.library.root):raise ValueError('Stem setup did not finish.')
         return dict(state='DONE',message='Stem engine installed. Separation now works offline.',progress=100)
     def start(self,value):

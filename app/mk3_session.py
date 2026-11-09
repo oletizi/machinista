@@ -1,4 +1,5 @@
 """MK3 optional session: separate input process, renderer process and USB output."""
+from app.paths import code as code_root
 import os,sys,subprocess,time
 from pathlib import Path
 from app.mk2_session import Mk2Session
@@ -40,7 +41,7 @@ class Mk3Session(Mk2Session):
                 self.renderer=ProcessRenderer(kind='mk3')
                 self.output=Mk3Output(self.fd,self.renderer,self.app.settings['controllers'][self.source],self.product,self.display_interface)
                 self.pad_trigger=Mk3PadTrigger()
-                self.process=subprocess.Popen([sys.executable,str(self.root/'tools/mk3_monitor.py'),path,str(self.product)],stdout=subprocess.PIPE)
+                self.process=subprocess.Popen([sys.executable,str(code_root(self.root)/'tools/mk3_monitor.py'),path,str(self.product)],stdout=subprocess.PIPE)
                 os.set_blocking(self.process.stdout.fileno(),False);self.reader_watch.start(now)
                 self.next_frame=self.next_led=0
                 print(self.device_name+' connected: '+path,flush=True);return

@@ -1,4 +1,5 @@
 """Isolated, bounded WAV rendering; no live audio devices or project writes."""
+from app.paths import code as code_root
 import copy
 import errno
 import json
@@ -245,7 +246,7 @@ def _render_export(request,root,cancel,progress,location):
                 # retries with no input can otherwise strand a partly sent pipe.
                 with tempfile.TemporaryFile(mode='w+',encoding='utf-8') as instructions:
                     instructions.write(script);instructions.seek(0)
-                    process=subprocess.Popen(['nice','-n','19',str(root/'build/audio_engine'),'--offline-render'],stdin=instructions,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    process=subprocess.Popen(['nice','-n','19',str(code_root(root)/'build/audio_engine'),'--offline-render'],stdin=instructions,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                     try:
                         started=time.monotonic();percent=-1
                         while True:
