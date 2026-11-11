@@ -1,36 +1,32 @@
 import copy,tempfile,unittest
-from unittest.mock import patch
-from app.mk2_surface import Field
-from app.mk3_surface import Mk3Surface
+from unittest.mock import patch,Mock
 from app.model import Application
 from app.controller_inputs import ControllerInputs
+from app.mk2_surface import Field
+from app.mk3_surface import Mk3Surface
 
-FULL=tuple(Field(f'P{i}',str(i),()) for i in range(8))
+FULL=[Field('P%d'%i,'0',()) for i in range(8)]
 
-class ParameterCursorTests(unittest.TestCase):
+class CursorTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
-        self.a=Application(self.tmp.name);self.inputs=ControllerInputs(self.a);self.s=Mk3Surface(self.a,self.inputs)
-    def press(self,name):self.s.button(name,True);self.s.button(name,False)
-    def state(self):
-        out={}
-        for k,v in vars(self.a).items():
-            if k=='selection_project':continue                                # lazily refreshed cache, not state
-            if isinstance(v,(int,float,str,bool,list,dict,tuple,set,type(None))):
-                try:out[k]=copy.deepcopy(v)
-                except Exception:pass
-        return out,copy.deepcopy(self.s.cursors)
-    def restore(self,snap):
-        for k,v in snap[0].items():setattr(self.a,k,copy.deepcopy(v))
-        self.s.cursors=copy.deepcopy(snap[1])
-    def same_as_knob(self,index,delta,action):
-        """Park the cursor on knob `index`, run `action`, then the equivalent knob turn from the same start; True when the app state matches."""
-        self.s.cursors[self.s.cursor_key()]=index-1                    # cursor parked on that knob's cell
-        start=self.state();action();via_action=self.state()
-        self.restore(start);self.s.rotate(index,delta);via_knob=self.state()
-        self.assertNotEqual(start[0]['project'],via_knob[0]['project'])
-        return via_action[0]==via_knob[0]
-
+        self.a=Application(self.tmp.name);self.a.control_level=2
+        self.inputs=ControllerInputs(self.a);self.s=Mk3Surface(self.a,self.inputs)
+    def press(self,name,surface=None):
+        s=surface or self.s;s.button(name,True);s.button(name,False)
+    def same_as_knob(self,knob,delta,action):
+        # Same application, same selectors: replay from an identical project.
+        start=copy.deepcopy(self.a.project);self.s.rotate(knob,delta)
+        expected=copy.deepcopy(self.a.project);self.a.project=copy.deepcopy(start)
+        action();self.assertEqual(self.a.project,expected)
+        return expected!=start
+    def blank(self,*views):
+        # views: (page, channel_page) pairs whose fields() report no parameters.
+        real=self.s.fields
+        def fake():
+            a=self.a;key=(a.page,a.channel_page if a.page in ('CHANNEL','PAD') else 0)
+            return [None]*8 if key in views else real()
+        return patch.object(self.s,'fields',side_effect=fake)
     def test_cursor_defaults_to_first_populated_cell(self):
         self.a.page='CHANNEL';self.a.channel_page=0
         self.assertEqual(self.s.cursor_cell(),0)
