@@ -68,3 +68,23 @@ clamping, are cheap and now in the plan, to pin this down.
 All six are reflected in the revised test list. For item 1, chain slots are
 covered through the plug-in URI case; slot-for-slot identity is intentionally
 not distinguished (see P1).
+
+## Revision 2 response
+
+Responds to: [follow-up review](2026-11-11-mk3-4d-parameter-cursor-design-review-r2.md)
+
+**P1 — rollback after empty-page traversal: agreed on the problem, resolved by
+removing the rollback rather than completing it.** `change_page()` does mutate
+more than the five saved fields, so a partial restore could leave the page and
+editing target inconsistent. A complete restore would mean reversing every side
+effect of `change_page()`, and keeping that in step with future changes to it.
+Instead, the traversal now never rolls back: each step is an ordinary
+PAGE LEFT/RIGHT page change, so the result is always a state the page buttons
+can already produce. If no populated view remains, the user lands on the last
+empty view with no cursor, exactly as after pressing PAGE RIGHT there. The test
+compares the full navigation and editing state with a twin application that
+pressed the page buttons the same number of times.
+
+**Minor — `rotate_raw` delegation: agreed.** The override intercepts only
+index 0; indices 1–8 go to `super().rotate_raw()`. The turn tests now go through
+`Mk3Session.rotate_raw(0, delta)`.

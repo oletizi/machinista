@@ -61,16 +61,23 @@ unchanged.
 cursor to the previous / next non-empty cell. Past either end the traversal is
 bounded:
 
-1. Record the view key and remember the original view (page, `channel_page`,
-   `sampler_page`, `plugin_param`, `control_level`).
-2. Call `change_page(±1)` at most `page_total` times (the second value of
-   `page_state()`, re-read after each call; at least 1, at most 16).
-3. After each call, if the view key did not change, the first/last page was
+1. Call `change_page(±1)` — the exact PAGE LEFT/RIGHT path — at most
+   `page_total` times (the second value of `page_state()`, re-read after each
+   call; at least 1, at most 16).
+2. After each call, if the view key did not change, the first/last page was
    reached: stop.
-4. If the new view has a non-empty cell, place the cursor on its first (moving
+3. If the new view has a non-empty cell, place the cursor on its first (moving
    right) or last (moving left) non-empty cell and stop.
-5. If the loop ends without a populated view, restore the original view and
-   leave the cursor where it was.
+4. Otherwise continue with the next call.
+
+There is no rollback. Each step is an ordinary page change with exactly the
+effects of pressing PAGE LEFT/RIGHT once (including `parameter_kind`, field
+selection and `remember_control_view()`), so the resulting state is always one
+the page buttons can produce. If the traversal ends on an empty view (no
+populated page remains in that direction), the user stays there with no cursor,
+as after pressing PAGE RIGHT onto that page; the opposite direction moves back.
+Attempting to restore the earlier view would require reversing every side
+effect of `change_page()`, which is fragile and not needed for a correct result.
 
 `change_page()` may move between page names (via `channel_page_path()`); the
 view key includes the page name, so that counts as a change. Auto-repeat follows
@@ -115,8 +122,10 @@ both apply to one cell, both marks show.
     page without SHIFT move the cursor (bounded page traversal at the ends);
     the existing chain-slot handler keeps up/down, and left/right only with
     SHIFT, on `SAMPLER` / `PLUGIN` / `AUDIO LOOP`.
-- `app/mk3_session.py`: `rotate_raw(0, delta)` calls
-  `surface.master_turn(delta)`; the display snapshot gets `state['cursor']` =
+- `app/mk3_session.py`: a `rotate_raw` override intercepts only index 0 and
+  calls `surface.master_turn(delta)`; indices 1–8 delegate to
+  `super().rotate_raw(index, delta)` so the smooth-knob accumulator and per-field
+  quantum stay intact; the display snapshot gets `state['cursor']` =
   `cursor_cell()` next to `state['touches']`.
 - `app/mk3_display.py`: draw the cursor bar below the cell where
   `side*4 + i == s.get('cursor')`.
@@ -137,14 +146,16 @@ New `tests/test_mk3_parameter_cursor.py`, using the existing fixture pattern
 written before the implementation:
 
 1. Cursor defaults to the first non-empty cell; empty cells are skipped.
-2. A 4D `master_turn(±1)` and `master_turn(±N)` change the cursor's parameter
+2. A 4D turn through `Mk3Session.rotate_raw(0, ±1)` and `(0, ±N)` changes the cursor's parameter
    exactly as `rotate(cursor+1, ±1/±N)` does on a twin application, for a
    discrete and a continuous field, including clamping at the limits.
 3. Left/right move the cursor; past the end the page changes and the cursor
    lands on the first/last cell; at the first/last page it stops; the
    multi-page CHANNEL path is traversed in both directions; a destination
-   view with no populated cells is skipped or, if nothing populated follows,
-   the original view is restored.
+   view with no populated cells is skipped; if nothing populated follows, the
+   resulting state (page, `parameter_kind`, `parameter_choice`, field
+   selection, remembered control view) equals the state reached by pressing
+   PAGE RIGHT/LEFT the same number of times on a twin application.
 4. A knob turn moves the cursor to that knob; turning an empty cell's knob
    does not.
 5. Cursor memory: two different plug-ins keep separate positions; two sounds
