@@ -8,7 +8,7 @@ class Mk3Surface(Mk2Surface):
     event_select_button='DISPLAY 4'
     event_select_index=3
     def __init__(self,*args):
-        super().__init__(*args);self.strip_mode=None;self.strip_value=0;self.touched=set();self.cursors={}
+        super().__init__(*args);self.strip_mode=None;self.strip_value=0;self.touched=set();self.cursors={};self.cursor_buttons=set()
     def move_cursor(self,step):
         cell=self.cursor_cell()
         if cell is not None:
@@ -79,12 +79,15 @@ class Mk3Surface(Mk2Surface):
                 if getattr(self,'tap_binding',None)=='TAP':self.inputs.button(self.source,'TAP',False)
                 self.tap_binding=None
             return
-        if name in ('MASTER LEFT','MASTER RIGHT') and not a.shift and self.cursor_active() and (self.cursor_cell() is not None or a.page not in ('SAMPLER','PLUGIN','AUDIO LOOP')):
+        if name in ('MASTER LEFT','MASTER RIGHT'):
+            # Route each release to the handler that took the press.
             if pressed:
-                if name in self.held:return
-                self.held.add(name);self.move_cursor(-1 if name=='MASTER LEFT' else 1)
-            else:self.held.discard(name)
-            return
+                if not a.shift and self.cursor_active() and (self.cursor_cell() is not None or a.page not in ('SAMPLER','PLUGIN','AUDIO LOOP')):
+                    if name in self.held:return
+                    self.held.add(name);self.cursor_buttons.add(name);self.move_cursor(-1 if name=='MASTER LEFT' else 1)
+                    return
+            elif name in self.cursor_buttons:
+                self.cursor_buttons.discard(name);self.held.discard(name);return
         if name in ('MASTER LEFT','MASTER RIGHT','MASTER UP','MASTER DOWN') and a.page in ('SAMPLER','PLUGIN','AUDIO LOOP'):
             if pressed:
                 if name in self.held:return
@@ -216,7 +219,7 @@ class Mk3Surface(Mk2Surface):
 
     def cursor_key(self):
         a=self.app;sel=a.plugin_selected() if a.page=='PLUGIN' else None
-        return (a.page,a.control_level,self.page_state()[0],sel and sel.get('uri'))
+        return (a.page,a.control_level,self.page_state()[0],(sel or {}).get('uri'))
 
     def populated(self):
         return [i for i,f in enumerate(self.fields()) if f is not None]

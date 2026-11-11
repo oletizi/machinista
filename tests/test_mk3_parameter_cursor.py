@@ -142,10 +142,29 @@ class CursorTests(unittest.TestCase):
         s=self.session();self.a.page='CHANNEL';self.a.channel_page=0
         for knob,delta in ((1,3),(1,-500),(3,5),(3,-5),(3,10**4)):
             with self.subTest(knob=knob,delta=delta):
-                self.same_as_knob(knob,delta,lambda:s.rotate_raw(0,delta))
+                changed=self.same_as_knob(knob,delta,lambda:s.rotate_raw(0,delta))
+                if (knob,delta) in ((1,3),(3,5)):self.assertTrue(changed)
     def test_session_knobs_still_use_accumulator(self):
-        s=self.session();self.a.page='CHANNEL';s.surface.rotate=Mock();s.rotate_raw(3,1)
-        s.surface.rotate.assert_not_called()
+        s=self.session();self.a.page='CHANNEL';s.surface.rotate=Mock();s.surface.master_turn=Mock()
+        s.rotate_raw(3,1)
+        s.surface.rotate.assert_not_called();s.surface.master_turn.assert_not_called()
+        s.rotate_raw(3,10**4)
+        self.assertEqual(s.surface.rotate.call_args[0][0],3);s.surface.master_turn.assert_not_called()
+    def test_shift_release_order_does_not_stick_nav_right(self):
+        self.a.page='CHANNEL';self.a.channel_page=0
+        for order in ('shift-first','right-first'):
+            with self.subTest(order=order):
+                s=self.s
+                if order=='shift-first':
+                    s.button('SHIFT',True);s.button('MASTER RIGHT',True);s.button('SHIFT',False);s.button('MASTER RIGHT',False)
+                else:
+                    s.button('MASTER RIGHT',True);s.button('SHIFT',True);s.button('MASTER RIGHT',False);s.button('SHIFT',False)
+                self.assertNotIn('NAV RIGHT',self.inputs.buttons);self.assertNotIn('NAV RIGHT',self.a.held_buttons)
+                before=s.cursor_cell();self.press('MASTER RIGHT');self.assertNotEqual(s.cursor_cell(),before)
+                s.button('SHIFT',True);s.button('MASTER RIGHT',True)
+                if order=='shift-first':self.assertIn('NAV RIGHT',self.inputs.buttons)
+                s.button('MASTER RIGHT',False);s.button('SHIFT',False)
+                self.assertNotIn('NAV RIGHT',self.inputs.buttons)
     def test_plus_session_4d_turn_keeps_transport(self):
         from app.plus_session import PlusSession
         s=self.session(PlusSession);self.a.page='CHANNEL';self.a.settings['arrange_grid']='1/4';before=copy.deepcopy(self.a.project)
