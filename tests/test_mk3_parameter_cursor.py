@@ -122,7 +122,7 @@ class CursorTests(unittest.TestCase):
         self.a.page='SAMPLER';self.press('MASTER DOWN');self.assertEqual((self.a.page,self.a.plugin_slot),('PLUGIN',0))
         self.press('MASTER UP');self.assertEqual(self.a.page,'SAMPLER')
         self.a.page='CHANNEL';before=copy.deepcopy(self.a.project)
-        self.a.shift=True;self.press('MASTER DOWN');self.a.shift=False;self.assertGreater(self.a.clock_phase,0);self.assertEqual(before,self.a.project)
+        self.a.settings['arrange_grid']='1/4';cell=self.s.cursor_cell();self.press('MASTER DOWN');self.assertGreater(self.a.clock_phase,0);self.assertEqual(before,self.a.project);self.assertEqual(self.s.cursor_cell(),cell)
     def test_empty_plugin_view_keeps_slot_switching(self):
         self.a.track()['plugins']=[dict(uri='urn:filter',kind='EFFECT',controls={}),dict(uri='urn:delay',kind='EFFECT',controls={})]
         self.press('PLUG-IN');self.assertEqual(self.a.page,'PLUGIN');self.assertIsNone(self.s.cursor_cell())
