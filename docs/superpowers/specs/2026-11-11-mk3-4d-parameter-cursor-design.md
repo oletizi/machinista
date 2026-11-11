@@ -32,9 +32,12 @@ cutoff). Different plug-ins have different layouts, so they get separate
 positions. No invalidation is needed: positions are resolved against the live
 `fields()` on every use. A view not yet visited starts on its first non-empty cell. If the
 remembered cell is empty (the page's contents changed), the cursor resolves to
-the nearest non-empty cell, preferring the lower index on a tie. A page with no
-non-empty cells has no cursor, and the 4D encoder keeps its current behaviour
-there.
+the nearest non-empty cell, preferring the lower index on a tie. A view with no
+non-empty cells has no cursor. There, a 4D turn keeps its current behaviour.
+4D left/right without SHIFT still navigate: on `SAMPLER` / `PLUGIN` /
+`AUDIO LOOP` they keep switching chain slots (so a plug-in without controls can
+always be left), and on the other cursor pages they run the page traversal
+below immediately, so an empty view can always be left in either direction.
 
 **4D turn** (no SHIFT): applies `delta` steps to the cursor's parameter by
 calling the same entry point a knob uses: `rotate(cursor + 1, delta)`. That
@@ -61,9 +64,11 @@ unchanged.
 cursor to the previous / next non-empty cell. Past either end the traversal is
 bounded:
 
-1. Call `change_page(±1)` — the exact PAGE LEFT/RIGHT path — at most
-   `page_total` times (the second value of `page_state()`, re-read after each
-   call; at least 1, at most 16).
+1. Call `change_page(±1)` — the exact PAGE LEFT/RIGHT path — repeatedly, at most
+   `bound` times, where `bound` is `len(channel_page_path())` when that path is
+   non-empty (it spans INPUT, the CHANNEL pages, GROOVE and MACRO, whose own
+   `page_state()` totals can be 1) and otherwise the second value of
+   `page_state()`; clamped to 1–32. A view key seen twice also stops it.
 2. After each call, if the view key did not change, the first/last page was
    reached: stop.
 3. If the new view has a non-empty cell, place the cursor on its first (moving
