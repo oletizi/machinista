@@ -364,6 +364,7 @@ class Mk3Renderer:
                     while size>12 and c.draw.textlength(str(value),font=font(size,True))>104:size-=1
                     c.text(i*120+10,242,value,size,True,color=foreground(color) if isinstance(color,GroupColor) and s.get('color_scheme')=='daylight' else BG,width=104)
                     if f'KNOB {side*4+i+1} TOUCH' in s.get('touches',()):c.rect(i*120+7,219,105,2,ACCENT)
+                    if s.get('cursor')==side*4+i:c.rect(i*120+7,268,105,3,ACCENT)
         if s['page']=='CLIP ARRANGER':self.clip_arranger(p,q,s['clip_arranger'])
         elif s['page']=='CLIP MENU':
             from app.clip_arranger import MENU

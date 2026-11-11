@@ -131,3 +131,40 @@ class CursorTests(unittest.TestCase):
         self.a.page='CHANNEL';self.a.channel_page=0
         self.s.button('MASTER RIGHT',True);self.s.button('MASTER RIGHT',True)
         self.assertEqual(self.s.cursor_cell(),2);self.s.button('MASTER RIGHT',False)
+    def session(self,cls=None):
+        from app.mk3_session import Mk3Session
+        s=(cls or Mk3Session)(self.tmp.name,self.a,self.inputs,{});self.addCleanup(s.close)
+        self.s=s.surface;return s
+    def test_session_routes_4d_turn_to_cursor(self):
+        s=self.session();self.a.page='GROOVE'
+        self.assertTrue(self.same_as_knob(2,1,lambda:s.rotate_raw(0,1)))         # cycle
+    def test_batched_turn_moves_n_steps_and_clamps(self):
+        s=self.session();self.a.page='CHANNEL';self.a.channel_page=0
+        for knob,delta in ((1,3),(1,-500),(3,5),(3,-5),(3,10**4)):
+            with self.subTest(knob=knob,delta=delta):
+                self.same_as_knob(knob,delta,lambda:s.rotate_raw(0,delta))
+    def test_session_knobs_still_use_accumulator(self):
+        s=self.session();self.a.page='CHANNEL';s.surface.rotate=Mock();s.rotate_raw(3,1)
+        s.surface.rotate.assert_not_called()
+    def test_plus_session_4d_turn_keeps_transport(self):
+        from app.plus_session import PlusSession
+        s=self.session(PlusSession);self.a.page='CHANNEL';self.a.settings['arrange_grid']='1/4';before=copy.deepcopy(self.a.project)
+        s.rotate_raw(0,1);self.assertGreater(self.a.clock_phase,0);self.assertEqual(before,self.a.project)
+    def test_snapshot_and_render_marks(self):
+        from app.mk3_state import snapshot
+        from app.mk3_display import Mk3Renderer
+        r=Mk3Renderer();self.addCleanup(r.close)
+        self.a.settings['controllers']['mk3']['color_scheme']='current';self.a.page='MACRO'
+        base=snapshot(self.s);base['touches']=();base['cursor']=None
+        def render(**changes):return r.images(dict(base,**changes))[0]
+        plain=render();cursor=render(cursor=0);touch=render(touches=('KNOB 2 TOUCH',));both=render(cursor=2,touches=('KNOB 3 TOUCH',))
+        px=lambda img,x,y:img.getpixel((x,y))
+        self.assertNotEqual(px(cursor,60,269),px(plain,60,269));self.assertEqual(px(cursor,60,219),px(plain,60,219))
+        self.assertNotEqual(px(touch,180,219),px(plain,180,219));self.assertEqual(px(touch,180,269),px(plain,180,269))
+        self.assertNotEqual(px(both,300,219),px(plain,300,219));self.assertNotEqual(px(both,300,269),px(plain,300,269))
+        session=self.session();self.a.page='MACRO';session.surface.cursors[session.surface.cursor_key()]=4
+        captured={}
+        session.output=Mock(submit=lambda state:captured.update(state),submit_leds=lambda *_:None)
+        session.palette=[(0,0,0)]+[(127,64,0)]*16
+        session.next_led=session.next_frame=0;session.update(1)
+        self.assertEqual(captured['cursor'],4)

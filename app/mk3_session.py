@@ -100,11 +100,14 @@ class Mk3Session(Mk2Session):
         report.extend(strip_leds(a,self.surface))
         for raw,slot in enumerate(PAD_SLOTS):report.append(self.colour(pads[1+raw*3:4+raw*3]))
         return led_reports(report)
+    def rotate_raw(self,index,delta):
+        if index==0:self.surface.master_turn(delta);return
+        super().rotate_raw(index,delta)
     def update(self,now):
         if not self.output:return
         try:
             if now>=self.next_led:self.output.submit_leds(self.reports(now));self.next_led=now+.05
             if now>=self.next_frame:
-                state=snapshot(self.surface);state['touches']=tuple(sorted(self.surface.touched))
+                state=snapshot(self.surface);state['touches']=tuple(sorted(self.surface.touched));state['cursor']=self.surface.cursor_cell()
                 self.output.submit(state);self.next_frame=now+1/30
         except Exception as error:print('MK3 snapshot: '+str(error),flush=True);self.disconnect();self.next_scan=now+2
