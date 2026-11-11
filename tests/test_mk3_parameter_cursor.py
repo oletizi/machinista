@@ -72,3 +72,62 @@ class CursorTests(unittest.TestCase):
         self.a.track()['sample']='x.wav';self.a.audio_loop_setup()               # MODE, BARS, STRETCH, TUNE
         self.assertTrue(self.same_as_knob(2,1,lambda:self.s.master_turn(1)))      # BARS
         self.assertEqual(self.s.cursor_cell(),1)
+    def view(self):return (self.a.page,self.a.channel_page,self.s.cursor_cell())
+    def test_right_moves_within_page_skipping_empty_cells(self):
+        self.a.page='CHANNEL';self.a.channel_page=0
+        self.press('MASTER RIGHT');self.assertEqual(self.s.cursor_cell(),2)
+        self.press('MASTER RIGHT');self.assertEqual(self.s.cursor_cell(),3)
+    def test_right_past_last_cell_changes_page_and_lands_first(self):
+        self.a.page='CHANNEL';self.a.channel_page=0;self.s.rotate(4,1)
+        self.press('MASTER RIGHT');self.assertEqual(self.view(),('CHANNEL',1,0))
+    def test_left_before_first_cell_lands_on_last_of_previous_page(self):
+        self.a.page='CHANNEL';self.a.channel_page=1
+        self.press('MASTER LEFT');self.assertEqual(self.view(),('CHANNEL',0,3))
+    def test_path_is_traversed_both_ways_and_stops_at_ends(self):
+        self.a.page='INPUT';self.press('MASTER LEFT');self.assertEqual((self.a.page,self.s.cursor_cell()),('INPUT',0))
+        for _ in range(40):self.press('MASTER RIGHT')
+        self.assertEqual((self.a.page,self.s.cursor_cell()),('MACRO',7))
+        for _ in range(40):self.press('MASTER LEFT')
+        self.assertEqual((self.a.page,self.s.cursor_cell()),('INPUT',0))
+    def test_consecutive_empty_views_are_skipped_from_input_and_groove(self):
+        with self.blank(('CHANNEL',0),('CHANNEL',1),('CHANNEL',2),('CHANNEL',3)):
+            self.a.page='INPUT';self.s.rotate(2,1)                                # GAIN, last cell
+            self.press('MASTER RIGHT');self.assertEqual((self.a.page,self.s.cursor_cell()),('GROOVE',0))
+            self.press('MASTER LEFT');self.assertEqual((self.a.page,self.s.cursor_cell()),('INPUT',1))
+    def test_empty_endpoint_matches_page_buttons_and_can_be_left(self):
+        with self.blank(('GROOVE',0),('MACRO',0)):
+            self.a.page='CHANNEL';self.a.channel_page=3;self.s.cursors[self.s.cursor_key()]=3
+            self.press('MASTER RIGHT')
+            b=Application(self.tmp.name);b.control_level=2;b.page='CHANNEL';b.channel_page=3
+            t=Mk3Surface(b,ControllerInputs(b));t.change_page(1);t.change_page(1)
+            keys=('page','channel_page','parameter_kind','parameter_choice','channel_field','groove_field','macro_index','control_views')
+            self.assertEqual({k:getattr(self.a,k) for k in keys},{k:getattr(b,k) for k in keys})
+            self.assertIsNone(self.s.cursor_cell())
+            self.press('MASTER LEFT');self.assertEqual(self.view(),('CHANNEL',3,3))
+    def test_shift_left_right_keeps_old_behaviour(self):
+        from app.plus_session import PlusSurface
+        for page,channel_page,knob in (('CHANNEL',0,1),('CHANNEL',0,4),('CHANNEL',3,4)):
+            with self.subTest(page=page,cell=knob-1):
+                b=Application(self.tmp.name);b.control_level=2;b.page=page;b.channel_page=channel_page
+                old=PlusSurface(b,ControllerInputs(b))
+                self.a.page=page;self.a.channel_page=channel_page;self.s.cursors[self.s.cursor_key()]=knob-1
+                self.a.shift=b.shift=True;self.press('MASTER RIGHT');self.press('MASTER RIGHT',old);self.a.shift=b.shift=False
+                self.assertEqual((self.a.page,self.a.channel_page,self.a.project),(b.page,b.channel_page,b.project))
+                self.assertEqual(self.s.cursor_cell(),knob-1)
+        self.a.track()['sample']='x.wav';self.a.track()['plugins']=[dict(uri='urn:filter',kind='EFFECT',controls={})]
+        self.a.page='SAMPLER';self.a.shift=True;self.press('MASTER RIGHT');self.a.shift=False
+        self.assertEqual((self.a.page,self.a.plugin_slot),('PLUGIN',0))
+    def test_up_down_still_switch_slots_and_move_transport(self):
+        self.a.track()['sample']='x.wav';self.a.track()['plugins']=[dict(uri='urn:filter',kind='EFFECT',controls={})]
+        self.a.page='SAMPLER';self.press('MASTER DOWN');self.assertEqual((self.a.page,self.a.plugin_slot),('PLUGIN',0))
+        self.press('MASTER UP');self.assertEqual(self.a.page,'SAMPLER')
+        self.a.page='CHANNEL';before=copy.deepcopy(self.a.project)
+        self.a.shift=True;self.press('MASTER DOWN');self.a.shift=False;self.assertGreater(self.a.clock_phase,0);self.assertEqual(before,self.a.project)
+    def test_empty_plugin_view_keeps_slot_switching(self):
+        self.a.track()['plugins']=[dict(uri='urn:filter',kind='EFFECT',controls={}),dict(uri='urn:delay',kind='EFFECT',controls={})]
+        self.press('PLUG-IN');self.assertEqual(self.a.page,'PLUGIN');self.assertIsNone(self.s.cursor_cell())
+        self.press('MASTER RIGHT');self.assertEqual(self.a.plugin_slot,1)
+    def test_held_right_moves_once(self):
+        self.a.page='CHANNEL';self.a.channel_page=0
+        self.s.button('MASTER RIGHT',True);self.s.button('MASTER RIGHT',True)
+        self.assertEqual(self.s.cursor_cell(),2);self.s.button('MASTER RIGHT',False)

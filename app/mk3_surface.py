@@ -9,6 +9,20 @@ class Mk3Surface(Mk2Surface):
     event_select_index=3
     def __init__(self,*args):
         super().__init__(*args);self.strip_mode=None;self.strip_value=0;self.touched=set();self.cursors={}
+    def move_cursor(self,step):
+        cell=self.cursor_cell()
+        if cell is not None:
+            beyond=[c for c in self.populated() if (c-cell)*step>0]
+            if beyond:self.cursors[self.cursor_key()]=beyond[0] if step>0 else beyond[-1];return
+        path=self.channel_page_path()
+        bound=max(1,min(32,len(path) if path else self.page_state()[1]))
+        seen={self.cursor_key()}
+        for _ in range(bound):
+            self.change_page(step);key=self.cursor_key()
+            if key in seen:return
+            seen.add(key)
+            cells=self.populated() if self.cursor_active() else []
+            if cells:self.cursors[key]=cells[0] if step>0 else cells[-1];return
     @on_controller('mk3')
     def button(self,name,pressed):
         import time
@@ -64,6 +78,12 @@ class Mk3Surface(Mk2Surface):
                 self.held.discard(name)
                 if getattr(self,'tap_binding',None)=='TAP':self.inputs.button(self.source,'TAP',False)
                 self.tap_binding=None
+            return
+        if name in ('MASTER LEFT','MASTER RIGHT') and not a.shift and self.cursor_active() and (self.cursor_cell() is not None or a.page not in ('SAMPLER','PLUGIN','AUDIO LOOP')):
+            if pressed:
+                if name in self.held:return
+                self.held.add(name);self.move_cursor(-1 if name=='MASTER LEFT' else 1)
+            else:self.held.discard(name)
             return
         if name in ('MASTER LEFT','MASTER RIGHT','MASTER UP','MASTER DOWN') and a.page in ('SAMPLER','PLUGIN','AUDIO LOOP'):
             if pressed:

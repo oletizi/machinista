@@ -27,16 +27,16 @@ class ChainCardsTests(unittest.TestCase):
         self.a.track()['sample']='sample.wav';self.a.track()['plugins']=[dict(uri='urn:filter',kind='EFFECT',controls={})]
         self.press('PLUG-IN');self.assertEqual(self.a.page,'SAMPLER')
         state=snapshot(self.s);self.assertEqual([v['name'] for v in state['chain_cards']['items']],['SAMPLER','urn:filter'])
-        self.press('MASTER RIGHT');self.assertEqual((self.a.page,self.a.plugin_slot),('PLUGIN',0))
-        self.press('MASTER LEFT');self.assertEqual(self.a.page,'SAMPLER')
-    def test_all_four_directions_select_slots_and_keep_audio_untouched(self):
+        self.press('MASTER DOWN');self.assertEqual((self.a.page,self.a.plugin_slot),('PLUGIN',0))
+        self.press('MASTER UP');self.assertEqual(self.a.page,'SAMPLER')
+    def test_up_down_and_shift_left_right_select_slots_and_keep_audio_untouched(self):
         self.plugins();self.press('PLUG-IN');project=copy.deepcopy(self.a.project);actions=list(self.a.actions)
         for key,index in [('MASTER RIGHT',1),('MASTER DOWN',2),('MASTER DOWN',2),('MASTER UP',1),('MASTER LEFT',0),('MASTER LEFT',0)]:
-            self.a.plugin_param=16;self.press(key);self.assertEqual(self.a.plugin_slot,index)
+            self.a.shift=key in ('MASTER LEFT','MASTER RIGHT');self.a.plugin_param=16;self.press(key);self.a.shift=False;self.assertEqual(self.a.plugin_slot,index)
             self.assertEqual(chain_state(self.s)['selected'],index)
         self.assertEqual(project,self.a.project);self.assertEqual(actions,self.a.actions)
-        self.s.button('MASTER RIGHT',True);self.s.button('MASTER RIGHT',True);self.assertEqual(self.a.plugin_slot,1)
-        self.s.button('MASTER RIGHT',False)
+        self.a.shift=True;self.s.button('MASTER RIGHT',True);self.s.button('MASTER RIGHT',True);self.assertEqual(self.a.plugin_slot,1)
+        self.s.button('MASTER RIGHT',False);self.a.shift=False
     def test_effect_only_sound_present_and_external_input_retained(self):
         self.a.track()['plugins']=[dict(uri='urn:filter',kind='EFFECT',controls={})]
         self.a.track().setdefault('routing',{})['input']='EXT. 1/2';before=copy.deepcopy(self.a.track())
@@ -50,7 +50,7 @@ class ChainCardsTests(unittest.TestCase):
     def test_animation_is_renderer_only_bounded_and_context_safe(self):
         self.plugins();self.press('PLUG-IN')
         with patch('app.mk3_display.time.monotonic',return_value=10):first=self.r.images(snapshot(self.s))
-        self.press('MASTER RIGHT');state=snapshot(self.s)
+        self.press('MASTER DOWN');state=snapshot(self.s)
         with patch('app.mk3_display.time.monotonic',return_value=11):start=self.r.images(state)
         self.assertTrue(self.r.needs_refresh)
         with patch('app.mk3_display.time.monotonic',return_value=11.09):middle=self.r.images(state)
