@@ -8,7 +8,7 @@ class Mk3Surface(Mk2Surface):
     event_select_button='DISPLAY 4'
     event_select_index=3
     def __init__(self,*args):
-        super().__init__(*args);self.strip_mode=None;self.strip_value=0;self.touched=set()
+        super().__init__(*args);self.strip_mode=None;self.strip_value=0;self.touched=set();self.cursors={}
     @on_controller('mk3')
     def button(self,name,pressed):
         import time
@@ -187,7 +187,31 @@ class Mk3Surface(Mk2Surface):
         import time
         a=self.app
         if time.monotonic()<getattr(a,'update_lock_until',0):return
+        if 1<=index<=8 and self.cursor_active() and self.fields()[index-1] is not None:self.cursors[self.cursor_key()]=index-1
         return super().rotate(index,delta)
+
+    def cursor_active(self):
+        from app.navigation import CONTROL_PAGES
+        return self.source=='mk3' and self.app.page in CONTROL_PAGES+('AUDIO LOOP',) and not self.master_mode
+
+    def cursor_key(self):
+        a=self.app;sel=a.plugin_selected() if a.page=='PLUGIN' else None
+        return (a.page,a.control_level,self.page_state()[0],sel and sel.get('uri'))
+
+    def populated(self):
+        return [i for i,f in enumerate(self.fields()) if f is not None]
+
+    def cursor_cell(self):
+        if not self.cursor_active():return None
+        cells=self.populated()
+        if not cells:return None
+        want=self.cursors.get(self.cursor_key(),cells[0])
+        return min(cells,key=lambda c:(abs(c-want),c))
+
+    def master_turn(self,delta):
+        cell=self.cursor_cell()
+        if cell is not None and not self.app.shift:self.rotate(cell+1,delta)
+        else:self.rotate(0,delta)
 
     def page_directions(self):
         if self.app.page=='CHOP' and self.app.slice_ranges():return True,True
