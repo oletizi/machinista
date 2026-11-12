@@ -208,14 +208,15 @@ class Mk3Surface(mk3_actions.CursorState,Mk2Surface):
         self.missing_profile=None;return profile
 
     def indicator_cell(self):
-        cell=self.cursor_cell()
-        return cell if cell is not None and self.active_profile().shows_cursor(self.app.page) else None
+        if not self.active_profile().shows_cursor(self.app.page):return None
+        return self.cursor_cell()
 
     def dispatch(self,input,index,delta):
         """Offer one physical event to the active profile: 'profile' if it took it, else 'original'."""
         a=self.app
         if self.source!='mk3' or not self.cursor_active() or time.monotonic()<getattr(a,'update_lock_until',0):return 'original'
         profile=self.active_profile()
+        if not profile.bindings:return 'original'
         binding=profile.match(input,a.page,a.shift,self.cursor_cell() is not None)
         if binding is None or binding.action=='default':return 'original'
         if binding.action=='none':return 'profile'
@@ -225,6 +226,7 @@ class Mk3Surface(mk3_actions.CursorState,Mk2Surface):
             a.message='PROFILE ERROR';return 'profile'
         return 'profile' if acted else 'original'
 
+    @on_controller('mk3')
     def physical_button(self,name,pressed):
         if name not in INTERCEPTED:return self.button(name,pressed)
         # The handler that took the press also takes its release.
@@ -238,9 +240,11 @@ class Mk3Surface(mk3_actions.CursorState,Mk2Surface):
             if owner=='profile':self.held.add(name)
         if owner=='original':return self.button(name,True)
 
+    @on_controller('mk3')
     def physical_turn(self,delta):
         if self.dispatch('4D TURN',None,delta)=='original':self.rotate(0,delta)
 
+    @on_controller('mk3')
     def physical_rotate(self,index,delta):
         if index==0:return self.physical_turn(delta)
         if self.dispatch('KNOB TURN',index,delta)=='original':self.rotate(index,delta)

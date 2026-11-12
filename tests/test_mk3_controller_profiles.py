@@ -80,6 +80,11 @@ class ProfileDispatchTests(unittest.TestCase):
         self.a.page='CHANNEL';self.a.channel_page=1;self.a.shift=True;b,t=self.twin()
         self.press('MASTER LEFT');t.button('MASTER LEFT',True);t.button('MASTER LEFT',False)
         self.assertEqual(self.state(self.a,self.s),self.state(b,t));self.assertNotEqual(self.a.channel_page,2)
+    def test_default_action_falls_back_without_later_bindings(self):
+        self.use('df',{'input':'4D LEFT','action':'default'},{'input':'4D LEFT','action':'page.next'})
+        self.a.page='CHANNEL';self.a.channel_page=1;b,t=self.twin()
+        self.press('MASTER LEFT');t.button('MASTER LEFT',True);t.button('MASTER LEFT',False)
+        self.assertEqual(self.state(self.a,self.s),self.state(b,t));self.assertNotEqual(self.a.channel_page,2)
     def test_press_owner_fixed_at_press_time(self):
         for change in ('shift','page','profile'):
             with self.subTest(change=change):
@@ -170,6 +175,12 @@ class ProfileDispatchTests(unittest.TestCase):
             self.s.rotate(1,1);self.assertEqual(a.settings['controllers']['mk3']['profile'],'zz')
             self.s.rotate(1,10);self.assertEqual(a.settings['controllers']['mk3']['profile'],'zz')
             self.s.rotate(1,-10);self.assertEqual(a.settings['controllers']['mk3']['profile'],'original')
+    def test_4d_turn_cycles_profile_on_profile_page(self):
+        for turn in (lambda:self.s.rotate(0,1),lambda:self.s.physical_turn(1)):
+            self.fresh();a=self.a
+            with controller_context(a,'mk3'):
+                self.open_page();pad=a.pad;focus=a.selection_focus;turn()
+                self.assertEqual(a.settings['controllers']['mk3']['profile'],'cursor');self.assertEqual((a.pad,a.selection_focus),(pad,focus))
     def test_open_page_reloads_files(self):
         with controller_context(self.a,'mk3'):
             self.open_page();self.write('new',self.good());self.assertNotIn('new',self.a.controller_profiles.ids())
@@ -190,6 +201,15 @@ class ProfileDispatchTests(unittest.TestCase):
         self.use('m',{'input':'4D TURN','action':'cursor.edit','pages':'MACRO'})
         self.assertIsNone(self.s.indicator_cell());self.a.page='MACRO';self.assertIsInstance(self.s.indicator_cell(),int)
         self.use('cursor');self.a.page='CHANNEL';self.press('TEMPO');self.assertIsNone(self.s.indicator_cell())
+    def test_original_profile_skips_cursor_cell(self):
+        self.a.page='CHANNEL';self.use('original')
+        with patch.object(self.s,'cursor_cell',side_effect=AssertionError) as c:
+            self.assertEqual(self.s.dispatch('4D TURN',None,1),'original');self.assertIsNone(self.s.indicator_cell())
+    def test_physical_inputs_run_in_mk3_context(self):
+        seen=[]
+        with patch.object(self.s,'dispatch',side_effect=lambda *x:seen.append(self.a.controller_source) or 'original'):
+            self.s.physical_turn(1);self.s.physical_rotate(2,1);self.s.physical_button('MASTER LEFT',True)
+        self.assertEqual(seen,['mk3']*3)
     def test_session_snapshot_uses_indicator(self):
         from app.mk3_session import Mk3Session
         self.a.page='MACRO'

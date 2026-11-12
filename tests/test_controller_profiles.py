@@ -24,6 +24,12 @@ class ValidateTests(unittest.TestCase):
           'device':(doc(device='mk2'),'device'),
           'unknown top key':(doc(extra=1),'extra'),
           'empty name':(doc(name=''),'name'),
+          'newline name':(doc(name='a\nb'),'name'),
+          'tab name':(doc(name='a\tb'),'name'),
+          'top note not string':(doc(note=5),'note'),
+          'binding note not string':(doc({'input':'4D TURN','action':'none','note':['x']}),'note'),
+          'shift null':(doc({'input':'4D TURN','action':'none','shift':None}),'shift'),
+          'cursor null':(doc({'input':'4D TURN','action':'none','cursor':None}),'cursor'),
           'long name':(doc(name='x'*25),'name'),
           'bindings not list':(doc(bindings={}),'bindings'),
           'too many':(doc(*[{'input':'4D TURN','action':'none'}]*65),'64'),
@@ -113,6 +119,9 @@ class DocsTests(unittest.TestCase):
         self.assertGreaterEqual(len(blocks),3)
         for i,block in enumerate(blocks):
             with self.subTest(block=i):validate('doc',json.loads(block))
+        shipped=[json.loads(b) for b in blocks if json.loads(b).get('name')=='4D cursor']
+        self.assertEqual(len(shipped),1)
+        self.assertEqual(shipped[0],json.loads((BUILTIN_DIR/'cursor.json').read_text('utf-8')))
         names=set(INPUTS)|set(GROUPS)|{a for acts in ACTIONS.values() for a in acts}
         for name in sorted(names):
             with self.subTest(name=name):self.assertIn(f'`{name}`',text)

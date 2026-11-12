@@ -10,7 +10,7 @@ Inputs covered: the 4D encoder (turn, push, up, down, left, right) and the eight
 
 ## Choosing one
 
-Go to SETTINGS › SYSTEM › WORKFLOW › CONTROLLER PROFILE and turn the encoder. The change applies at once and is saved. The default is Original, the normal MK3 behaviour. `4D cursor` is built in. Your own valid profiles follow, sorted by file name.
+Go to SETTINGS › SYSTEM › WORKFLOW › CONTROLLER PROFILE and turn encoder 1 or the 4D encoder. The change applies at once and is saved. The default is Original, the normal MK3 behaviour. `4D cursor` is built in. Your own valid profiles follow, sorted by file name.
 
 ## Where user files go
 

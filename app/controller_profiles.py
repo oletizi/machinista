@@ -54,7 +54,8 @@ def _binding(index,raw):
     if not isinstance(act,str) or not any(act in a for a in ACTIONS.values()):raise ProfileError(f"binding {index}: unknown action {act!r} (misspelt, or added in a newer Machinista)")
     if act not in ACTIONS[inp]:raise ProfileError(f'binding {index}: action {act!r} is not valid for {inp}')
     for key in ('shift','cursor'):
-        if raw.get(key) is not None and not isinstance(raw[key],bool):raise ProfileError(f'binding {index}: {key} must be true or false')
+        if key in raw and not isinstance(raw[key],bool):raise ProfileError(f'binding {index}: {key} must be true or false')
+    if 'note' in raw and not isinstance(raw['note'],str):raise ProfileError(f'binding {index}: note must be text')
     pages=_pages(index,raw['pages']) if 'pages' in raw else frozenset(GROUPS['parameters'])
     return Binding(index,inp,act,pages,raw.get('shift'),raw.get('cursor'))
 
@@ -68,7 +69,8 @@ def validate(ident,data):
     if fmt!=1:raise ProfileError('format must be the number 1')
     if data.get('device')!='mk3':raise ProfileError('device must be "mk3"')
     name=data.get('name')
-    if not isinstance(name,str) or not 1<=len(name)<=MAX_NAME:raise ProfileError(f'name must be 1 to {MAX_NAME} characters')
+    if not isinstance(name,str) or not 1<=len(name)<=MAX_NAME or not name.isprintable():raise ProfileError(f'name must be 1 to {MAX_NAME} printable characters')
+    if 'note' in data and not isinstance(data['note'],str):raise ProfileError('note must be text')
     raw=data.get('bindings')
     if not isinstance(raw,list):raise ProfileError('bindings must be a list')
     if len(raw)>MAX_BINDINGS:raise ProfileError(f'at most {MAX_BINDINGS} bindings are allowed')

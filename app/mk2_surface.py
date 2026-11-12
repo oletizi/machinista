@@ -462,6 +462,7 @@ class Mk2Surface:
         if index==0 and a.page=='CLIP MENU':
             from app.clip_arranger import MENU
             a.arranger_menu=max(0,min(len(MENU)-1,a.arranger_menu+delta));return
+        if index==0 and a.page=='CONTROLLER PROFILE' and self.source=='mk3':return self.rotate(1,delta)
         if index==0:
             if a.page in DEVICE_PAGES:a.rotate(delta);return
             if self.master_mode:
