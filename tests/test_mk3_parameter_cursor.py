@@ -11,12 +11,13 @@ class CursorTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.a=Application(self.tmp.name);self.a.control_level=2
+        self.a.settings['controllers']['mk3']['profile']='cursor'
         self.inputs=ControllerInputs(self.a);self.s=Mk3Surface(self.a,self.inputs)
     def press(self,name,surface=None):
-        s=surface or self.s;s.button(name,True);s.button(name,False)
+        s=surface or self.s;s.physical_button(name,True);s.physical_button(name,False)
     def same_as_knob(self,knob,delta,action):
         # Same application, same selectors: replay from an identical project.
-        start=copy.deepcopy(self.a.project);self.s.rotate(knob,delta)
+        start=copy.deepcopy(self.a.project);self.s.physical_rotate(knob,delta)
         expected=copy.deepcopy(self.a.project);self.a.project=copy.deepcopy(start)
         action();self.assertEqual(self.a.project,expected)
         return expected!=start
@@ -40,14 +41,14 @@ class CursorTests(unittest.TestCase):
         p=PlusSurface(self.a,self.inputs);self.a.page='CHANNEL';self.assertIsNone(p.cursor_cell())
     def test_turn_edits_cursor_parameter_like_a_knob(self):
         self.a.page='CHANNEL';self.a.channel_page=0
-        self.assertTrue(self.same_as_knob(3,1,lambda:self.s.master_turn(1)))      # LEVEL
-        self.assertTrue(self.same_as_knob(1,1,lambda:self.s.master_turn(1)))      # DEST.
+        self.assertTrue(self.same_as_knob(3,1,lambda:self.s.physical_turn(1)))      # LEVEL
+        self.assertTrue(self.same_as_knob(1,1,lambda:self.s.physical_turn(1)))      # DEST.
     def test_knob_turn_moves_cursor_but_empty_knob_does_not(self):
         self.a.page='CHANNEL';self.a.channel_page=0
-        self.s.rotate(4,1);self.assertEqual(self.s.cursor_cell(),3)
-        self.s.rotate(2,1);self.assertEqual(self.s.cursor_cell(),3)
+        self.s.physical_rotate(4,1);self.assertEqual(self.s.cursor_cell(),3)
+        self.s.physical_rotate(2,1);self.assertEqual(self.s.cursor_cell(),3)
     def test_cursor_memory_per_layout(self):
-        self.a.page='CHANNEL';self.a.channel_page=0;self.s.rotate(4,1)
+        self.a.page='CHANNEL';self.a.channel_page=0;self.s.physical_rotate(4,1)
         self.a.pad=5;self.assertEqual(self.s.cursor_cell(),3)
         with patch.object(self.s,'fields',return_value=FULL), patch.object(self.s,'page_state',return_value=(0,1)):
             self.a.page='PLUGIN'
@@ -57,7 +58,7 @@ class CursorTests(unittest.TestCase):
                 self.assertEqual(self.s.cursor_cell(),0)
     def test_shift_turn_moves_transport_and_leaves_parameters(self):
         self.a.page='CHANNEL';before=copy.deepcopy(self.a.project)
-        self.a.shift=True;self.s.master_turn(1);self.a.shift=False
+        self.a.shift=True;self.s.physical_turn(1);self.a.shift=False
         self.assertGreater(self.a.clock_phase,0);self.assertEqual(before,self.a.project)
     def test_master_modes_take_precedence(self):
         self.a.page='CHANNEL';self.s.cursors[self.s.cursor_key()]=2
@@ -65,12 +66,12 @@ class CursorTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 self.press(mode);start=copy.deepcopy(self.a.project)
                 self.s.rotate(0,2);expected=copy.deepcopy(self.a.project)
-                self.a.project=copy.deepcopy(start);self.s.master_turn(2)
+                self.a.project=copy.deepcopy(start);self.s.physical_turn(2)
                 self.assertEqual(self.a.project,expected);self.assertNotEqual(expected,start)
                 self.press(mode)                                                 # unlatch
     def test_audio_loop_cursor_reaches_later_setting(self):
         self.a.track()['sample']='x.wav';self.a.audio_loop_setup()               # MODE, BARS, STRETCH, TUNE
-        self.assertTrue(self.same_as_knob(2,1,lambda:self.s.master_turn(1)))      # BARS
+        self.assertTrue(self.same_as_knob(2,1,lambda:self.s.physical_turn(1)))      # BARS
         self.assertEqual(self.s.cursor_cell(),1)
     def view(self):return (self.a.page,self.a.channel_page,self.s.cursor_cell())
     def test_right_moves_within_page_skipping_empty_cells(self):
@@ -78,7 +79,7 @@ class CursorTests(unittest.TestCase):
         self.press('MASTER RIGHT');self.assertEqual(self.s.cursor_cell(),2)
         self.press('MASTER RIGHT');self.assertEqual(self.s.cursor_cell(),3)
     def test_right_past_last_cell_changes_page_and_lands_first(self):
-        self.a.page='CHANNEL';self.a.channel_page=0;self.s.rotate(4,1)
+        self.a.page='CHANNEL';self.a.channel_page=0;self.s.physical_rotate(4,1)
         self.press('MASTER RIGHT');self.assertEqual(self.view(),('CHANNEL',1,0))
     def test_left_before_first_cell_lands_on_last_of_previous_page(self):
         self.a.page='CHANNEL';self.a.channel_page=1
@@ -91,7 +92,7 @@ class CursorTests(unittest.TestCase):
         self.assertEqual((self.a.page,self.s.cursor_cell()),('INPUT',0))
     def test_consecutive_empty_views_are_skipped_from_input_and_groove(self):
         with self.blank(('CHANNEL',0),('CHANNEL',1),('CHANNEL',2),('CHANNEL',3)):
-            self.a.page='INPUT';self.s.rotate(2,1)                                # GAIN, last cell
+            self.a.page='INPUT';self.s.physical_rotate(2,1)                                # GAIN, last cell
             self.press('MASTER RIGHT');self.assertEqual((self.a.page,self.s.cursor_cell()),('GROOVE',0))
             self.press('MASTER LEFT');self.assertEqual((self.a.page,self.s.cursor_cell()),('INPUT',1))
     def test_empty_endpoint_matches_page_buttons_and_can_be_left(self):
@@ -129,8 +130,8 @@ class CursorTests(unittest.TestCase):
         self.press('MASTER RIGHT');self.assertEqual(self.a.plugin_slot,1)
     def test_held_right_moves_once(self):
         self.a.page='CHANNEL';self.a.channel_page=0
-        self.s.button('MASTER RIGHT',True);self.s.button('MASTER RIGHT',True)
-        self.assertEqual(self.s.cursor_cell(),2);self.s.button('MASTER RIGHT',False)
+        self.s.physical_button('MASTER RIGHT',True);self.s.physical_button('MASTER RIGHT',True)
+        self.assertEqual(self.s.cursor_cell(),2);self.s.physical_button('MASTER RIGHT',False)
     def session(self,cls=None):
         from app.mk3_session import Mk3Session
         s=(cls or Mk3Session)(self.tmp.name,self.a,self.inputs,{});self.addCleanup(s.close)
@@ -145,25 +146,25 @@ class CursorTests(unittest.TestCase):
                 changed=self.same_as_knob(knob,delta,lambda:s.rotate_raw(0,delta))
                 if (knob,delta) in ((1,3),(3,5)):self.assertTrue(changed)
     def test_session_knobs_still_use_accumulator(self):
-        s=self.session();self.a.page='CHANNEL';s.surface.rotate=Mock();s.surface.master_turn=Mock()
+        s=self.session();self.a.page='CHANNEL';s.surface.physical_rotate=Mock();s.surface.physical_turn=Mock()
         s.rotate_raw(3,1)
-        s.surface.rotate.assert_not_called();s.surface.master_turn.assert_not_called()
+        s.surface.physical_rotate.assert_not_called();s.surface.physical_turn.assert_not_called()
         s.rotate_raw(3,10**4)
-        self.assertEqual(s.surface.rotate.call_args[0][0],3);s.surface.master_turn.assert_not_called()
+        self.assertEqual(s.surface.physical_rotate.call_args[0][0],3);s.surface.physical_turn.assert_not_called()
     def test_shift_release_order_does_not_stick_nav_right(self):
         self.a.page='CHANNEL';self.a.channel_page=0
         for order in ('shift-first','right-first'):
             with self.subTest(order=order):
                 s=self.s
                 if order=='shift-first':
-                    s.button('SHIFT',True);s.button('MASTER RIGHT',True);s.button('SHIFT',False);s.button('MASTER RIGHT',False)
+                    s.physical_button('SHIFT',True);s.physical_button('MASTER RIGHT',True);s.physical_button('SHIFT',False);s.physical_button('MASTER RIGHT',False)
                 else:
-                    s.button('MASTER RIGHT',True);s.button('SHIFT',True);s.button('MASTER RIGHT',False);s.button('SHIFT',False)
+                    s.physical_button('MASTER RIGHT',True);s.physical_button('SHIFT',True);s.physical_button('MASTER RIGHT',False);s.physical_button('SHIFT',False)
                 self.assertNotIn('NAV RIGHT',self.inputs.buttons);self.assertNotIn('NAV RIGHT',self.a.held_buttons)
                 before=s.cursor_cell();self.press('MASTER RIGHT');self.assertNotEqual(s.cursor_cell(),before)
-                s.button('SHIFT',True);s.button('MASTER RIGHT',True)
+                s.physical_button('SHIFT',True);s.physical_button('MASTER RIGHT',True)
                 if order=='shift-first':self.assertIn('NAV RIGHT',self.inputs.buttons)
-                s.button('MASTER RIGHT',False);s.button('SHIFT',False)
+                s.physical_button('MASTER RIGHT',False);s.physical_button('SHIFT',False)
                 self.assertNotIn('NAV RIGHT',self.inputs.buttons)
     def test_plus_session_4d_turn_keeps_transport(self):
         from app.plus_session import PlusSession

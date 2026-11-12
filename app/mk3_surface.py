@@ -1,28 +1,20 @@
 """MK3 dedicated controls share the proven eight-knob engine bindings."""
-import copy
+import copy,time
+from app import mk3_actions
+from app.controller_profiles import ORIGINAL
 from app.mk2_surface import Mk2Surface,Field
 from app.controller_settings import on_controller
 
-class Mk3Surface(Mk2Surface):
+# Physical inputs a controller profile may claim; everything else goes straight to button().
+INTERCEPTED={'MASTER UP':'4D UP','MASTER DOWN':'4D DOWN','MASTER LEFT':'4D LEFT','MASTER RIGHT':'4D RIGHT','MASTER PUSH':'4D PUSH',
+             **{f'KNOB {n} TOUCH':'KNOB TOUCH' for n in range(1,9)}}
+
+class Mk3Surface(mk3_actions.CursorState,Mk2Surface):
     source='mk3'
     event_select_button='DISPLAY 4'
     event_select_index=3
     def __init__(self,*args):
-        super().__init__(*args);self.strip_mode=None;self.strip_value=0;self.touched=set();self.cursors={};self.cursor_buttons=set()
-    def move_cursor(self,step):
-        cell=self.cursor_cell()
-        if cell is not None:
-            beyond=[c for c in self.populated() if (c-cell)*step>0]
-            if beyond:self.cursors[self.cursor_key()]=beyond[0] if step>0 else beyond[-1];return
-        path=self.channel_page_path()
-        bound=max(1,min(32,len(path) if path else self.page_state()[1]))
-        seen={self.cursor_key()}
-        for _ in range(bound):
-            self.change_page(step);key=self.cursor_key()
-            if key in seen:return
-            seen.add(key)
-            cells=self.populated() if self.cursor_active() else []
-            if cells:self.cursors[key]=cells[0] if step>0 else cells[-1];return
+        super().__init__(*args);self.strip_mode=None;self.strip_value=0;self.touched=set();self.cursors={};self.press_owner={};self.missing_profile=None
     @on_controller('mk3')
     def button(self,name,pressed):
         import time
@@ -79,27 +71,10 @@ class Mk3Surface(Mk2Surface):
                 if getattr(self,'tap_binding',None)=='TAP':self.inputs.button(self.source,'TAP',False)
                 self.tap_binding=None
             return
-        if name in ('MASTER LEFT','MASTER RIGHT'):
-            # Route each release to the handler that took the press.
-            if pressed:
-                if not a.shift and self.cursor_active() and (self.cursor_cell() is not None or a.page not in ('SAMPLER','PLUGIN','AUDIO LOOP')):
-                    if name in self.held:return
-                    self.held.add(name);self.cursor_buttons.add(name);self.move_cursor(-1 if name=='MASTER LEFT' else 1)
-                    return
-            elif name in self.cursor_buttons:
-                self.cursor_buttons.discard(name);self.held.discard(name);return
         if name in ('MASTER LEFT','MASTER RIGHT','MASTER UP','MASTER DOWN') and a.page in ('SAMPLER','PLUGIN','AUDIO LOOP'):
             if pressed:
                 if name in self.held:return
-                self.held.add(name)
-                offset=int(a.sampler_slot_present());count=len(a.plugin_target().get('plugins',[]))+offset
-                current=0 if a.page in ('SAMPLER','AUDIO LOOP') else a.plugin_slot+offset
-                delta=-1 if name in ('MASTER LEFT','MASTER UP') else 1
-                target=max(0,min(count-1,current+delta))
-                if count and target!=current:
-                    a.parameter_kind='PLUG-IN';a.parameter_choice=target
-                    a.plugin_param=0;a.page=a.parameter_destination();a.remember_control_view()
-                    self.chain_motion=(getattr(self,'chain_motion',(0,''))[0]+1,name)
+                self.held.add(name);self.switch_chain(-1 if name in ('MASTER LEFT','MASTER UP') else 1,name)
             else:self.held.discard(name)
             return
         if name.endswith(' TOUCH'):
@@ -210,31 +185,61 @@ class Mk3Surface(Mk2Surface):
         import time
         a=self.app
         if time.monotonic()<getattr(a,'update_lock_until',0):return
-        if 1<=index<=8 and self.cursor_active() and self.fields()[index-1] is not None:self.cursors[self.cursor_key()]=index-1
         return super().rotate(index,delta)
 
-    def cursor_active(self):
-        from app.navigation import CONTROL_PAGES
-        return self.source=='mk3' and self.app.page in CONTROL_PAGES+('AUDIO LOOP',) and not self.master_mode
+    def switch_chain(self,step,name=None):
+        """Select the neighbouring chain slot, clamped; False off the chain pages."""
+        a=self.app
+        if a.page not in ('SAMPLER','PLUGIN','AUDIO LOOP'):return False
+        offset=int(a.sampler_slot_present());count=len(a.plugin_target().get('plugins',[]))+offset
+        current=0 if a.page in ('SAMPLER','AUDIO LOOP') else a.plugin_slot+offset
+        target=max(0,min(count-1,current+step))
+        if count and target!=current:
+            a.parameter_kind='PLUG-IN';a.parameter_choice=target
+            a.plugin_param=0;a.page=a.parameter_destination();a.remember_control_view()
+            self.chain_motion=(getattr(self,'chain_motion',(0,''))[0]+1,name or ('MASTER LEFT' if step<0 else 'MASTER RIGHT'))
+        return True
 
-    def cursor_key(self):
-        a=self.app;sel=a.plugin_selected() if a.page=='PLUGIN' else None
-        return (a.page,a.control_level,self.page_state()[0],(sel or {}).get('uri'))
+    def active_profile(self):
+        a=self.app;ident=a.settings['controllers']['mk3']['profile'];profile=a.controller_profiles.get(ident)
+        if profile is None:
+            if self.missing_profile!=ident:a.message='PROFILE NOT FOUND'
+            self.missing_profile=ident;return ORIGINAL
+        self.missing_profile=None;return profile
 
-    def populated(self):
-        return [i for i,f in enumerate(self.fields()) if f is not None]
+    def dispatch(self,input,index,delta):
+        """Offer one physical event to the active profile: 'profile' if it took it, else 'original'."""
+        a=self.app
+        if self.source!='mk3' or not self.cursor_active() or time.monotonic()<getattr(a,'update_lock_until',0):return 'original'
+        profile=self.active_profile()
+        binding=profile.match(input,a.page,a.shift,self.cursor_cell() is not None)
+        if binding is None or binding.action=='default':return 'original'
+        if binding.action=='none':return 'profile'
+        try:acted=mk3_actions.run(self,binding.action,index,delta)
+        except Exception as error:
+            print(f'controller profile {profile.ident} binding {binding.index} {input}: {error!r}',flush=True)
+            a.message='PROFILE ERROR';return 'profile'
+        return 'profile' if acted else 'original'
 
-    def cursor_cell(self):
-        if not self.cursor_active():return None
-        cells=self.populated()
-        if not cells:return None
-        want=self.cursors.get(self.cursor_key(),cells[0])
-        return min(cells,key=lambda c:(abs(c-want),c))
+    def physical_button(self,name,pressed):
+        if name not in INTERCEPTED:return self.button(name,pressed)
+        # The handler that took the press also takes its release.
+        if not pressed:
+            if self.press_owner.pop(name,'original')=='profile':self.held.discard(name);return
+            return self.button(name,False)
+        owner=self.press_owner.get(name)
+        if owner is None:
+            index=int(name.split()[1]) if name.startswith('KNOB') else None
+            owner=self.press_owner[name]=self.dispatch(INTERCEPTED[name],index,0)
+            if owner=='profile':self.held.add(name)
+        if owner=='original':return self.button(name,True)
 
-    def master_turn(self,delta):
-        cell=self.cursor_cell()
-        if cell is not None and not self.app.shift:self.rotate(cell+1,delta)
-        else:self.rotate(0,delta)
+    def physical_turn(self,delta):
+        if self.dispatch('4D TURN',None,delta)=='original':self.rotate(0,delta)
+
+    def physical_rotate(self,index,delta):
+        if index==0:return self.physical_turn(delta)
+        if self.dispatch('KNOB TURN',index,delta)=='original':self.rotate(index,delta)
 
     def page_directions(self):
         if self.app.page=='CHOP' and self.app.slice_ranges():return True,True
@@ -260,7 +265,7 @@ class Mk3Surface(Mk2Surface):
                 if slot is not None:self.inputs.pad_on(self.source+'-strip',slot,100)
                 self.strip_pad=slot
     def disconnect(self):
-        self.inputs.disconnect(self.source+'-strip');super().disconnect()
+        self.press_owner.clear();self.inputs.disconnect(self.source+'-strip');super().disconnect()
 
     def lock_parameters(self):
         """A/B performance parameters only; never restore notes, files or plug-in slots."""

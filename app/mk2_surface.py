@@ -443,6 +443,9 @@ class Mk2Surface:
             elif a.page in values:field(0,a.page,values[a.page],_utility=True)
         return tuple(result)
 
+    def physical_button(self,name,pressed):return self.button(name,pressed)
+    def physical_rotate(self,index,delta):return self.rotate(index,delta)
+
     @on_controller('mk2')
     def rotate(self,index,delta):
         self.sync()

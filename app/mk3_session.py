@@ -101,7 +101,7 @@ class Mk3Session(Mk2Session):
         for raw,slot in enumerate(PAD_SLOTS):report.append(self.colour(pads[1+raw*3:4+raw*3]))
         return led_reports(report)
     def rotate_raw(self,index,delta):
-        if index==0:self.surface.master_turn(delta);return
+        if index==0:self.surface.physical_turn(delta);return
         super().rotate_raw(index,delta)
     def update(self,now):
         if not self.output:return

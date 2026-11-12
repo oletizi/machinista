@@ -116,7 +116,7 @@ class Mk2Session:
                 a.input_timestamp=event.get('monotonic_ns',0)/1e9 or None
                 try:
                     if self.handle_event(event):pass
-                    elif kind=='button':self.surface.button(event['name'],bool(event['value']))
+                    elif kind=='button':self.surface.physical_button(event['name'],bool(event['value']))
                     elif kind=='encoder':self.rotate_raw(event['raw_control'],event['value'])
                     elif kind.startswith('pad_'):
                         slot=int(event['name'].split('_')[-1])-1
@@ -137,7 +137,7 @@ class Mk2Session:
         # The eight smooth knobs count 0..999; master counts 0..15.
         # Preserve sub-step travel across reports, but never across bindings.
         if index==0:
-            self.surface.rotate(index,delta);return
+            self.surface.physical_rotate(index,delta);return
         if not 1<=index<=8:raise ValueError('invalid MK2 encoder')
         fields=self.surface.fields()
         resolutions=tuple(quantum(self.surface,f) for f in fields)
@@ -154,7 +154,7 @@ class Mk2Session:
         total=remainder+delta
         steps=(abs(total)//travel)*(1 if total>=0 else -1)
         self.encoder_remainders[index]=total-steps*travel
-        if steps:self.surface.rotate(index,steps)
+        if steps:self.surface.physical_rotate(index,steps)
 
     def display_settings(self):
         if self.output:self.output.display_settings(self.app.settings['controllers']['mk2'])

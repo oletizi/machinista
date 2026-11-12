@@ -1,6 +1,7 @@
 """Device-local hardware preferences; legacy flat keys belong to Mikro only."""
 from contextlib import contextmanager
 from functools import wraps
+from pathlib import Path
 from app.storage import save_json
 
 DISPLAY_PAGES=('BRIGHTNESS','CONTRAST','CONTRAST L','CONTRAST R','INVERT','COLOR SCHEME')
@@ -18,6 +19,7 @@ def init_controller_settings(app):
         defaults=dict(MK2_DEFAULTS)
         if device=='mikro_mk2':defaults.update(display_brightness=100,display_contrast=42,display_invert=False)
         if device in ('mk3','plus'):defaults['color_scheme']='furnace'
+        if device=='mk3':defaults['profile']='original'
         if device=='mk1':defaults.update(brightness=72,contrast_left=29,contrast_right=29)
         for key,default in defaults.items():
             value=values.setdefault(key,default)
@@ -27,8 +29,11 @@ def init_controller_settings(app):
                 valid=value in SCHEMES
             elif key=='pad_curve':valid=value in ('SOFT','LINEAR','HARD','FIXED')
             elif key=='pad_sensitivity':valid=type(value) is int and 25<=value<=200
+            elif key=='profile':valid=type(value) is str
             else:valid=value is None or type(value) is int and 0<=value<=100
             if not valid:raise ValueError('invalid '+device+' '+key)
+    from app.controller_profiles import ProfileStore
+    app.controller_profiles=ProfileStore(Path(app.root)/'controller-profiles');app.controller_profiles.load()
 
 @contextmanager
 def controller_context(app,source):
