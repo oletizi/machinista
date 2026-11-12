@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "name": "4D cursor",
+  "device": "mk3",
+  "note": "4D turn edits the parameter under the cursor; left/right move it.",
+  "bindings": [
+    {"input": "4D TURN",  "shift": false, "cursor": true, "action": "cursor.edit"},
+    {"input": "4D LEFT",  "shift": false, "cursor": true, "action": "cursor.previous"},
+    {"input": "4D RIGHT", "shift": false, "cursor": true, "action": "cursor.next"},
+    {"input": "4D LEFT",  "pages": ["PAD","CHANNEL","INPUT","GROOVE","MACRO"], "shift": false, "action": "cursor.previous"},
+    {"input": "4D RIGHT", "pages": ["PAD","CHANNEL","INPUT","GROOVE","MACRO"], "shift": false, "action": "cursor.next"},
+    {"input": "KNOB TURN", "action": "cursor.follow"}
+  ]
+}
