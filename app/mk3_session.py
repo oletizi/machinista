@@ -108,6 +108,6 @@ class Mk3Session(Mk2Session):
         try:
             if now>=self.next_led:self.output.submit_leds(self.reports(now));self.next_led=now+.05
             if now>=self.next_frame:
-                state=snapshot(self.surface);state['touches']=tuple(sorted(self.surface.touched));state['cursor']=self.surface.cursor_cell()
+                state=snapshot(self.surface);state['touches']=tuple(sorted(self.surface.touched));state['cursor']=self.surface.indicator_cell()
                 self.output.submit(state);self.next_frame=now+1/30
         except Exception as error:print('MK3 snapshot: '+str(error),flush=True);self.disconnect();self.next_scan=now+2

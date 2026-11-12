@@ -6,6 +6,7 @@ import time
 import random
 import re
 from app.storage import save_json, load_json
+from app.controller_profiles import ORIGINAL
 from app.devices import choose_audio
 
 AUDIO_BUFFERS=(0,128,256,512,1024,2048,4096)
@@ -907,6 +908,9 @@ class Application(ClipArranger,MultiSelection,MidiRemote,AudioExport,Mixer,Relin
         elif self.page=='COLOR SCHEME':
             from app.mk3_theme import LABELS
             body=[LABELS.get(display_value(self),'Current'),'THIS CONTROLLER ONLY','SHIFT F1 RESET'];footer='ENTER BACK'
+        elif self.page=='CONTROLLER PROFILE':
+            profile=self.controller_profiles.get(self.settings['controllers']['mk3']['profile']) or ORIGINAL
+            body=[profile.name,'MK3 4D AND KNOBS','ID '+profile.ident];footer='ENTER BACK'
         elif self.page in DISPLAY_PAGES:
             value = display_value(self)
             body, footer = [('ON' if value else 'OFF') if self.page=='INVERT' else f'{value}%', (getattr(self,'controller_source','mk2').upper()+' '+('RIGHT' if self.page=='CONTRAST R' else 'BOTH' if self.page=='BRIGHTNESS' else 'BOTH' if self.page=='INVERT' else 'LEFT')) if is_mk2(self) else 'MIKRO ONLY', 'SHIFT F1 RESET'], 'ENTER BACK'

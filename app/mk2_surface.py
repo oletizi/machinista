@@ -4,6 +4,7 @@ Bindings are also the display's parameter columns; an encoder can only edit
 the parameter shown directly above it. NI MK2 manual PDF52,216,289-299,787ff.
 """
 from dataclasses import dataclass
+from app.storage import save_json
 from app.controller_settings import on_controller,DEVICE_PAGES,DISPLAY_PAGES,change_display,save_display
 from app.preferences import PREFERENCES
 import copy
@@ -247,6 +248,9 @@ class Mk2Surface:
         if a.page=='COLOR SCHEME' and self.source in ('mk3','plus'):
             from app.mk3_theme import LABELS
             field(0,'PRESET',LABELS[a.settings['controllers'][self.source].get('color_scheme','current')],_controller_key='color_scheme')
+            return tuple(result)
+        if a.page=='CONTROLLER PROFILE' and self.source=='mk3':
+            field(0,'PROFILE',self.active_profile().name if hasattr(self,'active_profile') else 'Original',_controller_key='profile')
             return tuple(result)
         if a.page in DEVICE_PAGES:
             values=a.settings['controllers'][self.source]
@@ -521,6 +525,9 @@ class Mk2Surface:
             elif key=='color_scheme':
                 from app.mk3_theme import rotate
                 rotate(a,delta)
+            elif key=='profile':
+                ids=a.controller_profiles.ids();now=values.get('profile')
+                values['profile']=ids[max(0,min(len(ids)-1,(ids.index(now) if now in ids else 0)+delta))];save_json(a.settings_path,a.settings)
             elif key=='invert':
                 if delta:save_display(a,key,delta>0)
             else:

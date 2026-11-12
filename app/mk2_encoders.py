@@ -23,7 +23,7 @@ def choice_binding(surface,field):
     if '_sample_tool' in attrs:return a.page=='BOUNCE TO PAD' or attrs['_sample_tool'] in (0,1,2)
     if '_hardware_select' in attrs:return True
     if '_hardware_level' in attrs:return (a.interface_control() or {}).get('kind')=='switch'
-    if '_controller_key' in attrs:return attrs['_controller_key'] in ('pad_curve','invert','color_scheme')
+    if '_controller_key' in attrs:return attrs['_controller_key'] in ('pad_curve','invert','color_scheme','profile')
     if '_mixer' in attrs:return a.mixer_field==2
     if 'sampler_field' in attrs:
         key,_,default,_=a.sampler_fields()[attrs['sampler_field']]

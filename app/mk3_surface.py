@@ -207,6 +207,10 @@ class Mk3Surface(mk3_actions.CursorState,Mk2Surface):
             self.missing_profile=ident;return ORIGINAL
         self.missing_profile=None;return profile
 
+    def indicator_cell(self):
+        cell=self.cursor_cell()
+        return cell if cell is not None and self.active_profile().shows_cursor(self.app.page) else None
+
     def dispatch(self,input,index,delta):
         """Offer one physical event to the active profile: 'profile' if it took it, else 'original'."""
         a=self.app
