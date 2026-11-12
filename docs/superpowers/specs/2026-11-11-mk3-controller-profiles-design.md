@@ -170,7 +170,10 @@ consulted. Profiles are also not consulted on pages outside `parameters`.
 Every intercepted button (`MASTER UP/DOWN/LEFT/RIGHT/PUSH`, `KNOB n TOUCH`)
 gets an owner when it is pressed, recorded in `surface.press_owner[name]`:
 
-- `profile` when the matched action ran (including `none`), and
+- `profile` once a matching binding with an action other than `default` is
+  chosen and that action does not report "not applicable" (including `none`,
+  and including an action that raises: the owner is `profile` whether the
+  action completes or fails), and
 - `original` when there was no match, the action was `default`, it was not
   applicable, or profiles were not consulted (master mode, other page,
   Maschine+), or the action was `cursor.follow` (which continues into the
@@ -272,8 +275,9 @@ per plug-in layout) stays on the surface and survives profile switches.
 
 Within `format: 1`: an existing input, condition, group or action name never
 changes meaning and is never removed; new ones may be added. A file using a
-name this Machinista does not know, or a higher `format`, is rejected whole
-with "needs a newer Machinista" in the journal. `Original` always means the
+name this Machinista does not know is rejected whole, reported as "misspelt, or
+added in a newer Machinista"; a file with a higher `format` is rejected whole,
+reported as needing a newer Machinista. `Original` always means the
 current upstream behaviour.
 
 ## Error handling

@@ -98,3 +98,27 @@ with the same name. Display names no longer need to be unique.
   - mixed lists;
   - a not-applicable action followed by a later binding that would have
     matched.
+
+## Revision 2 response
+
+Responds to: [follow-up review](2026-11-11-mk3-controller-profiles-design-review-r2.md)
+
+**P2 — compatibility wording: agreed.** The compatibility promise now uses the
+validation section's wording: an unknown name is reported as "misspelt, or added
+in a newer Machinista"; only a higher `format` is reported as needing a newer
+Machinista.
+
+**P2 — ownership before a failing action: agreed.** The plan already had this:
+`dispatch()` catches the error and returns `profile`, and that result becomes
+the press owner. The spec now states it: the owner is `profile` once an
+applicable action is chosen, whether it completes or raises. The plan adds
+`test_failed_button_action_keeps_profile_ownership`, which raises during a
+`MASTER RIGHT` action and releases after SHIFT and the page change, and asserts
+that the original release handler is never reached.
+
+**Implementation verification:** these items are covered in the plan.
+- Task 2 switches both `Mk2Session` delivery sites (button events and quantised
+  knob steps) to the `physical_*` hooks.
+- `test_plus_ignores_profiles` covers Plus surfaces and sessions.
+- `test_turn_edit_knob1_dispatches_once_and_edits_once` covers synthetic calls
+  bypassing matching.
