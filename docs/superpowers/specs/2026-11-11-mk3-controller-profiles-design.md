@@ -42,9 +42,8 @@ Top-level keys, all required except where noted:
 
 - `format`: integer, must be `1`. A higher value is rejected with
   "needs a newer Machinista".
-- `name`: non-empty string, at most 24 characters (fits the settings cell);
-  unique across loaded profiles, case-insensitive. The built-in names win a
-  clash; a user file with a clashing name is rejected.
+- `name`: non-empty string, at most 24 characters (fits the settings cell).
+  Display only; it need not be unique.
 - `device`: must be `"mk3"`.
 - `bindings`: list, at most 64 entries. May be empty.
 - `note`: optional string, ignored.
@@ -53,7 +52,8 @@ Binding keys:
 
 - `input` (required): one of the inputs below.
 - `action` (required): one of the actions valid for that input.
-- `pages` (optional): a page name, a list of page names, or a group name.
+- `pages` (optional): a page name, a group name, or a list mixing page and
+  group names (expanded and combined).
   Groups: `parameters` = `PAD`, `CHANNEL`, `SAMPLER`, `PLUGIN`, `INPUT`,
   `GROOVE`, `MACRO`, `AUDIO LOOP` (`CONTROL_PAGES` plus `AUDIO LOOP`);
   `chain` = `SAMPLER`, `PLUGIN`, `AUDIO LOOP`. Page names must be one of the
@@ -67,6 +67,16 @@ Binding keys:
 Any other key, an unknown input, action, page or group, an action not valid for
 its input, or a wrong type rejects the whole file. The reason (file, binding
 index, key) goes to the journal. A rejected file is never partly applied.
+Unknown names are reported as, e.g., `unknown action 'cursor.nxt' (misspelt,
+or added in a newer Machinista)`; only `format` above 1 is reported as
+definitely needing a newer Machinista.
+
+**Identity.** A profile's identifier is its file name without `.json`
+(built-ins: `original`, `cursor`). It must match `[a-z0-9][a-z0-9-]{0,31}`;
+other file names are skipped with a journal message. A user file whose
+identifier equals a built-in's is rejected. The identifier, not the display
+name, is what the selection stores, so editing `name` keeps the selection;
+renaming the file makes it a different profile (format-1 contract).
 
 ## Inputs and actions
 
@@ -107,10 +117,47 @@ Actions:
 - `transport.back` / `transport.forward`: `rotate(0, -1 / +1)`, as the
   original MASTER UP/DOWN on non-chain parameter pages.
 
-"Not applicable" means the action falls through to the original handling for
-that input, the same as `default`.
+"Not applicable" means the input gets the original handling, the same as
+`default`. Later bindings are **not** tried: matching picks one binding, and
+that binding's outcome is final.
 
-## Matching and dispatch
+## Original handling
+
+"Original handling" is the MK3 surface's own, profile-free code path:
+`Mk3Surface.button()` and `Mk3Surface.rotate()` with the cursor code removed
+from them. Concretely, it is the behaviour of `mk3-linux-desktop` before the
+cursor branch (`cebddb3`), plus any later upstream changes to that path. The
+cursor branch's interceptions in `button()` (MASTER LEFT/RIGHT, the
+`cursor_buttons` set), `rotate()` (cursor recording) and `master_turn()` are
+removed; their logic exists only in `app/mk3_actions.py`, reachable only from
+profile actions. So Original is "no bindings" over a path that contains no
+cursor logic, and it tracks upstream's MK3 behaviour as it evolves.
+
+## Dispatch boundary
+
+Profile matching happens exactly once per physical event, at the boundary
+where the session delivers it to the surface:
+
+- `Mk2Session` delivers button events through `surface.physical_button(name,
+  pressed)` and quantised knob steps (indices 1–8) through
+  `surface.physical_rotate(index, steps)` (today: `surface.button` at
+  `app/mk2_session.py:119`, `surface.rotate` at `:157`). The base surface
+  implements both as plain calls to `button` / `rotate`, so other controllers
+  are unchanged.
+- `Mk3Session.rotate_raw(0, delta)` calls `surface.physical_turn(delta)`
+  (replacing `master_turn`).
+- `Mk3Surface` overrides the three `physical_*` methods to consult the
+  profile. `button()` and `rotate()` never consult it.
+
+Actions call only the non-dispatching operations: `cursor.edit` and
+`edit.knobN` call `rotate(n, delta)`, `transport.*` call `rotate(0, ±n)`,
+`cursor.follow` sets the cursor and then calls `rotate(n, steps)` or
+`button('KNOB n TOUCH', True)`. A physical event therefore produces one
+dispatch and at most one edit, with the existing undo, automation, clamping and
+display semantics. Synthetic callers (MASTER UP/DOWN calling `rotate(0, ±1)`,
+`super().button(...)` remaps inside the surface) never reach a profile.
+
+## Matching
 
 For an input event, Machinista picks the first binding (file order) whose
 `input` matches and whose `pages`, `shift` and `cursor` conditions all hold,
@@ -118,11 +165,29 @@ and runs its action. No match → original handling. Held VOLUME / SWING / TEMPO
 master modes always take precedence: while one is held, profiles are not
 consulted. Profiles are also not consulted on pages outside `parameters`.
 
-Press handling keeps the current rules: an action runs once per press (the
-existing `held` guard; no auto-repeat), and a release is routed to the handler
-that took its press — a profile action's release is swallowed even if SHIFT
-or the page changed in between (generalising the existing `cursor_buttons`
-fix). A `KNOB TOUCH` release always takes the original handling.
+## Press ownership
+
+Every intercepted button (`MASTER UP/DOWN/LEFT/RIGHT/PUSH`, `KNOB n TOUCH`)
+gets an owner when it is pressed, recorded in `surface.press_owner[name]`:
+
+- `profile` when the matched action ran (including `none`), and
+- `original` when there was no match, the action was `default`, it was not
+  applicable, or profiles were not consulted (master mode, other page,
+  Maschine+), or the action was `cursor.follow` (which continues into the
+  original handling).
+
+A release goes to its press's owner and then clears the entry: `original` →
+`button(name, False)`, exactly as today (so `held`, `touched` and other release
+effects are preserved); `profile` → the release is consumed and `name` is
+removed from `held`. A release with no recorded owner (e.g. the press happened
+before a reconnect) takes the original handling. Ownership is decided at press
+time only, so SHIFT, page, profile or file changes between press and release
+do not move it. A profile action runs once per press (no auto-repeat); a second
+press report while owned is ignored. Disconnect clears all owners.
+
+`KNOB n TOUCH` follows the same rule: with `cursor.follow` the press is owned
+by `original` (the touch highlight shows and clears normally); with `none` the
+press and its release are both consumed.
 
 **Original profile:** built-in, `bindings: []`. It is therefore exactly the
 original behaviour, now and after future upstream changes to it.
@@ -142,8 +207,12 @@ and loaded by the same validator as user files. It reproduces the behaviour of
 ]
 ```
 
-**Cursor indicator:** the bar below the cursor cell is drawn only when the
-active profile has at least one `cursor.*` binding. Cursor memory (per view,
+**Cursor indicator:** the bar below the cursor cell is drawn when the current
+view has a cursor cell and the active profile has a binding with a `cursor.*`
+action whose `pages` and `cursor` conditions hold in the current view. `shift`
+is ignored for this test, so holding SHIFT does not make the bar flicker. No
+master mode may be held. So the bar appears exactly where a cursor action can
+apply. Cursor memory (per view,
 per plug-in layout) stays on the surface and survives profile switches.
 
 ## Loading and selection
@@ -159,29 +228,36 @@ per plug-in layout) stays on the surface and survives profile switches.
   is opened, so an edited file is picked up without a restart.
 - Selection: SETTINGS › SYSTEM › WORKFLOW › CONTROLLER PROFILE (MK3 only,
   added like COLOR SCHEME under DISPLAY). Turning cycles Original, 4D cursor,
-  then valid user profiles sorted by name; the change applies immediately and
-  is saved as `settings['controllers']['mk3']['profile']` (the profile name).
-  Default: `"Original"`.
-- If the saved name is not among the loaded profiles, the controller uses
-  Original and shows `PROFILE NOT FOUND` once; the saved name is kept, so the
-  profile comes back when its file is fixed.
+  then valid user profiles sorted by identifier; the change applies
+  immediately and is saved as `settings['controllers']['mk3']['profile']` (the
+  identifier). Default: `"original"`.
+- If the saved identifier is not among the loaded profiles, the controller
+  uses Original and shows `PROFILE NOT FOUND` once; the saved identifier is
+  kept, so the profile comes back when its file is fixed.
+- Loading never raises: any error reading or validating a user file (I/O,
+  JSON, encoding, validation) skips that file with a journal message. Start-up
+  and opening the settings page cannot fail because of user files.
 
 ## Components
 
 - `app/controller_profiles.py`: constants (inputs, actions per input, page
-  groups, limits), `validate(data) -> Profile` raising `ProfileError(reason)`,
-  `load_profiles(root) -> list[Profile]` (built-ins first, then users;
-  rejections logged), `Profile.match(input, page, shift, cursor) -> str|None`.
-  No MK3 or surface imports.
+  groups, limits), `validate(ident, data) -> Profile` raising
+  `ProfileError(reason)`, `load_profiles(root) -> list[Profile]` (built-ins
+  first, then users; rejections logged, never raises),
+  `Profile.match(input, page, shift, cursor) -> Binding|None`,
+  `Profile.shows_cursor(page, cursor) -> bool`. No MK3 or surface imports.
 - `app/controller_profiles/cursor.json`: the 4D cursor built-in.
 - `app/mk3_actions.py`: `run(surface, action, input, index, delta) -> bool`
   (False = not applicable); the cursor state and logic moved out of
   `mk3_surface.py`, and the chain-slot switch extracted into a function shared
   by the original handler and `chain.*`.
-- `app/mk3_surface.py`: dispatch at the four entry points (`master_turn`,
-  `button` for `MASTER UP/DOWN/LEFT/RIGHT/PUSH` and `KNOB n TOUCH`, `rotate`
-  1–8); the cursor-specific code there is replaced by the dispatch.
-- `app/controller_settings.py`: default `profile='Original'` for `mk3`, type
+- `app/mk2_session.py`, `app/surface.py` or `app/mk2_surface.py`: the
+  `physical_button` / `physical_rotate` delivery hooks (plain pass-through by
+  default).
+- `app/mk3_surface.py`: `physical_turn`, `physical_button`, `physical_rotate`
+  (dispatch and press ownership); the cursor code removed from `button`,
+  `rotate` and `master_turn`.
+- `app/controller_settings.py`: default `profile='original'` for `mk3`, type
   check (string).
 - `app/settings_menu.py`, `app/mk2_surface.py`: the CONTROLLER PROFILE page
   and its field.
@@ -202,29 +278,51 @@ current upstream behaviour.
 
 ## Error handling
 
-Validation is the only defence needed: actions are Machinista code, so a
-loaded profile cannot raise in an unexpected way beyond what the original
-handlers can. Unreadable, invalid or oversized files are skipped with a reason;
-a missing selected profile falls back to Original. Profiles are UI behaviour
-only; they are never written into projects.
+Validation keeps unknown data out; it does not make actions infallible. At the
+action boundary:
+
+- Each action checks its own preconditions (cursor cell exists, knob cell
+  non-empty, chain page) and reports "not applicable" rather than acting on a
+  missing target; that falls back to the original handling as above.
+- If an action raises anyway, the exception goes to the journal with the
+  profile, binding index and input, the display shows `PROFILE ERROR`, and
+  the event is consumed (owner `profile`). It does not fall back to the
+  original handling, because a half-applied action followed by the original
+  one could apply two edits. The controller keeps running; the profile stays
+  selected.
+
+Unreadable, invalid or oversized files are skipped with a reason; a missing
+selected profile falls back to Original. Profiles are UI behaviour only; they
+are never written into projects.
 
 ## Testing
 
 - `tests/test_controller_profiles.py`: valid minimal file; each rejection
   (bad JSON, `format` 2, wrong device, unknown key, unknown input, unknown
   action, action not valid for input, bad page, bad group, wrong types, too
-  many bindings, long or duplicate name, oversized file, symlink); first-match
-  order; each condition; every built-in validates.
+  many bindings, long name, bad file name, built-in identifier clash,
+  oversized file, symlink); a loader run over a folder with good and bad files
+  returns the good ones and does not raise; first-match order with an
+  overlapping broad rule before a specific one and the reverse; omitted
+  conditions; group expansion; a `pages` list mixing names and groups; each
+  condition; `shows_cursor`; every built-in validates.
 - `tests/test_mk3_parameter_cursor.py` runs with the 4D cursor profile selected
   and passes with only fixture changes.
-- The existing MK3 tests (`tests/test_mk3_*.py`, chain cards with its original
-  left/right slot switching restored) pass with Original selected, the default.
+- Original is checked against the pre-cursor behaviour, not against the new
+  dispatcher: every `tests/test_mk3_*.py` file as it is at `cebddb3` (before
+  the cursor branch) passes unchanged with Original selected, the default.
 - `tests/test_mk3_controller_profiles.py`: switching profiles on the settings
   page applies immediately and persists; missing profile falls back to
   Original; a custom profile with `4D TURN → edit.knob1`, one with
-  `4D LEFT → none`, one with `4D PUSH → page.next`; `chain.*` off a chain page
-  falls through; profile release routing with SHIFT released first; no cursor
-  bar under Original; master modes override bindings; Maschine+ ignores
-  profiles.
+  `4D LEFT → none`, one with `4D PUSH → page.next`; `4D TURN → edit.knob1` and
+  `KNOB TURN → cursor.follow` each produce exactly one edit and one dispatch;
+  a not-applicable action (`chain.next` off a chain page) gets the original
+  handling and a later matching binding is not run; press ownership for each
+  intercepted button with SHIFT, page and profile changed between press and
+  release, and for `default`, `none` and not-applicable outcomes;
+  `KNOB TOUCH → none` consumes press and release; an action that raises
+  consumes the event and shows `PROFILE ERROR`; cursor bar shown only where a
+  cursor binding applies (page-limited binding, SHIFT held, Original); master
+  modes override bindings; Maschine+ ignores profiles.
 - Full suite compared with the known baseline (7 LV2 fixture failures). Final
   acceptance: switching between Original and 4D cursor on the MK3.
