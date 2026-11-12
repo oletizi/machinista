@@ -92,7 +92,7 @@ The bar under the cursor cell is drawn only where the active profile has a `curs
 
 - The first binding in the file that matches the input and all of its `pages`, `shift` and `cursor` conditions wins. Put specific bindings before broad ones.
 - If nothing matches, the original handling runs.
-- While VOLUME, SWING or TEMPO is held, profiles are not used.
+- While a VOLUME, SWING or TEMPO master mode is on (its button is lit), profiles are not used.
 - Profiles apply only on the parameter pages. Other pages always keep the original behaviour.
 - During a software update, profile actions do nothing, like the original handling.
 
@@ -111,7 +111,7 @@ journalctl --user -u machinista
 
 ## Compatibility promise for format 1
 
-Within `format: 1`, an existing input, condition, group or action name never changes meaning and is never removed. New ones may be added. A file using a name this Machinista does not know is rejected whole, reported as "misspelt, or added in a newer Machinista". A file with a higher `format` is rejected whole and reported as needing a newer Machinista. Original always means the current Machinista behaviour.
+Within `format: 1`, an existing input, condition, group or action name never changes meaning and is never removed. New ones may be added. A file using a name this Machinista does not know (input, page, group, action or key) is rejected whole. For an unknown action, the message says it may be misspelt or added in a newer Machinista. Only a higher `format` is reported as needing a newer Machinista. Original always means the current Machinista behaviour.
 
 ## Examples
 
