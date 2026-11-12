@@ -1,4 +1,5 @@
 import json,os,tempfile,unittest
+from unittest import mock
 from pathlib import Path
 from app.controller_profiles import (validate,ProfileError,ProfileStore,ORIGINAL,GROUPS,INPUTS,ACTIONS,BUILTIN_DIR)
 
@@ -85,13 +86,21 @@ class StoreTests(unittest.TestCase):
         self.write('bad-json.json',b'{');self.write('bom.json',b'\xef\xbb\xbf'+json.dumps(doc()).encode())
         self.write('latin.json',b'{"name":"\xff"}');self.write('Upper.json',doc());self.write('cursor.json',doc())
         self.write('big.json',b' '*65537);(self.dir/'dir.json').mkdir()
-        os.symlink(self.dir/'alpha.json',self.dir/'link.json');self.write('notes.txt',b'x')
+        os.symlink(self.dir/'alpha.json',self.dir/'link.json');self.write('notes.txt',b'x');self.write('deep.json',b'['*60000)
         s=ProfileStore(self.dir);s.load()
         self.assertEqual(s.ids(),['original','cursor','alpha','zeta'])
         joined='\n'.join(s.errors)
-        for name in ('bad-json.json','bom.json','latin.json','Upper.json','cursor.json','big.json','dir.json','link.json'):
+        for name in ('bad-json.json','bom.json','latin.json','Upper.json','cursor.json','big.json','dir.json','link.json','deep.json'):
             self.assertIn(name,joined)
         self.assertNotIn('notes.txt',joined)
+    def test_unlistable_user_folder_keeps_builtins(self):
+        self.dir.mkdir();real=Path.glob
+        def glob(path,pattern):
+            if path==self.dir:raise PermissionError('denied')
+            return real(path,pattern)
+        s=ProfileStore(self.dir)
+        with mock.patch.object(Path,'glob',glob):s.load()
+        self.assertEqual(s.ids(),['original','cursor']);self.assertEqual(len(s.errors),1);self.assertIn('denied',s.errors[0])
     def test_reload_picks_up_changes(self):
         s=ProfileStore(self.dir);s.load();self.write('mine.json',doc());s.load();self.assertIn('mine',s.ids())
         (self.dir/'mine.json').write_text('{');s.load();self.assertNotIn('mine',s.ids())

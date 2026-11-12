@@ -89,13 +89,15 @@ class ProfileStore:
             profiles[path.stem]=validate(path.stem,json.loads(path.read_text('utf-8')))
         builtin=set(profiles)
         user={}
-        if self.user_dir.is_dir():
-            for path in sorted(self.user_dir.glob('*.json')):
-                try:
-                    if path.stem in builtin:raise ProfileError('name is reserved for a built-in profile')
-                    user[path.stem]=self._read(path)
-                except (OSError,UnicodeError,ValueError) as e:
-                    errors.append(f'{path.name}: {e}');print(f'controller profile skipped: {errors[-1]}',flush=True)
+        try:paths=sorted(self.user_dir.glob('*.json')) if self.user_dir.is_dir() else []
+        except OSError as e:
+            paths=[];errors.append(f'{self.user_dir}: {e}');print(f'controller profile skipped: {errors[-1]}',flush=True)
+        for path in paths:
+            try:
+                if path.stem in builtin:raise ProfileError('name is reserved for a built-in profile')
+                user[path.stem]=self._read(path)
+            except (OSError,UnicodeError,ValueError,RecursionError) as e:
+                errors.append(f'{path.name}: {e}');print(f'controller profile skipped: {errors[-1]}',flush=True)
         profiles.update(sorted(user.items()));self.profiles=profiles;self.errors=errors
     def get(self,ident):return self.profiles.get(ident)
     def ids(self):return list(self.profiles)
