@@ -104,3 +104,15 @@ class StoreTests(unittest.TestCase):
     def test_reload_picks_up_changes(self):
         s=ProfileStore(self.dir);s.load();self.write('mine.json',doc());s.load();self.assertIn('mine',s.ids())
         (self.dir/'mine.json').write_text('{');s.load();self.assertNotIn('mine',s.ids())
+
+class DocsTests(unittest.TestCase):
+    def test_documented_examples_validate_and_document_every_name(self):
+        import re
+        text=(Path(__file__).resolve().parent.parent/'docs'/'CONTROLLER_PROFILES.md').read_text('utf-8')
+        blocks=re.findall(r'```json\n(.*?)```',text,re.S)
+        self.assertGreaterEqual(len(blocks),3)
+        for i,block in enumerate(blocks):
+            with self.subTest(block=i):validate('doc',json.loads(block))
+        names=set(INPUTS)|set(GROUPS)|{a for acts in ACTIONS.values() for a in acts}
+        for name in sorted(names):
+            with self.subTest(name=name):self.assertIn(f'`{name}`',text)
